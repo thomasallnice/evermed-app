@@ -1,0 +1,198 @@
+# Environment files
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+*.env
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+.eggs/
+*.whl
+
+# Node.js
+node_modules/
+/.pnp
+.pnp.js
+.yarn/
+coverage/
+.next/
+out/
+build/
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+Thumbs.db
+
+# Test and temporary files
+*.test
+*.tmp
+*.temp
+*.bak
+*.backup
+*.pid
+.cache/
+
+# Secrets and credentials
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+service-account-key.json
+evermed-ai-key.json
+credentials.json
+secrets/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Backend specific
+backend.pid
+frontend.pid
+
+# Large files
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# Claude Flow / Swarm files
+.hive-mind/
+.swarm/
+memory/sessions/
+memory/agents/
+coordination/memory_bank/
+coordination/orchestration/
+coordination/subtasks/
+.claude-flow/
+
+# Deployment
+deploy/
+deployment/model_spec.json
+
+# Custom
+medgemma-examples/
+custom_medgemma_deployment/
+cost_optimization_plan.md
+
+# Test files that shouldn't be in production
+test_*.html
+manual_*.html
+get_token_helper.html
+reset-auth.html
+test-button.html
+browser_test.py
+quick_test*.py
+debug_*.py
+check_*.py
+diagnose_*.py
+*_test.py
+
+# Documentation drafts
+*.draft.md
+TODO.md
+NOTES.md
+
+# Sensitive documentation
+JWT_TOKEN_SETTINGS.md
+SUPABASE_*_KEY.md
+*_SECRET.md
+*_CREDENTIALS.md
+# Environment files
+.env*
+!.env.example
+test_token.txt
+*.token
+
+# Logs
+*.log
+
+# Test artifacts
+test-results/
+playwright-report/
+.coverage
+
+# OS
+.DS_Store
+# Large files
+*.log
+vertex_ai_diagnostic.log
+*.tgz
+claude-flow-main/archive/
+
+
+
+
+
+
+
+
+# Claude Flow generated files
+.claude/settings.local.json
+.mcp.json
+claude-flow.config.json
+.swarm/
+.hive-mind/
+memory/claude-flow-data.json
+memory/sessions/*
+!memory/sessions/README.md
+memory/agents/*
+!memory/agents/README.md
+coordination/memory_bank/*
+coordination/subtasks/*
+coordination/orchestration/*
+*.db
+*.db-journal
+*.db-wal
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+claude-flow
+claude-flow.bat
+claude-flow.ps1
+hive-mind-prompt-*.txt
+# Claude Flow temporary files
+.claude-flow/
+.swarm/
+memory/
+*.db

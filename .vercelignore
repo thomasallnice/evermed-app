@@ -1,0 +1,20 @@
+# Ignore development and non-deploy assets
+Knowledge/
+design/
+coordination/
+memory/
+click-dummies/
+click-dummies-agents/
+click-dummies-claude-flow/
+click-dummies-gpt/
+landing/
+*.log
+*.bat
+*.ps1
+.git
+.gitignore
+node_modules/
+**/node_modules/
+
+# Keep app/web for deployment (do not over-restrict)
+# Note: vercel.json builds from app/web; allow source files
