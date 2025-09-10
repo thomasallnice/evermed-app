@@ -1,0 +1,2 @@
+module.exports = require('./packages/config/prettier.config.cjs');
+

@@ -1,0 +1,23 @@
+{
+  "name": "evermed-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run -w @evermed/web build",
+    "dev": "npm run -w @evermed/web dev",
+    "lint": "npm run -w @evermed/web lint:ci",
+    "typecheck": "tsc -p tests/tsconfig.json --noEmit",
+    "test": "vitest run",
+    "e2e": "echo 'E2E tests deferred to later PRs'",
+    "seed": "node -e \"console.log('Seeding placeholder — implemented in PR #2')\""
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5",
+    "tsx": "^4.17.0"
+  }
+}
