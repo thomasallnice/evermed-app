@@ -86,6 +86,8 @@ This document aligns product, design, and operations on what we’re building no
     
 - **Germany first**: export-ready; no ePA write-back in MVP.
   
+  Data infrastructure: Supabase Cloud (DB/Auth/Storage). CI connects via `SUPABASE_DB_URL`; no local Postgres in CI.
+  
   Data infrastructure: Supabase Cloud (DB/Auth/Storage). No local Postgres required; migrations target the project’s dev database.
     
 - Minimal data collection; user-controlled export/delete.

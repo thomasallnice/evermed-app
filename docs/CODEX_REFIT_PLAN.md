@@ -260,6 +260,7 @@ POST   /api/share-packs                 -> create pack (items[], expiry, passcod
 GET    /api/share-packs/:id             -> public view (after passcode)
 POST   /api/share-packs/:id/verify      -> passcode → session cookie (pack scope)
 POST   /api/share-packs/:id/revoke      -> owner only
+GET    /api/share-packs/:id/logs        -> owner-only logs (no PHI)
 
 # Admin (auth: admin role)
 GET    /api/admin/metrics               -> tiles (see §7)
@@ -279,7 +280,7 @@ model.token_usage
 
 ## **5) LLM & OCR Integration (pluggable, but ship defaults)**
 
-- **Explain/Ask:** single default model (configured via env). Enforce **citations required**. Refuse banned topics.
+- **Explain/Ask:** single default model (configured via env). Enforce **citations required**. Refuse banned topics. Use refusal/escalation copy from `/apps/web/src/lib/copy.ts`.
     
 - **Embeddings:** provider configurable (EMBEDDINGS_PROVIDER), default OpenAI. Index to DocChunk with pgvector.
     
