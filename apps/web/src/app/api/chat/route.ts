@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { retrieveChunks } from '@/src/lib/rag'
-import { ESCALATION_RED_FLAGS, REFUSAL_BANNED } from '@/src/lib/copy'
+import { retrieveChunks, type RetrievedChunk } from '@/lib/rag'
+import { ESCALATION_RED_FLAGS, REFUSAL_BANNED } from '@/lib/copy'
 
 export const runtime = 'nodejs'
 
@@ -29,10 +29,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Deterministic, template-style answer using retrieved chunks with citations
-    const top = chunks.slice(0, 3)
-    const bullets = top.map((c) => `- ${c.text}`).join('\n')
+    const top: RetrievedChunk[] = chunks.slice(0, 3)
+    const bullets = top.map((c: RetrievedChunk) => `- ${c.text}`).join('\n')
     const answer = `Here’s what I found in your records:\n\n${bullets}`
-    const citations = top.map((c) => ({ documentId: c.documentId, sourceAnchor: c.sourceAnchor || '' }))
+    const citations = top.map((c: RetrievedChunk) => ({ documentId: c.documentId, sourceAnchor: c.sourceAnchor || '' }))
     return NextResponse.json({ answer, citations, safetyTag: 'ok' })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'Unexpected error' }, { status: 500 })
