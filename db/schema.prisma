@@ -100,14 +100,15 @@ model ShareEvent {
 }
 
 model DocChunk {
-  id         String                 @id @default(uuid())
-  documentId String
-  chunkId    Int
-  text       String
-  embedding  Unsupported("vector")?
-  createdAt  DateTime               @default(now())
+  id          String   @id @default(uuid())
+  documentId  String
+  chunkId     Int
+  text        String
+  // embedding remains Unsupported("vector") via raw SQL migration
+  sourceAnchor String?
+  createdAt   DateTime @default(now())
 
-  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  document    Document @relation(fields: [documentId], references: [id])
 
   @@unique([documentId, chunkId])
 }
