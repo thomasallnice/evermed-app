@@ -1,40 +1,59 @@
 name: CI
 
 on:
-  pull_request:
   push:
-    branches: [refit/mvp-skeleton]
+    branches:
+      - main
+      - "refit/**"
+      - ci-test
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     env:
+      NODE_ENV: test
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - name: Install dependencies
         run: npm install
 
-      - name: Prisma generate
-        run: npx prisma generate
+      - name: Lint
+        run: npm run lint --if-present
 
-      - name: Deploy migrations
+      - name: Typecheck
+        run: npm run typecheck --if-present
+
+      - name: Prisma generate
+        run: npx prisma generate --schema=db/schema.prisma
+
+      - name: Deploy migrations (Supabase Cloud)
         if: env.SUPABASE_DB_URL != ''
         run: npx prisma migrate deploy --schema=db/schema.prisma
+        env:
+          DATABASE_URL: ${{ env.SUPABASE_DB_URL }}
 
-      - name: Seed database
+      - name: Seed database (non-PHI fixtures)
         if: env.SUPABASE_DB_URL != ''
         run: npm run seed
+        env:
+          DATABASE_URL: ${{ env.SUPABASE_DB_URL }}
 
       - name: Run tests
         run: npm test
+        env:
+          DATABASE_URL: ${{ env.SUPABASE_DB_URL }}
