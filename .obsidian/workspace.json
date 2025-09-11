@@ -62,9 +62,23 @@
               "icon": "lucide-file",
               "title": "CODEX_REFIT_PLAN"
             }
+          },
+          {
+            "id": "1e7b6e575e80d3d4",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "docs/BOOTSTRAP_PROMPT.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "BOOTSTRAP_PROMPT"
+            }
           }
         ],
-        "currentTab": 3
+        "currentTab": 4
       }
     ],
     "direction": "vertical"
@@ -214,6 +228,8 @@
   },
   "active": "182b8149fd3e4db6",
   "lastOpenFiles": [
+    "docs/CODEX_REFIT_PLAN.md",
+    "docs/BOOTSTRAP_PROMPT.md",
     "db/migrations/20250911081240_init/migration.sql",
     "db/migrations/migration_lock.toml",
     "db/migrations/20250911081240_init",
@@ -224,7 +240,6 @@
     "app/src/app/api/profile/update/route.ts",
     "app/src/app/api/rag/ingest/route.ts",
     "app/src/app/api/profile/set/route.ts",
-    "app/src/app/api/profile/account/delete",
     "app/src/app/icon.svg",
     "app/scripts/MIGRATION_README.md",
     "app/README.md",
@@ -250,7 +265,6 @@
     "app/node_modules/debug/CHANGELOG.md",
     "app/node_modules/electron-to-chromium/README.md",
     "app/node_modules/html-url-attributes/readme.md",
-    "app/node_modules/shebang-command/readme.md",
     "app/node_modules/pdf-parse/lib/pdf.js/v1.9.426/web/images/treeitem-expanded@2x.png",
     "app/node_modules/pdf-parse/lib/pdf.js/v1.9.426/web/images/treeitem-expanded.png",
     "app/node_modules/pdf-parse/lib/pdf.js/v1.9.426/web/images/treeitem-collapsed@2x.png",
