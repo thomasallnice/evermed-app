@@ -1,6 +1,8 @@
 {
-  "extends": "../packages/config/tsconfig.base.json",
-  "include": ["./**/*.ts", "./**/*.tsx"],
-  "exclude": ["../node_modules", "./e2e"]
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["vitest/globals", "node"],
+    "noImplicitAny": true
+  },
+  "include": ["**/*.ts","**/*.tsx"]
 }
-
