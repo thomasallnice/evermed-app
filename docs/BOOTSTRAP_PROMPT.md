@@ -23,11 +23,11 @@
     
 5. **Interoperability:** FHIR/gematik-aligned minimal model; no ePA write-back in MVP.
     
-6. **Environment split:** Local dev = Next.js/API only. **Supabase Cloud** = DB/Auth/Storage for dev/staging/prod. Hosting via Vercel.
+6. **Environment split:** Local dev = Next.js/API only. **Supabase Cloud** = DB/Auth/Storage for dev/staging/prod. Hosting via Vercel. CI uses `SUPABASE_DB_URL`; no local Postgres services.
     
 7. **Repo layout:** `/apps/web`, `/apps/workers`, `/packages/*`, `/db`, `/tests`, `/infra`, `/docs`. Remove code outside this plan unless explicitly referenced.
     
-8. **APIs (App Router):** uploads, documents, explain, chat, observations, share-packs, admin metrics; plus webhooks for processing/usage.
+8. **APIs (App Router):** uploads, documents, explain, chat (with citations/refusals), observations, share-packs (verify/revoke/logs), admin metrics; plus webhooks for processing/usage.
     
 9. **Analytics (no PHI):** exact events & token logging per plan; Admin Dashboard tiles per metrics spec.
     
