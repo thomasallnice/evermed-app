@@ -2,7 +2,11 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "types": ["vitest/globals", "node"],
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../apps/web/src/*"]
+    }
   },
   "include": ["**/*.ts","**/*.tsx"]
 }
