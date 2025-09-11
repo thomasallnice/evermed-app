@@ -4,11 +4,11 @@ import { createClient } from '@supabase/supabase-js'
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY
 const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
 const OPENAI_MODEL_SUMMARY = process.env.OPENAI_MODEL_SUMMARY || process.env.OPENAI_MODEL || 'gpt-5-mini'
-const OPENAI_MODEL_INTERPRET = process.env.OPENAI_MODEL_INTERPRET || 'gpt-5'
 const OPENAI_MODEL_EMBED = process.env.OPENAI_MODEL_EMBED || 'text-embedding-3-small'
 const OPENAI_ORG_ID = process.env.OPENAI_ORG_ID || process.env.OPENAI_ORGANIZATION || ''
 const OPENAI_MAX_TOKENS_SUMMARY = Number(process.env.OPENAI_MAX_TOKENS_SUMMARY || 800)
-const OPENAI_MAX_TOKENS_INTERPRET = Number(process.env.OPENAI_MAX_TOKENS_INTERPRET || 3000)
+// const OPENAI_MODEL_INTERPRET = process.env.OPENAI_MODEL_INTERPRET || 'gpt-5' // unused
+// const OPENAI_MAX_TOKENS_INTERPRET = Number(process.env.OPENAI_MAX_TOKENS_INTERPRET || 3000) // unused
 // MedGemma is disabled by default to avoid costs. No fallback.
 
 async function callOpenAI(messages: any[], model: string, maxTokens: number) {
@@ -125,7 +125,7 @@ async function buildContext(userId?: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages = [], userId, model, providerOverride, delayMs } = await req.json()
+    const { messages = [], userId, model: _model, providerOverride, delayMs } = await req.json()
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({ error: 'messages required' }, { status: 400 })
     }

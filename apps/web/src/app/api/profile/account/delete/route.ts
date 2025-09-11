@@ -12,7 +12,7 @@ function admin() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, email } = await req.json()
+    const { userId, email: _email } = await req.json()
     if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
     const a = admin()
     if (!a) return NextResponse.json({ error: 'missing supabase env' }, { status: 500 })
@@ -41,4 +41,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: e?.message || 'Unexpected error' }, { status: 500 })
   }
 }
-

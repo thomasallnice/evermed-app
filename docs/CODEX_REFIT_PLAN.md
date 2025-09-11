@@ -89,11 +89,11 @@ OTEL_EXPORTER_OTLP_ENDPOINT=
 
   
 
-**Enable**
+**Enable (Supabase Cloud)**
 
-- Extensions: pgvector, uuid-ossp, pgcrypto.
+- Ensure project has extensions enabled: pgvector, uuid-ossp, pgcrypto (via Supabase Dashboard → Database → Extensions).
     
-- Storage buckets (private): documents, thumbnails.
+- Storage buckets (private): documents, thumbnails (via Storage UI).
     
 
   
@@ -208,7 +208,7 @@ model AnalyticsEvent {
 }
 ```
 
-**RLS (SQL) — enforce per-owner**
+**RLS (SQL, apply in Supabase SQL editor) — enforce per-owner**
 
 ```
 -- Enable RLS
