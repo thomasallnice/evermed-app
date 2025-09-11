@@ -33,7 +33,7 @@ describe.runIf(hasDb)('DB shape and pgvector', () => {
     const tables = await prisma.$queryRaw<Array<{ table_name: string }>>`
       SELECT table_name FROM information_schema.tables WHERE table_name = 'DocChunk'
     `;
-    expect(tables.find((t) => t.table_name === 'DocChunk')).toBeTruthy();
+    expect(tables.find((t: { table_name: string }) => t.table_name === 'DocChunk')).toBeTruthy();
 
     // check the column type
     const cols = await prisma.$queryRaw<Array<{ column_name: string; data_type: string; udt_name: string }>>`
