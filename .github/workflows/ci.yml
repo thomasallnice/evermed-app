@@ -15,12 +15,26 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm ci
+      - name: Prisma generate
+        run: npm run prisma:generate
+      - name: Apply migrations (Supabase Cloud)
+        if: ${{ secrets.SUPABASE_DB_URL != '' }}
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: npm run prisma:migrate:deploy
+      - name: Seed DB (Supabase Cloud)
+        if: ${{ secrets.SUPABASE_DB_URL != '' }}
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: npm run seed
       - name: Lint
         run: npm run lint --if-present
       - name: Typecheck
         run: npm run typecheck --if-present
       - name: Unit tests
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: npm run test --if-present
       - name: E2E (placeholder)
         run: npm run e2e --if-present
-

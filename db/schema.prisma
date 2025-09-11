@@ -1,0 +1,134 @@
+// db/schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Prisma schema for EverMed MVP (Postgres/Supabase)
+model Person {
+  id         String   @id @default(uuid())
+  ownerId    String // supabase auth.uid()
+  givenName  String?
+  familyName String?
+  birthYear  Int?
+  sexAtBirth String?
+  locale     String?  @default("de-DE")
+  createdAt  DateTime @default(now())
+
+  documents    Document[]
+  observations Observation[]
+  sharePacks   SharePack[]
+}
+
+model Document {
+  id          String    @id @default(uuid())
+  personId    String
+  kind        String // 'pdf'|'image'|'note'
+  topic       String?
+  filename    String
+  storagePath String
+  sha256      String
+  uploadedAt  DateTime  @default(now())
+  processedAt DateTime?
+
+  person         Person          @relation(fields: [personId], references: [id], onDelete: Cascade)
+  chunks         DocChunk[]
+  observations   Observation[]   @relation("DocToObs")
+  sharePackItems SharePackItem[] // back-relation
+}
+
+model Observation {
+  id           String    @id @default(uuid())
+  personId     String
+  code         String
+  display      String
+  valueNum     Float?
+  unit         String?
+  refLow       Float?
+  refHigh      Float?
+  effectiveAt  DateTime?
+  sourceDocId  String
+  sourceAnchor String?
+
+  person         Person          @relation(fields: [personId], references: [id], onDelete: Cascade)
+  sourceDoc      Document        @relation("DocToObs", fields: [sourceDocId], references: [id], onDelete: Cascade)
+  sharePackItems SharePackItem[] // back-relation
+
+  @@index([personId, code, effectiveAt])
+}
+
+model SharePack {
+  id           String    @id @default(uuid())
+  personId     String
+  title        String
+  audience     String // 'clinician'|'school'|'urgent'
+  passcodeHash String // Argon2id(PEPPER+passcode)
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  viewsCount   Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  person Person          @relation(fields: [personId], references: [id], onDelete: Cascade)
+  items  SharePackItem[]
+  events ShareEvent[]
+}
+
+model SharePackItem {
+  id            String  @id @default(uuid())
+  packId        String
+  documentId    String?
+  observationId String?
+
+  pack        SharePack    @relation(fields: [packId], references: [id], onDelete: Cascade)
+  document    Document?    @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  observation Observation? @relation(fields: [observationId], references: [id], onDelete: Cascade)
+}
+
+model ShareEvent {
+  id        String   @id @default(uuid())
+  packId    String
+  kind      String // 'view'|'revoke' etc.
+  createdAt DateTime @default(now())
+  ipHash    String?
+
+  pack SharePack @relation(fields: [packId], references: [id], onDelete: Cascade)
+}
+
+model DocChunk {
+  id         String                 @id @default(uuid())
+  documentId String
+  chunkId    Int
+  text       String
+  embedding  Unsupported("vector")?
+  createdAt  DateTime               @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, chunkId])
+}
+
+model TokenUsage {
+  id        String   @id @default(uuid())
+  userId    String?
+  feature   String // 'explain'|'ask'|'ocr'|'index'
+  model     String
+  tokensIn  Int
+  tokensOut Int
+  costUsd   Decimal? @db.Decimal(10, 5)
+  createdAt DateTime @default(now())
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(uuid())
+  userId    String?
+  name      String // 'first_upload_done', etc.
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([name, createdAt])
+}

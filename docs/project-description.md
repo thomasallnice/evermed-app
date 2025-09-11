@@ -85,6 +85,8 @@ This document aligns product, design, and operations on what we’re building no
 - Canonical model aligned to **HL7 FHIR R4** and **gematik/ePA** profiles where practical (e.g., DocumentReference, Observation, MedicationStatement, AllergyIntolerance, Encounter).
     
 - **Germany first**: export-ready; no ePA write-back in MVP.
+  
+  Data infrastructure: Supabase Cloud (DB/Auth/Storage). No local Postgres required; migrations target the project’s dev database.
     
 - Minimal data collection; user-controlled export/delete.
     
