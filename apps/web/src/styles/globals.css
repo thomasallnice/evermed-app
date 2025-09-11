@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  height: 100%;
+}
+
+body {
+  @apply bg-neutral-50 text-neutral-900;
+}
+
+a {
+  @apply text-blue-600 hover:underline;
+}
+
+button {
+  @apply rounded-md px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50;
+}
+
+input, textarea, select {
+  @apply border border-neutral-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+}
+
+.container {
+  @apply mx-auto max-w-5xl px-4;
+}
+

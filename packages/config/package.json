@@ -1,0 +1,12 @@
+{
+  "name": "@evermed/config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./eslint.config.mjs": "./eslint.config.mjs",
+    "./prettier": "./prettier.config.cjs",
+    "./tsconfig": "./tsconfig.base.json"
+  }
+}
+

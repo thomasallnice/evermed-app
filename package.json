@@ -1,0 +1,30 @@
+{
+  "name": "evermed-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run -w @evermed/web build",
+    "dev": "npm run -w @evermed/web dev",
+    "lint": "npm run -w @evermed/web lint:ci",
+    "typecheck": "tsc -p tests/tsconfig.json --noEmit",
+    "test": "vitest run",
+    "e2e": "echo 'E2E tests deferred to later PRs'",
+    "prisma:generate": "prisma generate --schema=db/schema.prisma",
+    "prisma:migrate:dev": "prisma migrate dev --name init --schema=db/schema.prisma",
+    "prisma:migrate:deploy": "prisma migrate deploy --schema=db/schema.prisma",
+    "prisma:format": "prisma format --schema=db/schema.prisma",
+    "db:policies": "node -e \"console.log('Apply db/policies.sql on Supabase (SQL editor) — extensions enabled by project')\"",
+    "seed": "tsx db/seed.ts"
+  },
+  "devDependencies": {
+    "@prisma/client": "^5.19.1",
+    "prisma": "^5.19.1",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5",
+    "tsx": "^4.17.0"
+  }
+}
