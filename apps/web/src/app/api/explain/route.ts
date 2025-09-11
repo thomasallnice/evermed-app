@@ -8,7 +8,6 @@ const OPENAI_MODEL = process.env.OPENAI_MODEL_SUMMARY || process.env.OPENAI_MODE
 const OPENAI_ORG_ID = process.env.OPENAI_ORG_ID || process.env.OPENAI_ORGANIZATION || ''
 const OPENAI_MAX_TOKENS_SUMMARY = Number(process.env.OPENAI_MAX_TOKENS_SUMMARY || 800)
 // pdfjs-dist fallback disabled in serverless to avoid native canvas dependency
-const PDFJS_FALLBACK = false
 const MAX_PDF_BYTES = Number(process.env.PDF_MAX_BYTES || 25_000_000)
 const PDF_EXTRACT_URL = process.env.PDF_EXTRACT_URL || ''
 const PDF_EXTRACT_BEARER = process.env.PDF_EXTRACT_BEARER || ''

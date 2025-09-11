@@ -446,5 +446,4 @@ export async function POST(req: NextRequest) {
   }
 }
 export const runtime = 'nodejs'
-const PDFJS_FALLBACK = false
 const MAX_PDF_BYTES = Number(process.env.PDF_MAX_BYTES || 25_000_000)

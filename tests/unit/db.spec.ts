@@ -29,11 +29,12 @@ describe.runIf(hasDb)('DB shape and pgvector', () => {
   });
 
   it('DocChunk.embedding column exists as vector and allows NULL', async () => {
+    type InfoSchemaTable = { table_name: string };
     // ensure the table exists
-    const tables = await prisma.$queryRaw<Array<{ table_name: string }>>`
+    const tables = await prisma.$queryRaw<InfoSchemaTable[]>`
       SELECT table_name FROM information_schema.tables WHERE table_name = 'DocChunk'
     `;
-    expect(tables.find((t: { table_name: string }) => t.table_name === 'DocChunk')).toBeTruthy();
+    expect(tables.find((t: InfoSchemaTable) => t.table_name === 'DocChunk')).toBeTruthy();
 
     // check the column type
     const cols = await prisma.$queryRaw<Array<{ column_name: string; data_type: string; udt_name: string }>>`
@@ -57,7 +58,7 @@ describe.runIf(hasDb)('DB shape and pgvector', () => {
       },
     });
     const chunk = await prisma.docChunk.create({
-      data: { documentId: doc.id, chunkId: 1, text: 'hello world', embedding: null },
+      data: { documentId: doc.id, chunkId: 1, text: 'hello world' },
     });
     expect(chunk.documentId).toBe(doc.id);
   });

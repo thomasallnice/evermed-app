@@ -7,10 +7,10 @@ function hostnameFromUrl(u?: string) {
   try { return u ? new URL(u).hostname : '' } catch { return '' }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   // Optional: restrict on production
   const envName = process.env.NEXT_PUBLIC_ENVIRONMENT || process.env.NODE_ENV || 'development'
-  const isProd = envName.toLowerCase() === 'production'
+  const _isProd = envName.toLowerCase() === 'production'
   // Allow in all envs by default; uncomment to restrict
   // if (isProd) return NextResponse.json({ error: 'disabled in production' }, { status: 403 })
 
