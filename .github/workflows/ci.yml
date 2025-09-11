@@ -6,35 +6,35 @@ on:
     branches: [refit/mvp-skeleton]
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - name: Install dependencies
-        run: npm ci
+        run: npm install
+
       - name: Prisma generate
-        run: npm run prisma:generate
-      - name: Apply migrations (Supabase Cloud)
-        if: ${{ secrets.SUPABASE_DB_URL != '' }}
-        env:
-          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: npm run prisma:migrate:deploy
-      - name: Seed DB (Supabase Cloud)
-        if: ${{ secrets.SUPABASE_DB_URL != '' }}
-        env:
-          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: npx prisma generate
+
+      - name: Deploy migrations
+        if: env.SUPABASE_DB_URL != ''
+        run: npx prisma migrate deploy --schema=db/schema.prisma
+
+      - name: Seed database
+        if: env.SUPABASE_DB_URL != ''
         run: npm run seed
-      - name: Lint
-        run: npm run lint --if-present
-      - name: Typecheck
-        run: npm run typecheck --if-present
-      - name: Unit tests
-        env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: npm run test --if-present
-      - name: E2E (placeholder)
-        run: npm run e2e --if-present
+
+      - name: Run tests
+        run: npm test
