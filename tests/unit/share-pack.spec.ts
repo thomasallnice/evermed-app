@@ -30,3 +30,13 @@ describe.runIf(hasDb)('Share Pack API', () => {
   });
 });
 
+describe('passcode hashing', () => {
+  it('hash + verify succeeds for same passcode and fails for wrong one', async () => {
+    const { hashPasscode, verifyPasscode } = await import('../../apps/web/src/lib/passcode');
+    const pepper = Buffer.from('test-pepper').toString('base64');
+    const h = hashPasscode('1234', pepper);
+    expect(h).toMatch(/^[a-f0-9]+$/);
+    expect(verifyPasscode('1234', h, pepper)).toBe(true);
+    expect(verifyPasscode('9999', h, pepper)).toBe(false);
+  });
+});

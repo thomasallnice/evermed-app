@@ -1,20 +1,16 @@
-import crypto from 'node:crypto';
+import crypto from 'crypto';
 
-// Hash: scrypt with random salt, storing as: scrypt$base64(salt)$base64(key)
+// Pepper (base64) acts as salt. We derive a fixed-length key and store as hex.
 export function hashPasscode(passcode: string, pepper: string): string {
-  const salt = crypto.randomBytes(16);
-  const key = crypto.scryptSync(Buffer.from(pepper + passcode), salt, 32, { N: 1 << 15, r: 8, p: 1 }) as Buffer;
-  return `scrypt$${salt.toString('base64')}$${key.toString('base64')}`;
+  const salt = Buffer.from(pepper, 'base64');
+  const keylen = 64;
+  const hash = crypto.scryptSync(passcode, salt, keylen, { N: 16384, r: 8, p: 1 });
+  return hash.toString('hex');
 }
 
 export function verifyPasscode(passcode: string, hash: string, pepper: string): boolean {
-  try {
-    if (!hash.startsWith('scrypt$')) return false;
-    const parts = hash.split('$');
-    if (parts.length !== 3) return false;
-    const salt = Buffer.from(parts[1], 'base64');
-    const expected = Buffer.from(parts[2], 'base64');
-    const key = crypto.scryptSync(Buffer.from(pepper + passcode), salt, expected.length, { N: 1 << 15, r: 8, p: 1 }) as Buffer;
-    return crypto.timingSafeEqual(key, expected);
-  } catch { return false; }
+  const salt = Buffer.from(pepper, 'base64');
+  const keylen = 64;
+  const derived = crypto.scryptSync(passcode, salt, keylen, { N: 16384, r: 8, p: 1 });
+  return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), derived as Buffer);
 }
