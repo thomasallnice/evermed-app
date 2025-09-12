@@ -1,33 +1,20 @@
 import crypto from 'node:crypto';
 
-const PEPPER = process.env.SHARE_LINK_PEPPER || '';
-
-export async function hashPasscode(passcode: string): Promise<string> {
+// Hash: scrypt with random salt, storing as: scrypt$base64(salt)$base64(key)
+export function hashPasscode(passcode: string, pepper: string): string {
   const salt = crypto.randomBytes(16);
-  const toHash = Buffer.from(PEPPER + passcode);
-  const derived = await scryptAsync(toHash, salt, 32);
-  return `scrypt$${salt.toString('base64')}$${derived.toString('base64')}`;
+  const key = crypto.scryptSync(Buffer.from(pepper + passcode), salt, 32, { N: 1 << 15, r: 8, p: 1 }) as Buffer;
+  return `scrypt$${salt.toString('base64')}$${key.toString('base64')}`;
 }
 
-export async function verifyPasscode(hash: string, passcode: string): Promise<boolean> {
+export function verifyPasscode(passcode: string, hash: string, pepper: string): boolean {
   try {
     if (!hash.startsWith('scrypt$')) return false;
-    const [, , saltB64, keyB64] = hash.match(/^(scrypt)\$(.+?)\$(.+)$/) || [];
-    if (!saltB64 || !keyB64) return false;
-    const salt = Buffer.from(saltB64, 'base64');
-    const expected = Buffer.from(keyB64, 'base64');
-    const toHash = Buffer.from(PEPPER + passcode);
-    const derived = await scryptAsync(toHash, salt, expected.length);
-    return crypto.timingSafeEqual(derived, expected);
+    const parts = hash.split('$');
+    if (parts.length !== 3) return false;
+    const salt = Buffer.from(parts[1], 'base64');
+    const expected = Buffer.from(parts[2], 'base64');
+    const key = crypto.scryptSync(Buffer.from(pepper + passcode), salt, expected.length, { N: 1 << 15, r: 8, p: 1 }) as Buffer;
+    return crypto.timingSafeEqual(key, expected);
   } catch { return false; }
 }
-
-function scryptAsync(password: Buffer, salt: Buffer, keylen: number): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    crypto.scrypt(password, salt, keylen, { N: 1 << 15, r: 8, p: 1 }, (err, derivedKey) => {
-      if (err) reject(err);
-      else resolve(derivedKey as Buffer);
-    });
-  });
-}
-

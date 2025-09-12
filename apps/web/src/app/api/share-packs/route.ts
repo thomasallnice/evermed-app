@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     if (!personId || !title || !audience) return NextResponse.json({ error: 'personId, title, audience required' }, { status: 400 });
     if (!passcode || String(passcode).length < 4) return NextResponse.json({ error: 'passcode required' }, { status: 400 });
 
-    const passcodeHash = await hashPasscode(String(passcode));
+    const passcodeHash = hashPasscode(String(passcode), process.env.SHARE_LINK_PEPPER || '');
     const expiresAt = new Date(Date.now() + (Math.max(1, Number(expiryDays || 7)) * 24 * 3600 * 1000));
 
     const pack = await prisma.sharePack.create({ data: { personId, title, audience, passcodeHash, expiresAt } });
@@ -30,4 +30,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: e?.message || 'Unexpected' }, { status: 500 });
   }
 }
-
