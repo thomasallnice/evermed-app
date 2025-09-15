@@ -180,7 +180,7 @@ model DocChunk {
   documentId  String
   chunkId     Int
   text        String
-  embedding   Bytes    // pgvector (store as bytea via Prisma)
+  embedding   Unsupported('vector')? // vector(1536) added via raw SQL migration
   createdAt   DateTime @default(now())
 
   document    Document @relation(fields: [documentId], references: [id])
@@ -240,6 +240,9 @@ with check (exists (select 1 from "Person" p where p.id = personId and p.ownerId
     
 - Thumbnails generated into thumbnails with the same access model.
     
+Dev note (RLS bypass in dev/test)
+- In dev/test, `/api/uploads` uses a Supabase client initialized with `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS while Auth is not yet wired. Replace with Supabase Auth + RLS enforcement once login/signup is in place.
+    
 
 ---
 
@@ -257,9 +260,10 @@ POST   /api/chat                        -> {answer, citations[], safetyTag}
 POST   /api/observations/extract        -> Observation[]
 GET    /api/observations                -> timeline by {personId, code}
 POST   /api/share-packs                 -> create pack (items[], expiry, passcode)
-GET    /api/share-packs/:id             -> public view (after passcode)
 POST   /api/share-packs/:id/verify      -> passcode → session cookie (pack scope)
+GET    /api/share-packs/:id             -> public view (after passcode) — returns only selected items
 POST   /api/share-packs/:id/revoke      -> owner only
+GET    /api/share-packs/:id/logs        -> view events (owner only)
 
 # Admin (auth: admin role)
 GET    /api/admin/metrics               -> tiles (see §7)
@@ -284,6 +288,11 @@ model.token_usage
 - **Embeddings:** provider configurable (EMBEDDINGS_PROVIDER), default OpenAI. Index to DocChunk with pgvector.
     
 - **OCR:** implement workers/ocr.ts with a provider interface; default to local Tesseract (WASM or container) _or_ stub with a TODO flag. Route via background function to avoid blocking UI.
+    
+Cloud Run extractor (optional)
+- Explain/RAG/OCR can call a Cloud Run text extractor when local parsers return no text. Configure via env:
+  - `PDF_EXTRACT_URL`, `PDF_EXTRACT_BEARER`, `PDF_EXTRACT_TIMEOUT_MS`, `PDF_MAX_BYTES`, `PDF_USE_PDFJS_FALLBACK`.
+- The local OCR worker remains responsible for provenance anchors; Cloud Run handles text extraction only.
     
 
 ---

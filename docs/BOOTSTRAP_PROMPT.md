@@ -33,6 +33,7 @@
     
 10. **Quality gates in CI:** tests pass; citations present; latency budget met; RLS blocks cross-user access; storage is private; no PHI in logs/analytics.
     
+- **Guardrail (dev/test only):** `/api/uploads` uses a service-role client to bypass RLS while Auth is not wired; TODO replace with Supabase Auth + RLS.
 
 ## Environment & Secrets
 
@@ -58,11 +59,13 @@ When this prompt runs, **first output** a short report:
 
 - **PR #1 (merged):** repo convergence & hygiene.
     
-- **PR #2 (done on `refit/mvp-skeleton`):** schema, migrations, RLS, storage.
+- **PR #2 (merged):** schema, migrations, RLS, storage.
     
-- **PR #2.1 (follow-up):** Supabase **Cloud** refit (remove local DB artifacts, update CI, docs). If not open, create branch `refit/supabase-cloud-refit` from `refit/mvp-skeleton`, apply changes, and open **“PR #2.1 — Supabase Cloud refit”** (base=`refit/mvp-skeleton`).
+- **PR #2.1 (merged):** Supabase **Cloud** refit (CI uses `SUPABASE_DB_URL`; docs updated).
     
-- **Next after #2.1 is approved:** proceed to PR #3 (Upload + OCR + provenance anchors), then PR #4… per Refit Plan.
+- **PR #3–#6 (merged):** Upload + OCR + provenance anchors; Explain/Chat with citations; Share Packs (create/verify/view/revoke/logs); Admin metrics tiles.
+    
+- **Next:** **PR #7 — Trend Views (labs, timelines)** per Refit Plan.
     
 
 ## Tasks Codex Should Execute Next (in any fresh chat)
