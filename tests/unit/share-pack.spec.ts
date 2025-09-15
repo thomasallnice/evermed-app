@@ -35,7 +35,8 @@ describe.runIf(hasDb)('Share Pack API', () => {
     const d = await prisma.document.create({ data: { personId: p.id, kind: 'pdf', filename: 'lab.pdf', storagePath: 'documents/lab.pdf', sha256: 'y' } });
     const o = await prisma.observation.create({ data: { personId: p.id, code: '718-7', display: 'Hemoglobin', valueNum: 12.9, unit: 'g/dL', sourceDocId: d.id } });
     const { POST } = await import('../../apps/web/src/app/api/share-packs/route');
-    const res = await POST(new Request('http://localhost/api/share-packs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ personId: p.id, title: 'Pack', audience: 'clinician', items: [{ documentId: d.id }, { observationId: o.id }], passcode: '2222', expiryDays: 7 }) }) as any);
+    // Use both shorthand (string) and object form for items
+    const res = await POST(new Request('http://localhost/api/share-packs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ personId: p.id, title: 'Pack', audience: 'clinician', items: [ d.id, { observationId: o.id } ], passcode: '2222', expiryDays: 7 }) }) as any);
     const j = await (res as Response).json();
     const id = j.shareId as string;
 
