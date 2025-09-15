@@ -100,6 +100,11 @@ OTEL_EXPORTER_OTLP_ENDPOINT=
 
 **Prisma schema (excerpt) → /db/schema.prisma**
 
+### RLS / Auth note
+
+- In dev/test we use `x-user-id: test-user` instead of full Supabase Auth.
+- `/api/uploads` uses a Supabase client initialized with `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS for storage writes; the code includes a TODO to replace this with proper Auth + RLS enforcement once login/signup is wired up.
+
 ```
 model Person {
   id           String   @id @default(uuid())
