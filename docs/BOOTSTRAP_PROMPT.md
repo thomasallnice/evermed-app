@@ -4,7 +4,7 @@
 
 ## Ground Truth (read these first)
 
-1. `/docs/project-description.md` — product, scope, safety and metrics.
+1. `/docs/project-description.md` — product, scope, safety and metrics (Appointment Pack implemented).
     
 2. `/docs/CODEX_REFIT_PLAN.md` — architecture, APIs, repo layout, tests, and quality gates.
     

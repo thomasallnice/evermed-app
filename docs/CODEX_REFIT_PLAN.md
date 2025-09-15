@@ -93,7 +93,7 @@ OTEL_EXPORTER_OTLP_ENDPOINT=
 
 - Ensure project has extensions enabled: pgvector, uuid-ossp, pgcrypto (via Supabase Dashboard → Database → Extensions).
     
-- Storage buckets (private): documents, thumbnails (via Storage UI).
+- Storage buckets (private): documents, thumbnails (via Storage UI). Upload API stores files under a per-person prefix and all access uses signed URLs from the server.
     
 
   
@@ -303,7 +303,7 @@ Implement **starter cards** on Home + composer quick actions:
 
 - Modes: cardiology | school | urgent
     
-- Defaults: passcode required, 7-day expiry, view logs, one-tap revoke
+- Defaults: passcode required, 7-day expiry, view logs, one-tap revoke. Passcodes are hashed using scrypt + project pepper; verify sets a session cookie scoped to the pack. Views are logged with anonymized IP hash.
     
 - Public view page: shows only included items; never the vault
     

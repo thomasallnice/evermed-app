@@ -108,9 +108,9 @@ This document aligns product, design, and operations on what we’re building no
 
 ---
 
-## **9) Killer Use Case —** 
+## **9) Killer Use Case —**
 
-## **Appointment Pack**
+## **Appointment Pack (Implemented)**
 
 ##  **(Spec)**
 
@@ -119,6 +119,8 @@ This document aligns product, design, and operations on what we’re building no
 - **Contents:** Last 6–12 months relevant labs, current meds, allergies, brief history, user notes.
     
 - **Defaults:** Passcode required, 7-day expiry, view logs, one-tap revoke; printable summary PDF.
+  
+  Implementation: viewer API returns only selected `documents[]` (filename, storagePath) and `observations[]` (code, display, valueNum…), never the full vault. Access requires passcode verification (cookie per pack). Revoked or expired packs return errors; views are logged with anonymized IP hash.
     
 - **Scope:** Only selected items—never the whole vault.
     
