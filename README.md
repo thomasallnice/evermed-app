@@ -34,6 +34,10 @@ Open http://localhost:3000
 
 GitHub Actions runs lint, typecheck, unit tests, and a placeholder e2e step. See `.github/workflows/ci.yml`.
 
+Set GitHub Secrets:
+- `SUPABASE_DB_URL` — Supabase Cloud dev DB connection string
+- `SUPABASE_SERVICE_ROLE_KEY` — service role key (used in server-only tests/migrations)
+
 ## Docs
 
 - Product spec: `docs/project-description.md`
