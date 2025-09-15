@@ -28,6 +28,27 @@ describe.runIf(hasDb)('Share Pack API', () => {
     const rres = await REVOKE(new Request(`http://localhost/api/share-packs/${packId}/revoke`, { method: 'POST', headers: { 'x-user-id': 'userA' } }) as any, { params: { id: packId } });
     expect((rres as Response).ok).toBe(true);
   });
+
+  it('viewer returns linked documents and observations', async () => {
+    // Seed person, doc, and observation
+    const p = await prisma.person.create({ data: { ownerId: 'userX' } });
+    const d = await prisma.document.create({ data: { personId: p.id, kind: 'pdf', filename: 'lab.pdf', storagePath: 'documents/lab.pdf', sha256: 'y' } });
+    const o = await prisma.observation.create({ data: { personId: p.id, code: '718-7', display: 'Hemoglobin', valueNum: 12.9, unit: 'g/dL', sourceDocId: d.id } });
+    const { POST } = await import('../../apps/web/src/app/api/share-packs/route');
+    const res = await POST(new Request('http://localhost/api/share-packs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ personId: p.id, title: 'Pack', audience: 'clinician', items: [{ documentId: d.id }, { observationId: o.id }], passcode: '2222', expiryDays: 7 }) }) as any);
+    const j = await (res as Response).json();
+    const id = j.shareId as string;
+
+    // Mock a request with verified cookie
+    const { GET } = await import('../../apps/web/src/app/api/share-packs/[id]/route');
+    const req: any = { headers: new Headers({ 'x-forwarded-for': '127.0.0.1' }), cookies: { get: () => ({ value: 'ok' }) } };
+    const gres = await GET(req, { params: { id } });
+    const body = await (gres as Response).json();
+    expect(Array.isArray(body.documents)).toBe(true);
+    expect(Array.isArray(body.observations)).toBe(true);
+    expect(body.documents.length).toBe(1);
+    expect(body.observations.length).toBe(1);
+  });
 });
 
 describe('passcode hashing', () => {

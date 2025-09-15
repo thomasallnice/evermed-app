@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { retrieveChunks, type RetrievedChunk } from '@/lib/rag'
-import { ESCALATION_RED_FLAGS, REFUSAL_BANNED } from '@/lib/copy'
+import { retrieveChunks, type RetrievedChunk } from '../../../lib/rag'
+import { ESCALATION_RED_FLAGS, REFUSAL_BANNED } from '../../../lib/copy'
 
 export const runtime = 'nodejs'
 
