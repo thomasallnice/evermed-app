@@ -56,6 +56,8 @@ Smoke test (optional)
 ### Troubleshooting
 
 - If the dev server reports missing `_next/static/chunks/*.js` files (e.g., `main-app.js` 404), stop the server, run `npm run clean:next`, reinstall dependencies (`npm ci`), and restart `npm run dev`.
+- If uploads fail with Supabase RLS errors, re-apply policies (`db/policies.sql`) and confirm documents/storage policies reference `auth.uid()`.
+- If chat responds with OPENAI errors, ensure `OPENAI_API_KEY` is set in `.env.local` or deployment env vars.
 
 ## CI
 
