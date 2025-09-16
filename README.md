@@ -53,6 +53,10 @@ Smoke test (optional)
 - After each deploy run `./scripts/smoke-e2e.sh` against the environment to validate upload → share.
 - Recommended suites: Playwright/Cypress E2E (auth → upload → share), load tests (large PDFs/concurrency), security review (RLS, passcodes, signed URLs, revocation), monitoring/alerting setup.
 
+### Troubleshooting
+
+- If the dev server reports missing `_next/static/chunks/*.js` files (e.g., `main-app.js` 404), stop the server, run `npm run clean:next`, reinstall dependencies (`npm ci`), and restart `npm run dev`.
+
 ## CI
 
 GitHub Actions (`.github/workflows/ci.yml`) runs lint, typecheck, unit tests, and placeholder e2e.

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { createClient } from '@supabase/supabase-js';
 import { hashPasscode } from '@/lib/passcode';
+import { requireUserId } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 const prisma = new PrismaClient();
@@ -35,6 +36,7 @@ function getAdmin() {
 
 export async function POST(req: NextRequest) {
   try {
+    const userId = await requireUserId(req);
     const body = await req.json();
     const { personId, title, audience, items = [], expiryDays, passcode } = body || {};
     if (!personId || !title || !audience) return NextResponse.json({ error: 'personId, title, audience required' }, { status: 400 });
@@ -42,7 +44,10 @@ export async function POST(req: NextRequest) {
 
     const pepper = process.env.SHARE_LINK_PEPPER;
     if (!pepper) return NextResponse.json({ error: 'SHARE_LINK_PEPPER missing' }, { status: 500 });
-
+    const person = await prisma.person.findUnique({ where: { id: personId } });
+    if (!person || person.ownerId !== userId) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
     const passcodeHash = hashPasscode(String(passcode), pepper);
     const expiresAt = new Date(Date.now() + (Math.max(1, Number(expiryDays || 7)) * 24 * 3600 * 1000));
     const normalizedItems = normalizeItems(Array.isArray(items) ? items : []);
@@ -110,6 +115,9 @@ export async function POST(req: NextRequest) {
       observations,
     });
   } catch (e: any) {
+    if (e?.message === 'unauthorized') {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    }
     return NextResponse.json({ error: e?.message || 'Unexpected' }, { status: 500 });
   }
 }

@@ -1,7 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  experimental: { typedRoutes: true },
+  experimental: {
+    typedRoutes: true,
+    appDir: true,
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**.supabase.co' },
@@ -10,4 +13,3 @@ const nextConfig = {
 }
 
 module.exports = nextConfig
-
