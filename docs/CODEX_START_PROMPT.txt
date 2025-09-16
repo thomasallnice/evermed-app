@@ -1,0 +1,12 @@
+mkdir -p docs
+cat > docs/CODEX_START_PROMPT.txt <<'EOF'
+MODEL: GPT-5-Codex
+
+Read `/docs/BOOTSTRAP_PROMPT.md` and follow it EXACTLY.
+
+Then do a DRY-RUN (no writes):
+- Print Repo & Branch Health
+- Print the planned changeset (files to add/edit/delete, grouped by path)
+
+Stop after PR creation and printing the PR link + summary.
+EOF
