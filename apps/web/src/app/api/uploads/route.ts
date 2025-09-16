@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'node:crypto';
-import { createDocument } from '@/src/lib/documents';
-import { queueOcrJob } from '@/../../../apps/workers/ocr';
+import { createDocument } from '@/lib/documents';
+import { runOcr } from '@/lib/ocr';
 
 export const runtime = 'nodejs';
+
+const prisma = new PrismaClient();
 
 function getAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -36,14 +39,39 @@ export async function POST(req: NextRequest) {
     const { error: upErr } = await (admin as any).storage.from('documents').upload(storagePath, buf, { contentType: mime, upsert: false });
     if (upErr) return NextResponse.json({ error: 'upload failed', details: upErr.message || '' }, { status: 500 });
 
-    const doc = await createDocument({ personId, kind: kindFromMime(mime), filename: fileName, storagePath, sha256, topic: null });
+    const kind = kindFromMime(mime);
+    const doc = await createDocument({ personId, kind, filename: fileName, storagePath, sha256, topic: null });
 
-    // Best-effort OCR job
-    queueOcrJob(doc.id, storagePath).catch(() => {});
+    if (kind === 'pdf' || kind === 'image') {
+      try {
+        const ocrResult = await runOcr(buf, mime);
+        if (ocrResult?.text) {
+          const normalized = ocrResult.text.replace(/\r\n/g, '\n').trim();
+          if (normalized) {
+            const CHUNK_SIZE = 4000;
+            const chunks: string[] = [];
+            for (let i = 0; i < normalized.length; i += CHUNK_SIZE) {
+              chunks.push(normalized.slice(i, i + CHUNK_SIZE));
+            }
+            if (chunks.length) {
+              await prisma.docChunk.createMany({
+                data: chunks.map((text, idx) => ({
+                  documentId: doc.id,
+                  chunkId: idx,
+                  text,
+                  sourceAnchor: null,
+                })),
+              });
+            }
+          }
+        }
+      } catch (error: any) {
+        console.warn('[uploads] failed to store OCR text', error?.message || error);
+      }
+    }
 
     return NextResponse.json({ documentId: doc.id });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'Unexpected' }, { status: 500 });
   }
 }
-

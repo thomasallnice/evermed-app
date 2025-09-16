@@ -36,7 +36,7 @@
 
 ## Environment & Secrets
 
-- **Vercel Project Env:** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+- **Vercel Project Env:** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `PDF_EXTRACT_URL`, `PDF_EXTRACT_BEARER`, `PDF_EXTRACT_TIMEOUT_MS`, `PDF_MAX_BYTES`.
     
 - **GitHub Secrets (CI):** `SUPABASE_DB_URL` (Cloud dev DB connection), `SUPABASE_SERVICE_ROLE_KEY`.
     

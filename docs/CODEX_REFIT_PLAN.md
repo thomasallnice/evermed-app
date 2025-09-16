@@ -284,7 +284,7 @@ model.token_usage
     
 - **Embeddings:** provider configurable (EMBEDDINGS_PROVIDER), default OpenAI. Index to DocChunk with pgvector.
     
-- **OCR:** implement workers/ocr.ts with a provider interface; default to local Tesseract (WASM or container) _or_ stub with a TODO flag. Route via background function to avoid blocking UI.
+- **OCR:** uploads call the Cloud Run extractor via `/lib/ocr`. If envs are missing or time out, the upload completes and logs a warning; extracted text is chunked into `DocChunk` rows for explain/RAG.
     
 
 ---
