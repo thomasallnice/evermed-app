@@ -307,6 +307,7 @@ Implement **starter cards** on Home + composer quick actions:
 - Defaults: passcode required, 7-day expiry, view logs, one-tap revoke
     
 - Public view page: shows only included items; never the vault
+- Packs can bundle uploaded documents and selected observations (trend snippet with delta/out-of-range).
     
 
 ---
