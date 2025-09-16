@@ -4,6 +4,7 @@
 - Upload API now streams PDFs/images to the Cloud Run OCR extractor configured via `PDF_EXTRACT_URL` (+ bearer/timeout/size envs).
 - Extracted text is chunked into `DocChunk` rows immediately after upload for downstream explain/trend workflows.
 - Public smoke test (`scripts/smoke-e2e.sh`) continues to validate upload → signed URL → share pack.
+- Fixed alias in /api/documents/[id]/route.ts to '@/lib/documents'. Regression test added so '@/src/lib/…' cannot return.
 
 ### Environment variables
 - `PDF_EXTRACT_URL` — required to enable Cloud Run OCR.

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import type { NextRequest } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 vi.mock('@supabase/supabase-js', () => {
@@ -20,6 +21,8 @@ const hasDb = !!(process.env.SUPABASE_DB_URL || process.env.DATABASE_URL);
 if (process.env.SUPABASE_DB_URL && !process.env.DATABASE_URL) {
   process.env.DATABASE_URL = process.env.SUPABASE_DB_URL;
 }
+process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
+process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'service-role-key';
 
 describe.runIf(hasDb)('Document auth + signed URL', () => {
   const prisma = new PrismaClient();
@@ -38,3 +41,25 @@ describe.runIf(hasDb)('Document auth + signed URL', () => {
   });
 });
 
+describe('documents route alias regression', () => {
+  it('uses @/lib/documents alias', async () => {
+    const getDocumentAuthorized = vi.fn(async () => ({
+      id: 'doc',
+      filename: 'file.pdf',
+      kind: 'pdf',
+      uploadedAt: new Date(),
+      signedUrl: 'https://signed.example/url',
+    }));
+    // Regression: ensure correct alias '@/lib/documents' is used, not '@/src/lib/documents'.
+    vi.doMock('@/lib/documents', () => ({ getDocumentAuthorized }));
+
+    const { GET } = await import('../../apps/web/src/app/api/documents/[id]/route');
+    const req = { headers: new Headers({ 'x-user-id': 'user-1' }) } as unknown as NextRequest;
+    await GET(req, { params: { id: 'doc' } });
+
+    expect(getDocumentAuthorized).toHaveBeenCalledWith('doc', 'user-1');
+
+    vi.resetModules();
+    vi.doUnmock('@/lib/documents');
+  });
+});

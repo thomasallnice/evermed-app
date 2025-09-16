@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDocumentAuthorized } from '@/src/lib/documents';
+import { getDocumentAuthorized } from '@/lib/documents';
 
 export const runtime = 'nodejs';
 
