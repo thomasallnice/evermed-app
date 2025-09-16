@@ -280,7 +280,7 @@ model.token_usage
 
 ## **5) LLM & OCR Integration (pluggable, but ship defaults)**
 
-- **Explain/Ask:** single default model (configured via env). Enforce **citations required**. Refuse banned topics. Use refusal/escalation copy from `/apps/web/src/lib/copy.ts`.
+- **Explain/Ask:** single default model (configured via env). Enforce **citations required**. Refuse banned topics. Use refusal/escalation copy from `/apps/web/src/lib/copy.ts`. Retrieval uses `DocChunk.embedding` via pgvector to surface semantic matches; fall back to recent chunks if embeddings missing.
     
 - **Embeddings:** provider configurable (EMBEDDINGS_PROVIDER), default OpenAI. Index to DocChunk with pgvector.
     

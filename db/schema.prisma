@@ -104,9 +104,9 @@ model DocChunk {
   documentId  String
   chunkId     Int
   text        String
-  // embedding remains Unsupported("vector") via raw SQL migration
   sourceAnchor String?
   createdAt   DateTime @default(now())
+  embedding   Unsupported("vector")?
 
   document    Document @relation(fields: [documentId], references: [id])
 
