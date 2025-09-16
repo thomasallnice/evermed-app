@@ -4,6 +4,7 @@
 - Allow Share Pack creation to accept mixed items (`["<documentId>", { "observationId": "..." }]`) and persist them via nested `SharePackItem` rows.
 - Share Pack APIs now return both `documents[]` (with signed URLs) and `observations[]` (with metadata + trend snippets).
 - Public viewer displays uploaded documents and selected observations with recent trend deltas.
+- Restored guard files (`docs/CODEX_START_PROMPT.txt`, `scripts/smoke-e2e.sh`) after accidental deletion and documented them as permanent no-deletes.
 
 ### How to include observations
 - POST `/api/share-packs` with `items` array containing observation IDs: `{ "observationId": "<UUID>" }`.
