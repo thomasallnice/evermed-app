@@ -443,7 +443,19 @@ Data source: AnalyticsEvent, TokenUsage, derived SQL views. Strictly **no PHI** 
 
 ---
 
-## **11) Copy & Disclaimers (extract into** 
+## **11) Allowed Auto-Clean Paths**
+
+- Codex may delete files inside these folders without additional approval to keep the repo tidy:
+  - `docs/app-legacy/*` (old docs, archives, troubleshooting)
+  - `apps/workers/extractor/pdf-extractor/*` (legacy local extractor)
+  - `archive/*` (if exists)
+- All planned deletions must still be called out separately in the dry-run changeset before execution.
+- Any deletion outside the paths above requires an explicit `ALLOW_DELETIONS` directive in the user prompt.
+- Never treat `CODEX_START_PROMPT.txt`, `scripts/smoke-e2e.sh`, `AGENTS.md`, or `docs/BOOTSTRAP_PROMPT.md` as auto-clean candidates; these files must remain in the repo.
+
+---
+
+## **12) Copy & Disclaimers (extract into** 
 
 ## **/apps/web/lib/copy.ts**
 
@@ -458,7 +470,7 @@ Data source: AnalyticsEvent, TokenUsage, derived SQL views. Strictly **no PHI** 
 
 ---
 
-## **12) Open Questions (leave TODOs, don’t block MVP)**
+## **13) Open Questions (leave TODOs, don’t block MVP)**
 
 - OCR provider final choice (local vs vendor with BAA).
     
