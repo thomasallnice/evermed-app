@@ -111,40 +111,25 @@ export default function ChatPage() {
       } catch {}
       // Load persisted chat history including attachments
       try {
-        const { data: rows } = await (supabase as any)
-          .from('chat_messages')
-          .select('id, role, content, created_at, chat_message_docs(document_id)')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: true })
-          .limit(200)
-
-        const list = Array.isArray(rows) ? rows as any[] : []
-        const docIds = Array.from(new Set(list.flatMap((r: any) => (r.chat_message_docs || []).map((c: any) => c.document_id)).filter(Boolean)))
-        let docMap: Record<string, { file_name: string; file_type: string; signedUrl: string }> = {}
-        if (docIds.length) {
-          const { data: docs } = await (supabase as any)
-            .from('documents')
-            .select('id,file_name,file_type,storage_path')
-            .in('id', docIds)
-          const arr = Array.isArray(docs) ? docs as any[] : []
-          for (const d of arr) {
-            try {
-              const { data: s } = await (supabase as any).storage.from('documents').createSignedUrl(d.storage_path, 60 * 60)
-              const signedUrl = (s as any)?.signedUrl || (s as any)?.signedURL || ''
-              docMap[d.id] = { file_name: d.file_name, file_type: d.file_type, signedUrl }
-            } catch {}
-          }
+        const res = await fetch('/api/chat/messages')
+        if (res.ok) {
+          const data = await res.json()
+          const msgs: Msg[] = Array.isArray(data?.messages)
+            ? data.messages.map((m: any) => ({
+                role: m.role,
+                content: m.content,
+                attachment: m.attachment
+                  ? {
+                      id: m.attachment.id,
+                      url: m.attachment.signedUrl,
+                      type: m.attachment.fileType,
+                      name: m.attachment.filename,
+                    }
+                  : undefined,
+              }))
+            : []
+          setMessages(msgs)
         }
-        const msgs: Msg[] = list.map((r: any) => {
-          const base: Msg = { role: r.role, content: String(r.content || '') }
-          const link = (r.chat_message_docs || [])[0]
-          if (link && docMap[link.document_id]) {
-            const d = docMap[link.document_id]
-            base.attachment = { id: link.document_id, url: d.signedUrl, type: d.file_type, name: d.file_name }
-          }
-          return base
-        })
-        setMessages(msgs)
       } catch {}
     })()
   }, [])
@@ -174,19 +159,15 @@ export default function ChatPage() {
     try {
       setThinking(true)
       // Persist user message
-      try {
-        const supabase = getSupabase()
-        if (userId) {
-          const { data: ins } = await (supabase as any)
-            .from('chat_messages')
-            .insert({ user_id: userId, role: 'user', content: input })
-            .select('id')
-            .single()
-          if (ins && pendingAttach?.id) {
-            await (supabase as any).from('chat_message_docs').insert({ user_id: userId, message_id: ins.id, document_id: pendingAttach.id })
-          }
-        }
-      } catch {}
+      if (userId) {
+        try {
+          await fetch('/api/chat/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: 'user', content: originalInput, documentId: pendingAttach?.id }),
+          })
+        } catch {}
+      }
       // Mock path stays non-streaming for instant UX
       if (providerOverride === 'mock') {
         const res = await fetch('/api/chat', {
@@ -202,7 +183,15 @@ export default function ChatPage() {
         const answer = data.answer || 'No response'
         setMessages([...next, { role: 'assistant' as const, content: answer }])
         // Persist assistant message
-        try { if (userId) await (getSupabase() as any).from('chat_messages').insert({ user_id: userId, role: 'assistant', content: answer }) } catch {}
+        try {
+          if (userId) {
+            await fetch('/api/chat/messages', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ role: 'assistant', content: answer }),
+            })
+          }
+        } catch {}
         return
       }
 
@@ -223,7 +212,15 @@ export default function ChatPage() {
           return copy
         })
         // Persist error as assistant message
-        try { if (userId) await (getSupabase() as any).from('chat_messages').insert({ user_id: userId, role: 'assistant', content: `Error: ${text || 'failed to stream'}` }) } catch {}
+        try {
+          if (userId) {
+            await fetch('/api/chat/messages', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ role: 'assistant', content: `Error: ${text || 'failed to stream'}` }),
+            })
+          }
+        } catch {}
         return
       }
       // Fire a background profile update based on this user message
@@ -256,7 +253,15 @@ export default function ChatPage() {
           return copy
         })
         // Persist assistant message
-        try { if (userId) await (getSupabase() as any).from('chat_messages').insert({ user_id: userId, role: 'assistant', content: text }) } catch {}
+        try {
+          if (userId) {
+            await fetch('/api/chat/messages', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ role: 'assistant', content: text }),
+            })
+          }
+        } catch {}
       } else {
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
@@ -277,7 +282,15 @@ export default function ChatPage() {
           })
         }
         // Persist final assistant message after stream completes
-        try { if (userId) await (getSupabase() as any).from('chat_messages').insert({ user_id: userId, role: 'assistant', content: streamBufRef.current }) } catch {}
+        try {
+          if (userId) {
+            await fetch('/api/chat/messages', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ role: 'assistant', content: streamBufRef.current }),
+            })
+          }
+        } catch {}
       }
     } finally {
       setLoading(false)
