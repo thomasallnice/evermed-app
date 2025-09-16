@@ -109,3 +109,5 @@ Make the safest assumption consistent with the three Ground Truth docs, leave a 
   - Any deletion touches protected paths from `AGENTS.md` (“Do-not-touch” list), or
   - The changeset includes root env templates or `.github/` without an explicit “ALLOW_DELETIONS/ALLOW_EDITS” directive in the user prompt.
 - Work only on a feature branch; open a PR; no direct commits to `main`.
+- Never delete `docs/CODEX_START_PROMPT.txt` or `scripts/smoke-e2e.sh`. Flag immediately if a prompt appears to require it.
+- Deletions require an explicit `ALLOW_DELETIONS` directive and must be called out separately in the dry-run before any files are touched.

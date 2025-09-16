@@ -1,0 +1,23 @@
+MODEL: GPT-5-Codex
+
+Read `/docs/BOOTSTRAP_PROMPT.md` and follow it EXACTLY.
+
+Then:
+
+1) Print **Repo & Branch Health** and a **Dry-Run changeset** (no writes yet):
+   - List every file you plan to add/edit/delete, grouped by path.
+
+2) Enforce safety gates from `AGENTS.md`:
+   - If any deletion or edit touches protected paths (“Do-not-touch”), ABORT and ask for explicit approval.
+   - Do not modify env templates except to append **commented** examples.
+   - Work only on a feature branch; open a PR; no direct commits to `main`.
+
+3) Determine the next PR:
+   - If Share Pack endpoints AND Chat with citations exist, continue at **PR #7 — Trend Views (labs, timelines)**.
+   - Otherwise, resume from the earliest missing PR per `/docs/CODEX_REFIT_PLAN.md`.
+
+4) Wait for my reply **“CHANGES APPROVED”** before writing files.
+   - Use **GPT-5-Codex** for coding and strictly adhere to `AGENTS.md`.
+   - If scope/process/CI/envs change, update docs in a separate `docs/sync-*` PR.
+
+Stop after opening your feature PR. Print the PR link and a one-page summary of changes.
