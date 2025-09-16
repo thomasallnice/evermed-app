@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'node:crypto';
-import { createDocument } from '@/src/lib/documents';
+import { createDocument } from '@/lib/documents';
 
 export const runtime = 'nodejs';
 

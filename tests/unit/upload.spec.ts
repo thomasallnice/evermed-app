@@ -14,7 +14,7 @@ vi.mock('@supabase/supabase-js', () => ({
 }));
 
 const createDocumentMock = vi.fn(async () => ({ id: 'doc-123' }));
-vi.mock('@/src/lib/documents', () => ({
+vi.mock('@/lib/documents', () => ({
   createDocument: createDocumentMock,
 }));
 
@@ -34,7 +34,7 @@ describe('Upload API (OCR stub)', () => {
     vi.resetModules();
   });
 
-  it('uploads a file and logs OCR stub warning', async () => {
+  it('uploads a file, calls createDocument, and logs OCR stub warning', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { POST } = await import('../../apps/web/src/app/api/uploads/route');
 
@@ -65,6 +65,8 @@ describe('Upload API (OCR stub)', () => {
     expect(res.status).toBe(200);
     const json = await (res as Response).json();
     expect(json.documentId).toBe('doc-123');
+    // Regression: ensure correct alias '@/lib/documents' is used, not '@/src/lib/documents'.
+    expect(createDocumentMock).toHaveBeenCalled();
     expect(warnSpy).toHaveBeenCalledWith('[uploads] OCR worker not available; skipping');
     warnSpy.mockRestore();
   });

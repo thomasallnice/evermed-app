@@ -32,6 +32,7 @@
 
 ### Implementation Notes
 - OCR worker integration is stubbed in uploads. Dynamic import was removed to prevent Next.js 500s in dev/test. The stub logs a warning and skips OCR until PR #3 reintroduces proper extraction.
+- Fixed upload route import alias to '@/lib/documents'. Regression test added to ensure this alias remains correct. '@/src/lib/...' must not be used.
 
 ### Optional backfill
 - Invoke `POST /api/rag/ingest` with `{ "documentId": "…", "extractObservations": true }` and `x-user-id`/service-role headers to run the heuristic observation parser.
