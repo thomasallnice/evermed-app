@@ -36,6 +36,7 @@
 - Hardened /api/documents/:id to always return JSON errors instead of HTML. Updated smoke-e2e.sh to handle non-JSON responses gracefully, preventing jq parse errors.
 - Updated scripts/smoke-e2e.sh to use sed/tail instead of head -n -1 so it runs on macOS and Linux. Document fetch block now surfaces non-JSON responses clearly and exits on HTTP errors without crashing jq.
 - Adjusted scrypt parameters for Share Pack passcode hashing (N=16384, r=8, p=1, keylen=64). This prevents OpenSSL memory-limit errors in Node.js while preserving security. TODO: consider Argon2id in production.
+- Fixed Share Pack creation to persist SharePackItem rows so viewer now returns documents[]/observations[] when packs are created.
 
 ### Optional backfill
 - Invoke `POST /api/rag/ingest` with `{ "documentId": "…", "extractObservations": true }` and `x-user-id`/service-role headers to run the heuristic observation parser.
