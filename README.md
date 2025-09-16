@@ -1,44 +1,66 @@
-# EverMed.ai — Developer Readme
+# EverMed.ai — Developer README
 
-Monorepo aligned to `docs/CODEX_REFIT_PLAN.md`.
+Monorepo aligned with `docs/CODEX_REFIT_PLAN.md`.
 
 ## Layout
 
-- apps/web — Next.js (App Router)
-- apps/workers — background jobs (OCR/extraction)
-- packages/ui — shared UI (placeholder)
-- packages/types — shared types
-- packages/config — eslint/prettier/tsconfig
-- db — Prisma schema & migrations (next PR)
-- infra — vercel.json, supabase config
-- tests — unit/e2e/fixtures (non‑PHI)
+- `apps/web` — Next.js (App Router) web app + API routes
+- `apps/workers` — OCR/extractor scaffolding (Cloud Run)
+- `packages/config` — shared eslint/prettier/tsconfig
+- `packages/types`, `packages/ui` — shared types/components
+- `db` — Prisma schema & migrations
+- `docs` — product spec, refit notes, ground truth
+- `tests` — Vitest unit suites and fixtures (non-PHI)
+
+## Features (PR #10 stack)
+
+- Uploads stream files to Supabase Storage, run Cloud Run OCR, chunk text into `DocChunk`, and embed via OpenAI (pgvector backed).
+- Chat `/api/chat` performs semantic retrieval with citations and guardrails.
+- Trends page surfaces lab timelines, trend snippets, and related context.
+- Share Packs bundle selected documents **and** observations with passcode, logs, revoke, and signed-viewer URLs.
+- Smoke script (`./scripts/smoke-e2e.sh`) exercises upload → signed URL → share pack flow.
 
 ## Quick Start (local)
 
-Prereqs:
+Prerequisites
 - Node 20+
-- Supabase project (Auth + Storage)
-- OpenAI API key
+- Supabase project (Auth + Storage, pgvector enabled)
+- OpenAI API key (for embeddings)
 
-Setup:
-1) `cp apps/web/.env.example apps/web/.env.local` and fill values
-2) `npm ci`
+Setup
+```
+git clone …
+cd evermed-app
+npm ci
+cp apps/web/.env.example apps/web/.env.local
+# populate SUPABASE_URL/keys, SHARE_LINK_PEPPER, PDF_EXTRACT_*, OPENAI_API_KEY
+```
 
-Run web:
+Run web app
 ```
 npm run dev
+# open http://localhost:3000
 ```
-Open http://localhost:3000
+
+Smoke test (optional)
+```
+./scripts/smoke-e2e.sh
+```
+
+## Deployment & Testing
+
+- Deploy Supabase migrations (`prisma migrate deploy`) and Vercel project (set env vars: Supabase keys, OCR envs, `OPENAI_API_KEY`).
+- After each deploy run `./scripts/smoke-e2e.sh` against the environment to validate upload → share.
+- Recommended suites: Playwright/Cypress E2E (auth → upload → share), load tests (large PDFs/concurrency), security review (RLS, passcodes, signed URLs, revocation), monitoring/alerting setup.
 
 ## CI
 
-GitHub Actions runs lint, typecheck, unit tests, and a placeholder e2e step. See `.github/workflows/ci.yml`.
+GitHub Actions (`.github/workflows/ci.yml`) runs lint, typecheck, unit tests, and placeholder e2e.
 
 ## Docs
 
-- Product spec: `docs/project-description.md`
-- Refit plan: `docs/CODEX_REFIT_PLAN.md`
-- File moves: `docs/refit/PR1_FILE_MOVES.md`
+- Product & ground truth: `docs/project-description.md`, `docs/CODEX_REFIT_PLAN.md`, `docs/BOOTSTRAP_PROMPT.md`
+- Refits: `docs/refit/PR*_NOTES.md`
 
 ## Contributing
 
