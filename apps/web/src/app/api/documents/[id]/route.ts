@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDocumentAuthorized } from '@/src/lib/documents';
-
+import { getDocumentAuthorized } from '@/lib/documents';
 export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
@@ -14,4 +13,3 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: e?.message || 'Unexpected' }, { status: 500 });
   }
 }
-

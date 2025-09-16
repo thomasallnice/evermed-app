@@ -18,7 +18,8 @@ export default [
       "@typescript-eslint/no-unused-vars": [
         "warn",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }
-      ]
+      ],
+      "no-restricted-imports": ["error", { patterns: ['@/src/lib/*'] }]
     }
   }
 ];

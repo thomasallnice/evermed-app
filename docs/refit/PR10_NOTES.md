@@ -5,6 +5,7 @@
 - Introduced `lib/embedding.ts` + `lib/ocr.ts` integration so extracted text is chunked, embedded, and persisted.
 - Chat `/api/chat` now performs semantic retrieval (`embedding <->`) with fallback to recent chunks.
 - Added retrieval helpers to support future trends context lookups.
+- Corrected alias in /api/documents/[id]/route.ts to '@/lib/documents' and added regression + lint guard to prevent '@/src/lib/…' from returning.
 
 ### Environment
 - Requires `OPENAI_API_KEY` (and optional `OPENAI_BASE_URL`, `EMBEDDINGS_MODEL`).
