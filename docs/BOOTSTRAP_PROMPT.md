@@ -36,7 +36,7 @@
 
 ## Environment & Secrets
 
-- **Vercel Project Env:** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+- **Vercel Project Env:** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `PDF_EXTRACT_URL`, `PDF_EXTRACT_BEARER`, `PDF_EXTRACT_TIMEOUT_MS`, `PDF_MAX_BYTES`, `OPENAI_API_KEY`, (optional) `OPENAI_BASE_URL`, `EMBEDDINGS_MODEL`.
     
 - **GitHub Secrets (CI):** `SUPABASE_DB_URL` (Cloud dev DB connection), `SUPABASE_SERVICE_ROLE_KEY`.
     
@@ -82,6 +82,9 @@ When this prompt runs, **first output** a short report:
     - Open PR: **“PR #2.1 — Supabase Cloud refit”** with base = `refit/mvp-skeleton`.
         
 4. **Pause** (do **not** start PR #3) until review is complete.
+
+- Keep guard files intact: `docs/CODEX_START_PROMPT.txt`, `scripts/smoke-e2e.sh`, `docs/BOOTSTRAP_PROMPT.md`, `AGENTS.md`.
+- Run `./scripts/smoke-e2e.sh` as the end-to-end smoke when verifying uploads/share packs.
     
 
 ## Testing & CI Expectations

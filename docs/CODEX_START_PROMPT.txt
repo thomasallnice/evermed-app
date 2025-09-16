@@ -1,0 +1,9 @@
+MODEL: GPT-5-Codex
+
+Read `/docs/BOOTSTRAP_PROMPT.md` and follow it exactly.
+
+Then do a DRY-RUN (no writes):
+- Print Repo & Branch Health.
+- Print the planned changeset (files to add/edit/delete, grouped by path).
+
+Stop after opening your PR and printing the PR link + summary.
