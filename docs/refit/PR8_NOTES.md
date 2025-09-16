@@ -35,3 +35,4 @@
 - Added trend helpers (`lib/trends.ts`) to compute deltas/out-of-range flags reused by Share Packs.
 - Viewer aggregates historic observations for each code to show simple trend snippets.
 - Public viewer renders an observations table with delta badges and links back to the source document when available.
+- Reapplied safe scrypt params (N=16384, r=8, p=1, keylen=64) to avoid OpenSSL memory-limit errors after branching without PR #7.

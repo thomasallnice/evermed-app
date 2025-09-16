@@ -1,14 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import type { NextRequest } from 'next/server';
-
-const hashPasscodeMock = vi.fn(async () => 'hash-1234');
-const verifyPasscodeMock = vi.fn(async (hash: string, passcode: string) => hash === 'hash-1234' && passcode === '1234');
-
-vi.mock('@/lib/passcode', () => ({
-  hashPasscode: hashPasscodeMock,
-  verifyPasscode: verifyPasscodeMock,
-}));
+import { hashPasscode, verifyPasscode } from '@/lib/passcode';
 
 const createSignedUrlMock = vi.fn(async () => ({ data: { signedUrl: 'https://signed.example/url' }, error: null }));
 const storageFromMock = vi.fn(() => ({ createSignedUrl: createSignedUrlMock }));
@@ -26,13 +19,23 @@ const hasDb = !!(process.env.SUPABASE_DB_URL || process.env.DATABASE_URL);
 if (process.env.SUPABASE_DB_URL && !process.env.DATABASE_URL) {
   process.env.DATABASE_URL = process.env.SUPABASE_DB_URL;
 }
-process.env.SHARE_LINK_PEPPER = process.env.SHARE_LINK_PEPPER || 'test-pepper';
+process.env.SHARE_LINK_PEPPER = process.env.SHARE_LINK_PEPPER || Buffer.from('test-pepper').toString('base64');
 process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
 process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'service-role-key';
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.resetModules();
+});
+
+describe('Share Pack passcode helpers', () => {
+  it("hashes and verifies passcode '1234' with safe scrypt params", () => {
+    const pepper = Buffer.from('demo-pepper').toString('base64');
+    const hash = hashPasscode('1234', pepper);
+    expect(typeof hash).toBe('string');
+    expect(hash).toMatch(/^[a-f0-9]+$/);
+    expect(verifyPasscode(hash, '1234', pepper)).toBe(true);
+    expect(verifyPasscode(hash, '9999', pepper)).toBe(false);
+  });
 });
 
 describe.runIf(hasDb)('Share Pack API', () => {
@@ -74,7 +77,7 @@ describe.runIf(hasDb)('Share Pack API', () => {
     const created = await (createRes as Response).json();
     expect(created.documents).toHaveLength(1);
     expect(created.observations).toHaveLength(1);
-    expect(hashPasscodeMock).toHaveBeenCalled();
+
     const packId = created.shareId as string;
 
     const { POST: VERIFY } = await import('../../apps/web/src/app/api/share-packs/[id]/verify/route');
@@ -87,7 +90,6 @@ describe.runIf(hasDb)('Share Pack API', () => {
       { params: { id: packId } },
     );
     expect((verifyRes as Response).ok).toBe(true);
-    expect(verifyPasscodeMock).toHaveBeenCalledWith('hash-1234', '1234');
 
     const { GET } = await import('../../apps/web/src/app/api/share-packs/[id]/route');
     const viewReq = {
