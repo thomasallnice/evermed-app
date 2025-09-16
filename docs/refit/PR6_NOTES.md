@@ -6,6 +6,7 @@
 - POST /api/share-packs/:id/verify — `{ passcode }` → sets session cookie (scoped to pack).
 - POST /api/share-packs/:id/revoke — owner-only (x-user-id stub) → revokes.
 - GET /api/share-packs/:id/logs — owner-only → view events (no PHI).
+- GET /api/documents/:id — owner-only signed URL (10 min TTL) so browser uploads page can access private storage.
 
 ### Persistence
 - `items[]` in the create request persists to `SharePackItem` via nested `create`. Both shorthand string IDs and object forms are supported: `['<documentId>', { observationId: '<obsId>' }]`.

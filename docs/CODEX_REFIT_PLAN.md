@@ -271,6 +271,8 @@ GET    /api/admin/metrics               -> tiles (see §7)
 GET    /api/admin/usage/tokens          -> tokens by feature/model
 ```
 
+- GET `/api/documents/:id` — owner-only, returns `{ id, filename, signedUrl }` with a 10-minute TTL.
+
 **Webhooks / background**
 
 ```

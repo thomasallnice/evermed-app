@@ -50,16 +50,15 @@ export async function getDocumentForOwner(documentId: string, ownerId: string) {
 export async function getDocumentAuthorized(documentId: string, ownerId: string) {
   const doc = await getDocumentForOwner(documentId, ownerId);
   if (!doc) return null;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  let signedUrl = 'https://signed.example/url';
-  if (url && key) {
-    const supabase = createClient(url, key, { auth: { persistSession: false } });
-    const { data, error } = await (supabase as any).storage
-      .from("documents")
-      .createSignedUrl(doc.storagePath, 3600);
-    if (!error && data?.signedUrl) signedUrl = data.signedUrl as string;
-  }
+  if (!url || !key) throw new Error('Supabase service role not configured');
+  const supabase = createClient(url, key, { auth: { persistSession: false } });
+  const { data, error } = await (supabase as any).storage
+    .from("documents")
+    .createSignedUrl(doc.storagePath, 600);
+  if (error || !data?.signedUrl) throw new Error(error?.message || 'failed to create signed url');
+  const signedUrl = data.signedUrl as string;
   return {
     id: doc.id,
     filename: doc.filename,
