@@ -3,7 +3,6 @@ const nextConfig = {
   reactStrictMode: true,
   experimental: {
     typedRoutes: true,
-    appDir: true,
   },
   images: {
     remotePatterns: [
