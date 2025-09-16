@@ -6,7 +6,8 @@
     "baseUrl": ".",
     "jsx": "react-jsx",
     "paths": {
-      "@/*": ["../apps/web/src/*"]
+      "@/*": ["../apps/web/src/*"],
+      "@/src/*": ["../apps/web/src/*"]
     }
   },
   "include": ["**/*.ts","**/*.tsx"]

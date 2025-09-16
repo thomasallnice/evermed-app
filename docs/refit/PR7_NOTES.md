@@ -30,8 +30,10 @@
 - Details modal traps focus visually via overlay; close button accessible.
 - Out-of-range indicator uses both color and text (“Out of range”).
 
+### Implementation Notes
+- OCR worker integration is stubbed in uploads. Dynamic import was removed to prevent Next.js 500s in dev/test. The stub logs a warning and skips OCR until PR #3 reintroduces proper extraction.
+
 ### Optional backfill
 - Invoke `POST /api/rag/ingest` with `{ "documentId": "…", "extractObservations": true }` and `x-user-id`/service-role headers to run the heuristic observation parser.
 - Parser recognises the codes above, scans text lines for numeric values + ranges, and writes new `Observation` rows only when the document’s person matches the requesting owner. Duplicate (code/date/value) combos are skipped.
 - Keep feature off by default; recommend testing against fixtures first (`curl` with sample `documentId`).
-

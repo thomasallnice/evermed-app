@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'node:crypto';
 import { createDocument } from '@/src/lib/documents';
-import { queueOcrJob } from '@/../../../apps/workers/ocr';
 
 export const runtime = 'nodejs';
+
+// TEMP: OCR worker disabled in dev/test.
+// TODO: integrate OCR worker (PR #3+) for text/anchor extraction.
+async function queueOcrJob(_docId: string, _storagePath: string) {
+  console.warn('[uploads] OCR worker not available; skipping');
+}
 
 function getAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -38,12 +43,11 @@ export async function POST(req: NextRequest) {
 
     const doc = await createDocument({ personId, kind: kindFromMime(mime), filename: fileName, storagePath, sha256, topic: null });
 
-    // Best-effort OCR job
-    queueOcrJob(doc.id, storagePath).catch(() => {});
+    // Best-effort OCR job (stubbed until worker integration returns)
+    await queueOcrJob(doc.id, storagePath);
 
     return NextResponse.json({ documentId: doc.id });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'Unexpected' }, { status: 500 });
   }
 }
-
