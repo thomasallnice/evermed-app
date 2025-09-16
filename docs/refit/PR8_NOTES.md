@@ -6,6 +6,7 @@
 - Public viewer displays uploaded documents and selected observations with recent trend deltas.
 - Restored guard files (`docs/CODEX_START_PROMPT.txt`, `scripts/smoke-e2e.sh`) after accidental deletion and documented them as permanent no-deletes.
 - Fixed broken imports in upload route. Corrected alias to @/lib/documents and restored OCR stub instead of invalid worker import.
+- Fixed alias in /api/documents/[id]/route.ts to '@/lib/documents'. Regression test added to prevent '@/src/...' regressions.
 
 ### How to include observations
 - POST `/api/share-packs` with `items` array containing observation IDs: `{ "observationId": "<UUID>" }`.
