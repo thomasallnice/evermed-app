@@ -52,6 +52,20 @@ if [ "$EMBED_COUNT" -eq 0 ]; then
 fi
 echo "[embedding] $EMBED_COUNT chunks with embeddings found ✅"
 
+# ---------- OCR + Embedding Preview ----------
+echo "[ocr+embedding] fetching preview chunk for $DOC_ID"
+PREVIEW=$(psql "$PSQL_URL" -Atc "
+  select left(text, 80)
+  from \"DocChunk\"
+  where \"documentId\"='${DOC_ID}' and embedding is not null and length(text) > 0
+  limit 1;
+")
+if [ -z "$PREVIEW" ]; then
+  echo "[ocr+embedding] ERROR: no DocChunk with text+embedding found"
+  exit 1
+fi
+echo "[ocr+embedding] sample chunk text: $PREVIEW"
+
 # ---------- OCR text check ----------
 echo "[ocr] verifying OCR text chunks exist for $DOC_ID"
 OCR_COUNT=$(psql "$PSQL_URL" -Atc "select count(*) from \"DocChunk\" where \"documentId\"='${DOC_ID}' and length(text) > 0")
