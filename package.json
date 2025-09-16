@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "clean:next": "node -e \"try{require('fs').rmSync('apps/web/.next',{recursive:true,force:true});}catch(e){}\"",
+    "clean:next": "node -e \"const fs=require('fs');['.next','apps/web/.next'].forEach(p=>{try{fs.rmSync(p,{recursive:true,force:true});}catch{}});\"",
     "predev": "npm run clean:next",
     "prebuild": "npm run clean:next",
     "build": "npm run -w @evermed/web build",
