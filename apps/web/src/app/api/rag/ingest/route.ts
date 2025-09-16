@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { PrismaClient } from '@prisma/client'
+import { extractObservationsFromText } from '@/lib/observations/extractor'
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
 const OPENAI_EMBED_MODEL = process.env.OPENAI_MODEL_EMBED || 'text-embedding-3-small'
@@ -11,6 +13,7 @@ const PDF_EXTRACT_TIMEOUT_MS = Number(process.env.PDF_EXTRACT_TIMEOUT_MS || 2000
 const PDF_DEBUG = String(process.env.PDF_DEBUG || process.env.DEBUG_PDF || '').toLowerCase() === 'true'
 const OPENAI_ORG_ID = process.env.OPENAI_ORG_ID || process.env.OPENAI_ORGANIZATION || ''
 const EXPECTED_EMBED_DIM = 1536 // matches `vector(1536)` in 002_rag.sql
+const prisma = new PrismaClient()
 
 async function embedBatch(texts: string[]) {
   const res = await fetch('https://api.openai.com/v1/embeddings', {
@@ -41,14 +44,20 @@ function chunkText(text: string, size = 1500, overlap = 150) {
 export async function POST(req: NextRequest) {
   try {
     if (!OPENAI_API_KEY) return NextResponse.json({ error: 'Missing OPENAI_API_KEY' }, { status: 500 })
-    const { documentId } = await req.json()
+    const body = await req.json()
+    const documentId = body?.documentId
+    const extractObservations = Boolean(body?.extractObservations)
     if (!documentId) return NextResponse.json({ error: 'documentId required' }, { status: 400 })
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
     const admin = createClient(supabaseUrl, serviceKey)
 
-    const { data: doc, error: docErr } = await admin.from('documents').select('id,user_id,storage_path,file_name,file_type').eq('id', documentId).single()
+    const { data: doc, error: docErr } = await admin
+      .from('documents')
+      .select('id,user_id,person_id,storage_path,file_name,file_type')
+      .eq('id', documentId)
+      .single()
     if (docErr || !doc) return NextResponse.json({ error: 'doc not found', details: docErr?.message || '' }, { status: 404 })
 
     // Only ingest text/pdf
@@ -396,6 +405,35 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ skipped: true, reason: 'no text from document', debug: { isPdf, isText, size: lastPdfSize, maxBytes: MAX_PDF_BYTES, extractorConfigured: Boolean(PDF_EXTRACT_URL), extractorTried, extractorStatus: extractorStatusDbg, extractorLen: extractorLenDbg } })
       }
       return NextResponse.json({ skipped: true, reason: 'no text from document' })
+    }
+
+    if (extractObservations && (doc as any).person_id) {
+      try {
+        const extracted = extractObservationsFromText(text, {
+          personId: String((doc as any).person_id),
+          documentId: String(doc.id),
+        });
+        if (extracted.length) {
+          const existing = await prisma.observation.findMany({
+            where: { personId: String((doc as any).person_id), sourceDocId: String(doc.id) },
+            select: { code: true, effectiveAt: true, valueNum: true },
+          });
+          const seen = new Set(existing.map((row) => `${row.code}:${row.effectiveAt?.toISOString() || ''}:${row.valueNum ?? ''}`));
+          const next = extracted.filter((item) => {
+            const key = `${item.code}:${item.effectiveAt?.toISOString() || ''}:${item.valueNum ?? ''}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          if (next.length) {
+            await prisma.observation.createMany({ data: next });
+          }
+        }
+      } catch (error) {
+        if (PDF_DEBUG) {
+          console.warn('observation extraction failed', error);
+        }
+      }
     }
 
     const chunks = chunkText(text)

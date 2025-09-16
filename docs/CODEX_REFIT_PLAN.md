@@ -245,6 +245,11 @@ with check (exists (select 1 from "Person" p where p.id = personId and p.ownerId
 **Dev note (uploads & RLS):** 
 
 In dev/test we use `x-user-id` headers and `/api/uploads` uses the **service-role** Supabase client to bypass RLS, so uploads work without Supabase Auth. Replace with Supabase Auth + RLS when login/signup is wired. (CI still enforces RLS semantics in tests.) 
+
+**Observation backfill (opt-in):**
+
+- Operators can call `POST /api/rag/ingest` with `{ documentId, extractObservations: true }` to parse common lab rows (CBC, CMP, lipids, endocrine, inflammation) into `Observation` records. Regex + keyword heuristics map values to LOINC-ish codes and preserve provenance via `sourceDocId`.
+- The same route verifies the document’s `person_id` matches the signed-in owner before inserting rows. Disabled by default; document the command before running against fixtures.
 ---
 
 ## **4) API Contract (must exist when PR closes)**
@@ -260,6 +265,7 @@ POST   /api/explain/:documentId         -> ExplainPayload (template)
 POST   /api/chat                        -> {answer, citations[], safetyTag}
 POST   /api/observations/extract        -> Observation[]
 GET    /api/observations                -> timeline by {personId, code}
+GET    /api/trends                      -> lab trends per code (windowMonths 3|6|12|24)
 POST   /api/share-packs                 -> create pack (items[], expiry, passcode)
 GET    /api/share-packs/:id             -> public view (after passcode)
 POST   /api/share-packs/:id/verify      -> passcode → session cookie (pack scope)
@@ -303,6 +309,13 @@ Implement **starter cards** on Home + composer quick actions:
 
 - Explain a lab • Prepare for visit • Allergy pack for school • What changed?
     
+
+**Trend Views (labs)**
+
+- `/trends` surface lab timelines with filters (CBC, CMP, lipids, endocrine, renal, inflammation, coagulation).
+- Provide selectable time windows (3/6/12/24 months), deltas, slopes, and out-of-range flags with provenance.
+- Details drawer lists the raw timeline and links to `/api/documents/:id` for signed access.
+
 
   
 

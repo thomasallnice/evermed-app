@@ -27,6 +27,7 @@ export default function Nav() {
           <a href="/vault">Vault</a>
           <a href="/upload">Upload</a>
           <a href="/chat">Chat</a>
+          <a href="/trends">Trends</a>
           <a href="/profile">Profile</a>
           <a href="/dev">Dev</a>
           <span className="inline-block w-px h-4 bg-neutral-300 mx-1" />
@@ -56,6 +57,7 @@ export default function Nav() {
             <a href="/vault" onClick={() => setOpen(false)}>Vault</a>
             <a href="/upload" onClick={() => setOpen(false)}>Upload</a>
             <a href="/chat" onClick={() => setOpen(false)}>Chat</a>
+            <a href="/trends" onClick={() => setOpen(false)}>Trends</a>
             <a href="/profile" onClick={() => setOpen(false)}>Profile</a>
             <a href="/dev" onClick={() => setOpen(false)}>Dev</a>
             <div className="h-px bg-neutral-200 my-1" />

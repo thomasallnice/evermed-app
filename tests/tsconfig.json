@@ -4,6 +4,7 @@
     "types": ["vitest/globals", "node"],
     "noImplicitAny": true,
     "baseUrl": ".",
+    "jsx": "react-jsx",
     "paths": {
       "@/*": ["../apps/web/src/*"]
     }
