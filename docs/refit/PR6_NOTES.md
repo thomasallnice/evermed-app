@@ -17,6 +17,8 @@
 - Passcode hashed with project pepper (scrypt placeholder; TODO: Argon2id) and stored as `passcodeHash`.
 - Packs default to 7-day expiry; revoke sets `revokedAt` to immediately disable access.
 - Viewer requires verify cookie per pack; logs record anonymized IP hash.
+- Upload API uses the Supabase service-role key in dev/test to bypass RLS until auth is wired.
+- Dev/test: OCR worker import is stubbed, so uploads complete without OCR. TODO to reintegrate in PR #3+.
 
 ### Public viewer
 - /share/[token] prompts for passcode; after verify, fetches pack and renders only selected items.

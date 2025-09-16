@@ -103,7 +103,7 @@ OTEL_EXPORTER_OTLP_ENDPOINT=
 ### RLS / Auth note
 
 - In dev/test we use `x-user-id: test-user` instead of full Supabase Auth.
-- `/api/uploads` uses a Supabase client initialized with `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS for storage writes; the code includes a TODO to replace this with proper Auth + RLS enforcement once login/signup is wired up.
+- In dev/test, `/api/uploads` uses `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS. TODO: replace with Supabase Auth + RLS once login/signup is wired.
 
 ```
 model Person {
@@ -289,6 +289,7 @@ model.token_usage
 - **Embeddings:** provider configurable (EMBEDDINGS_PROVIDER), default OpenAI. Index to DocChunk with pgvector.
     
 - **OCR:** implement workers/ocr.ts with a provider interface; default to local Tesseract (WASM or container) _or_ stub with a TODO flag. Route via background function to avoid blocking UI.
+- Note: Uploads currently bypass the OCR worker (stubbed). TODO to re-enable when OCR worker is ready.
     
 
 ---

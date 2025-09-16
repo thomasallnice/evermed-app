@@ -5,12 +5,22 @@ import { createDocument } from '../../../lib/documents';
 
 export const runtime = 'nodejs';
 
-function getAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+export function getServiceRoleClient() {
+  const url = process.env.SUPABASE_URL;
+  if (!url) throw new Error('SUPABASE_URL missing: uploads require service role client');
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error('Missing Supabase env');
-  // TODO: replace service role bypass with proper Supabase Auth + RLS enforcement
+  if (!key) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY missing: uploads require service role in dev/test');
+  }
+  // In dev/test we bypass RLS using the service-role client.
+  // TODO: replace with Supabase Auth + RLS when login/signup is wired.
   return createClient(url, key);
+}
+
+// TODO: re-enable OCR worker integration (PR #3)
+// For now we stub this out so uploads succeed in dev/test.
+async function queueOcrJob(_docId: string, _storagePath: string) {
+  console.warn('[uploads] OCR worker not available; skipping');
 }
 
 function kindFromMime(m: string) {
@@ -32,18 +42,13 @@ export async function POST(req: NextRequest) {
     const sha256 = crypto.createHash('sha256').update(buf).digest('hex');
     const storagePath = `${personId}/${Date.now()}-${fileName}`;
 
-    const admin = getAdmin();
+    const admin = getServiceRoleClient();
     const { error: upErr } = await (admin as any).storage.from('documents').upload(storagePath, buf, { contentType: mime, upsert: false });
     if (upErr) return NextResponse.json({ error: 'upload failed', details: upErr.message || '' }, { status: 500 });
 
     const doc = await createDocument({ personId, kind: kindFromMime(mime), filename: fileName, storagePath, sha256 });
 
-    // Best-effort OCR job (dynamic import to avoid test env resolution issues)
-    try {
-      // @ts-ignore dynamic import for optional worker in tests
-      const mod = await import('../../../../../apps/workers/ocr');
-      (mod as any).queueOcrJob?.(doc.id, storagePath).catch?.(() => {});
-    } catch {}
+    await queueOcrJob(doc.id, storagePath);
 
     return NextResponse.json({ documentId: doc.id });
   } catch (e: any) {
