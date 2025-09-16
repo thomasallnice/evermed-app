@@ -52,6 +52,15 @@ if [ "$EMBED_COUNT" -eq 0 ]; then
 fi
 echo "[embedding] $EMBED_COUNT chunks with embeddings found ✅"
 
+# ---------- OCR text check ----------
+echo "[ocr] verifying OCR text chunks exist for $DOC_ID"
+OCR_COUNT=$(psql "$PSQL_URL" -Atc "select count(*) from \"DocChunk\" where \"documentId\"='${DOC_ID}' and length(text) > 0")
+if [ "$OCR_COUNT" -eq 0 ]; then
+  echo "[ocr] ERROR: no OCR text found in DocChunks"
+  exit 1
+fi
+echo "[ocr] $OCR_COUNT chunks with OCR text found ✅"
+
 # ---------- Document signed URL ----------
 echo "[doc] fetching signed URL"
 DOC_JSON=$(curl -s "$API/api/documents/${DOC_ID}" -H "x-user-id: $OWNER_ID")
