@@ -8,7 +8,7 @@ API="http://localhost:3000"
 PSQL_URL="${DATABASE_URL:-${SUPABASE_DB_URL:-}}"
 PDF_PATH="${1:-tests/fixtures/documents/dummy-documents/SAMPLE-ALLERGY-TEST-REPORT.pdf}"
 
-OWNER_ID="test-user"   # force to test-user in dev/demo
+OWNER_ID="test-user"   # force in dev/demo
 PASSCODE="1234"
 COOKIE=/tmp/evermed_pack_cookie.txt
 
@@ -60,21 +60,24 @@ DOC_ID=$(echo "$UPLOAD_JSON" | jq -r '.documentId // empty')
 echo "[upload] DocumentId: $DOC_ID"
 
 # ---------- Document signed URL ----------
+echo "[doc] fetching signed URL for $DOC_ID"
 DOC_RAW=$(curl -s -w "\n%{http_code}" "$API/api/documents/${DOC_ID}" -H "x-user-id: $OWNER_ID")
-DOC_STATUS=$(printf '%s' "$DOC_RAW" | tail -n 1)
-DOC_BODY=$(printf '%s' "$DOC_RAW" | sed '$d')
+STATUS=$(echo "$DOC_RAW" | tail -n1)
+BODY=$(echo "$DOC_RAW" | sed '$d')
 
-if ! echo "$DOC_BODY" | jq . 2>/dev/null; then
-  echo "[doc] non-JSON response: $DOC_BODY"
+if echo "$BODY" | jq . >/dev/null 2>&1; then
+  echo "$BODY" | jq .
+else
+  echo "[doc] non-JSON response: $BODY"
 fi
 
-if [ "$DOC_STATUS" -ne 200 ]; then
-  echo "[doc] ERROR: /api/documents returned HTTP $DOC_STATUS"
+if [ "$STATUS" -ne 200 ]; then
+  echo "[doc] ERROR: /api/documents returned HTTP $STATUS"
   exit 1
 fi
 
-SIGNED_URL=$(echo "$DOC_BODY" | jq -r '.signedUrl // empty' 2>/dev/null || echo '')
-[ -z "$SIGNED_URL" -o "$SIGNED_URL" = "null" ] && { echo "[doc] missing signedUrl (forbidden or config?)"; exit 1; }
+SIGNED_URL=$(echo "$BODY" | jq -r '.signedUrl // empty')
+[ -z "$SIGNED_URL" -o "$SIGNED_URL" = "null" ] && { echo "[doc] missing signedUrl"; exit 1; }
 echo "[doc] signedUrl ok"
 
 # ---------- Create Share Pack ----------
