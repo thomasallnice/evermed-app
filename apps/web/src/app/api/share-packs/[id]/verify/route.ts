@@ -15,7 +15,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!pack) return NextResponse.json({ error: 'not found' }, { status: 404 });
     if (pack.revokedAt) return NextResponse.json({ error: 'revoked' }, { status: 403 });
     if (pack.expiresAt && pack.expiresAt.getTime() < Date.now()) return NextResponse.json({ error: 'expired' }, { status: 403 });
-    const ok = await verifyPasscode(pack.passcodeHash, String(passcode || ''));
+    const pepper = process.env.SHARE_LINK_PEPPER;
+    if (!pepper) return NextResponse.json({ error: 'SHARE_LINK_PEPPER missing' }, { status: 500 });
+    const ok = verifyPasscode(pack.passcodeHash, String(passcode || ''), pepper);
     if (!ok) return NextResponse.json({ error: 'invalid' }, { status: 401 });
     const res = NextResponse.json({ ok: true });
     const maxAge = Math.max(1, Math.floor((pack.expiresAt.getTime() - Date.now()) / 1000));
@@ -25,4 +27,3 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: e?.message || 'Unexpected' }, { status: 500 });
   }
 }
-

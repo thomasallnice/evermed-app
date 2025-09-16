@@ -1,11 +1,22 @@
 import { describe, it, expect } from 'vitest';
 import { PrismaClient } from '@prisma/client';
+import { hashPasscode, verifyPasscode } from '@/lib/passcode';
 
 const hasDb = !!(process.env.SUPABASE_DB_URL || process.env.DATABASE_URL);
 if (process.env.SUPABASE_DB_URL && !process.env.DATABASE_URL) {
   process.env.DATABASE_URL = process.env.SUPABASE_DB_URL;
 }
-process.env.SHARE_LINK_PEPPER = process.env.SHARE_LINK_PEPPER || 'test-pepper';
+process.env.SHARE_LINK_PEPPER = process.env.SHARE_LINK_PEPPER || Buffer.from('test-pepper').toString('base64');
+
+describe('Share Pack passcode helpers', () => {
+  it("hashes and verifies passcode '1234' with service params", () => {
+    const pepper = process.env.SHARE_LINK_PEPPER as string;
+    const hash = hashPasscode('1234', pepper);
+    expect(hash).toMatch(/^[a-f0-9]+$/);
+    expect(verifyPasscode(hash, '1234', pepper)).toBe(true);
+    expect(verifyPasscode(hash, '9999', pepper)).toBe(false);
+  });
+});
 
 describe.runIf(hasDb)('Share Pack API', () => {
   const prisma = new PrismaClient();
@@ -29,4 +40,3 @@ describe.runIf(hasDb)('Share Pack API', () => {
     expect((rres as Response).ok).toBe(true);
   });
 });
-

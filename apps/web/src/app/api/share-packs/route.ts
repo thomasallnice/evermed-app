@@ -12,7 +12,10 @@ export async function POST(req: NextRequest) {
     if (!personId || !title || !audience) return NextResponse.json({ error: 'personId, title, audience required' }, { status: 400 });
     if (!passcode || String(passcode).length < 4) return NextResponse.json({ error: 'passcode required' }, { status: 400 });
 
-    const passcodeHash = await hashPasscode(String(passcode));
+    const pepper = process.env.SHARE_LINK_PEPPER;
+    if (!pepper) return NextResponse.json({ error: 'SHARE_LINK_PEPPER missing' }, { status: 500 });
+
+    const passcodeHash = hashPasscode(String(passcode), pepper);
     const expiresAt = new Date(Date.now() + (Math.max(1, Number(expiryDays || 7)) * 24 * 3600 * 1000));
 
     const pack = await prisma.sharePack.create({ data: { personId, title, audience, passcodeHash, expiresAt } });
@@ -30,4 +33,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: e?.message || 'Unexpected' }, { status: 500 });
   }
 }
-
