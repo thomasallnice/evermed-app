@@ -32,7 +32,9 @@
 9. **Analytics (no PHI):** exact events & token logging per plan; Admin Dashboard tiles per metrics spec.
     
 10. **Quality gates in CI:** tests pass; citations present; latency budget met; RLS blocks cross-user access; storage is private; no PHI in logs/analytics.
-    
+
+11. **Model**: Use **GPT-5-Codex** for all coding tasks; adhere strictly to `AGENTS.md`. (GPT-5-Codex improves agentic coding and adheres better to AGENTS.md-style rules.) 
+
 
 ## Environment & Secrets
 
@@ -55,6 +57,8 @@ When this prompt runs, **first output** a short report:
     
 
 ## Stacked-PR Plan (where to continue)
+
+If the repo already contains Share Pack endpoints and Chat with citations, continue at **PR #7 — Trend Views**; otherwise resume from the earliest missing PR (PR #3…).
 
 - **PR #1 (merged):** repo convergence & hygiene.
     
@@ -96,3 +100,12 @@ When this prompt runs, **first output** a short report:
 ## If Anything is Ambiguous
 
 Make the safest assumption consistent with the three Ground Truth docs, leave a `TODO(reason)` inline, proceed, and flag in the PR description.
+
+
+## Preflight Safety (must execute before any code change)
+
+- Print “Repo & Branch Health” + a **Dry-Run changeset**: list of files to add/edit/delete, per path.
+- Abort if:
+  - Any deletion touches protected paths from `AGENTS.md` (“Do-not-touch” list), or
+  - The changeset includes root env templates or `.github/` without an explicit “ALLOW_DELETIONS/ALLOW_EDITS” directive in the user prompt.
+- Work only on a feature branch; open a PR; no direct commits to `main`.

@@ -64,8 +64,24 @@ Whenever code, schema, CI, or process change, update this file.
 - All outputs must include provenance (e.g. citations with `DocChunk.sourceAnchor`) when relevant.  
 - Auth must be enforced for user/owner access.
 
+
 ---
 
-## 🗂 Version History
 
-- `v1.0 — 2025-09-11`: Established AGENTS.md rules including CI guardrails, docs update policy, schema versioning, Typed TS, etc.
+## 🔒 Change-Management Protocol (Codex must follow)
+
+1) **Dry-Run first**: print a bullet list of files to add/edit/delete before writing any changes.  
+2) **Branching**: create a feature branch (`refit/*`, `docs/*`, or `hotfix/*`). Never commit to `main`.  
+3) **PR-only**: open a PR with the planned changes; include a file-by-file rationale and a diff summary.  
+4) **No broad deletions**: do not delete or rename files outside an explicit task that says “ALLOW_DELETIONS: path1, path2…”.  
+5) **Docs sync as separate PRs**: product/plan/bootstrap edits go in `docs/sync-*` PRs (no code in those PRs).  
+6) **Model**: use **GPT-5-Codex** for coding tasks; adhere to this `AGENTS.md`.  
+
+## ❌ Do-not-touch paths (without explicit approval)
+- Root: `README.md`, `agents.md`, `.github/`, `.gitignore`, `.prettierrc.cjs`, `.prettierignore`, `.editorconfig`, `.devcontainer/`  
+- Env templates: `apps/web/.env.example`, root `.env.example` (only append **commented** examples; don’t change defaults)  
+- Tests/fixtures: `tests/`, `dummy-documents/` (never delete)  
+- Docs baseline: `docs/` (except via a “docs/sync-*” branch)
+
+## 🗂 Version History
+- v1.1 — 2025-09-16: Added change management, do-not-touch list, GPT-5-Codex default.

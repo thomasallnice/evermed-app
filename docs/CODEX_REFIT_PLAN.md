@@ -180,7 +180,8 @@ model DocChunk {
   documentId  String
   chunkId     Int
   text        String
-  embedding   Bytes    // pgvector (store as bytea via Prisma)
+  // Store embeddings with pgvector; Prisma maps it as an unsupported type.
+  embedding   Unsupported("vector")? // vector(1536) via raw SQL migration
   createdAt   DateTime @default(now())
 
   document    Document @relation(fields: [documentId], references: [id])
@@ -241,6 +242,9 @@ with check (exists (select 1 from "Person" p where p.id = personId and p.ownerId
 - Thumbnails generated into thumbnails with the same access model.
     
 
+**Dev note (uploads & RLS):** 
+
+In dev/test we use `x-user-id` headers and `/api/uploads` uses the **service-role** Supabase client to bypass RLS, so uploads work without Supabase Auth. Replace with Supabase Auth + RLS when login/signup is wired. (CI still enforces RLS semantics in tests.) 
 ---
 
 ## **4) API Contract (must exist when PR closes)**
@@ -285,6 +289,8 @@ model.token_usage
 - **Embeddings:** provider configurable (EMBEDDINGS_PROVIDER), default OpenAI. Index to DocChunk with pgvector.
     
 - **OCR:** implement workers/ocr.ts with a provider interface; default to local Tesseract (WASM or container) _or_ stub with a TODO flag. Route via background function to avoid blocking UI.
+
+- **Cloud Run extractor (PDF/OCR):** Explain/RAG/OCR can call a Cloud Run service using `PDF_EXTRACT_URL`, `PDF_EXTRACT_BEARER`, `PDF_EXTRACT_TIMEOUT_MS`, `PDF_MAX_BYTES`, and `PDF_USE_PDFJS_FALLBACK`. Uploads may pre-fill `DocChunk` text via this extractor; the local OCR worker remains for anchors. 
     
 
 ---
