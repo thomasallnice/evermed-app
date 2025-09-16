@@ -54,6 +54,7 @@ Whenever code, schema, CI, or process change, update this file.
   - what schema/data change,  
   - what CI or secret implications,  
   - what docs were updated.
+- Guard files (`docs/CODEX_START_PROMPT.txt`, `scripts/smoke-e2e.sh`, `docs/BOOTSTRAP_PROMPT.md`, `AGENTS.md`) must remain tracked and up to date.
 
 ---
 
@@ -63,6 +64,18 @@ Whenever code, schema, CI, or process change, update this file.
 - No image grading or automated interpretations.  
 - All outputs must include provenance (e.g. citations with `DocChunk.sourceAnchor`) when relevant.  
 - Auth must be enforced for user/owner access.
+- Never delete or rename guard files. Never delete any file without an explicit `ALLOW_DELETIONS` instruction in the user prompt; call out deletions in the dry-run.
+
+---
+
+## 🔒 Guard Files
+
+- `docs/CODEX_START_PROMPT.txt`
+- `scripts/smoke-e2e.sh`
+- `docs/BOOTSTRAP_PROMPT.md`
+- `AGENTS.md`
+
+Any change to these files must be intentional and documented; do not remove them.
 
 ---
 

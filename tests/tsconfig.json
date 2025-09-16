@@ -5,7 +5,8 @@
     "noImplicitAny": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["../apps/web/src/*"]
+      "@/*": ["../apps/web/src/*"],
+      "@/lib/*": ["../apps/web/src/lib/*"]
     }
   },
   "include": ["**/*.ts","**/*.tsx"]

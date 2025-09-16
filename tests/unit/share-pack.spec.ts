@@ -44,13 +44,12 @@ describe.runIf(hasDb)('Share Pack API', () => {
     const doc = await prisma.document.create({ data: { personId: person.id, kind: 'pdf', filename: 't.pdf', storagePath: 'documents/t.pdf', sha256: 'x' } });
 
     const { POST } = await import('../../apps/web/src/app/api/share-packs/route');
-    const res = await POST(
-      new Request('http://localhost/api/share-packs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ personId: person.id, title: 'Visit', audience: 'clinician', items: [doc.id], passcode: '1234', expiryDays: 7 }),
-      }) as unknown as NextRequest,
-    );
+    const request = new Request('http://localhost/api/share-packs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-user-id': 'userA' },
+      body: JSON.stringify({ personId: person.id, title: 'Visit', audience: 'clinician', items: [doc.id], passcode: '1234', expiryDays: 7 }),
+    }) as unknown as NextRequest;
+    const res = await POST(request);
     const json = await (res as Response).json();
     expect(Array.isArray(json.documents)).toBe(true);
     expect(json.documents).toHaveLength(1);

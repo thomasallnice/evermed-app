@@ -7,6 +7,9 @@
     "packages/*"
   ],
   "scripts": {
+    "clean:next": "node -e \"try{require('fs').rmSync('apps/web/.next',{recursive:true,force:true});}catch(e){}\"",
+    "predev": "npm run clean:next",
+    "prebuild": "npm run clean:next",
     "build": "npm run -w @evermed/web build",
     "dev": "npm run -w @evermed/web dev",
     "lint": "npm run -w @evermed/web lint:ci",
@@ -23,8 +26,11 @@
   "devDependencies": {
     "@prisma/client": "^5.19.1",
     "prisma": "^5.19.1",
+    "tsx": "^4.17.0",
     "typescript": "^5.5.4",
-    "vitest": "^2.0.5",
-    "tsx": "^4.17.0"
+    "vitest": "^2.0.5"
+  },
+  "dependencies": {
+    "@supabase/auth-helpers-nextjs": "^0.10.0"
   }
 }
