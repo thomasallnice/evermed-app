@@ -61,23 +61,19 @@ echo "[upload] DocumentId: $DOC_ID"
 
 # ---------- Document signed URL ----------
 DOC_RAW=$(curl -s -w "\n%{http_code}" "$API/api/documents/${DOC_ID}" -H "x-user-id: $OWNER_ID")
-DOC_BODY=$(printf '%s' "$DOC_RAW" | head -n -1)
 DOC_STATUS=$(printf '%s' "$DOC_RAW" | tail -n 1)
-PARSE_OK=0
-if echo "$DOC_BODY" | jq .; then
-  PARSE_OK=1
-else
+DOC_BODY=$(printf '%s' "$DOC_RAW" | sed '$d')
+
+if ! echo "$DOC_BODY" | jq . 2>/dev/null; then
   echo "[doc] non-JSON response: $DOC_BODY"
 fi
+
 if [ "$DOC_STATUS" -ne 200 ]; then
   echo "[doc] ERROR: /api/documents returned HTTP $DOC_STATUS"
   exit 1
 fi
-if [ "$PARSE_OK" -ne 1 ]; then
-  echo "[doc] missing signedUrl (unexpected body format)"
-  exit 1
-fi
-SIGNED_URL=$(echo "$DOC_BODY" | jq -r '.signedUrl // empty')
+
+SIGNED_URL=$(echo "$DOC_BODY" | jq -r '.signedUrl // empty' 2>/dev/null || echo '')
 [ -z "$SIGNED_URL" -o "$SIGNED_URL" = "null" ] && { echo "[doc] missing signedUrl (forbidden or config?)"; exit 1; }
 echo "[doc] signedUrl ok"
 
