@@ -66,11 +66,14 @@ NEXT_PUBLIC_REGION=eu
 ```
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
-OPENAI_API_KEY=             # used via server-only routes; PHI-safe usage only
-EMBEDDINGS_PROVIDER=openai  # or local
-EMBEDDINGS_MODEL=text-embedding-3-large
-VECTOR_DIM=1536
-SHARE_LINK_PEPPER=          # random base64; used with Argon2id
+OPENAI_API_KEY=             # embeddings + chat retrieval
+OPENAI_BASE_URL=            # optional override
+EMBEDDINGS_MODEL=text-embedding-3-small
+PDF_EXTRACT_URL=
+PDF_EXTRACT_BEARER=
+PDF_EXTRACT_TIMEOUT_MS=20000
+PDF_MAX_BYTES=25000000
+SHARE_LINK_PEPPER=          # random base64; used with scrypt(SHARE_LINK_PEPPER+passcode)
 ENCRYPTION_KEY=             # 32-byte base64 (for at-rest sensitive fields if needed)
 SENTRY_DSN=
 OTEL_EXPORTER_OTLP_ENDPOINT=
@@ -280,11 +283,11 @@ model.token_usage
 
 ## **5) LLM & OCR Integration (pluggable, but ship defaults)**
 
-- **Explain/Ask:** single default model (configured via env). Enforce **citations required**. Refuse banned topics. Use refusal/escalation copy from `/apps/web/src/lib/copy.ts`.
+- **Explain/Ask:** single default model (configured via env). Enforce **citations required**. Refuse banned topics. Use refusal/escalation copy from `/apps/web/src/lib/copy.ts`. Retrieval uses `DocChunk.embedding` (pgvector semantic search); fall back to recent chunks if embeddings missing.
     
 - **Embeddings:** provider configurable (EMBEDDINGS_PROVIDER), default OpenAI. Index to DocChunk with pgvector.
     
-- **OCR:** implement workers/ocr.ts with a provider interface; default to local Tesseract (WASM or container) _or_ stub with a TODO flag. Route via background function to avoid blocking UI.
+- **OCR:** Uploads stream file bytes to the Cloud Run extractor (`PDF_EXTRACT_URL`); results are chunked into `DocChunk` rows and embedded for retrieval. Failures/timeouts log warnings but do not block the upload.
     
 
 ---
@@ -306,7 +309,7 @@ Implement **starter cards** on Home + composer quick actions:
     
 - Defaults: passcode required, 7-day expiry, view logs, one-tap revoke
     
-- Public view page: shows only included items; never the vault
+- Public view page: shows only selected documents **and** observations (with trend snippets and signed URLs); never the vault
     
 
 ---
@@ -424,7 +427,29 @@ Data source: AnalyticsEvent, TokenUsage, derived SQL views. Strictly **no PHI** 
 
 ---
 
-## **11) Copy & Disclaimers (extract into** 
+## **11) Allowed Auto-Clean Paths**
+
+- Codex may delete files inside these folders without additional approval to keep the repo tidy:
+  - `docs/app-legacy/*` (old docs, archives, troubleshooting)
+  - `apps/workers/extractor/pdf-extractor/*` (legacy local extractor)
+  - `archive/*` (if exists)
+- All planned deletions must still be called out separately in the dry-run changeset before execution and require an explicit `ALLOW_DELETIONS` directive for any other path.
+- Guard files listed in §12 must never be deleted or renamed.
+
+---
+
+## **12) Permanent Guard Files**
+
+- `docs/CODEX_START_PROMPT.txt`
+- `scripts/smoke-e2e.sh`
+- `docs/BOOTSTRAP_PROMPT.md`
+- `AGENTS.md`
+
+Any change to these files must be called out explicitly in the dry-run and PR notes; they cannot be removed without owner approval.
+
+---
+
+## **13) Copy & Disclaimers (extract into** 
 
 ## **/apps/web/lib/copy.ts**
 
@@ -439,7 +464,26 @@ Data source: AnalyticsEvent, TokenUsage, derived SQL views. Strictly **no PHI** 
 
 ---
 
-## **12) Open Questions (leave TODOs, don’t block MVP)**
+## **14) Next Steps after PR #10**
+
+- Deploy current stack (uploads + OCR + embeddings + semantic retrieval + share packs) to **staging** (Supabase + Vercel) and run the smoke script.
+- Promote to **production** once staging smoke passes; enable monitoring/alerting on both environments.
+- UI polish: upload, vault, chat, trends, share-pack viewer/onboarding.
+- Real-life pilot/dogfooding with trusted users; collect feedback and metrics.
+- PR #11 — User Onboarding & Auth: Supabase Auth, onboarding wizard, invites, RLS updates.
+
+---
+
+## **15) Recommended Tests & Workflows**
+
+- End-to-end UI coverage (Playwright/Cypress) for auth → upload → explain/chat → trends → share/revoke.
+- Load testing for large PDFs and concurrent uploads/OCR jobs.
+- Security review: passcode hashing, Supabase RLS, signed URLs, revocation flows.
+- Monitoring & alerting for staging/prod (Supabase logs, Vercel analytics, latency/error dashboards).
+
+---
+
+## **16) Open Questions (leave TODOs, don’t block MVP)**
 
 - OCR provider final choice (local vs vendor with BAA).
     

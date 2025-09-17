@@ -7,6 +7,8 @@ alter table "Observation"   enable row level security;
 alter table "SharePack"     enable row level security;
 alter table "SharePackItem" enable row level security;
 alter table "ShareEvent"    enable row level security;
+alter table "ChatMessage"   enable row level security;
+alter table "storage"."objects" enable row level security;
 
 -- Apply policies only if auth.uid() exists (Supabase)
 DO $$
@@ -30,6 +32,8 @@ BEGIN
     CREATE POLICY IF NOT EXISTS doc_owner_mod ON "Document"
       FOR ALL USING (EXISTS (SELECT 1 FROM "Person" p WHERE p.id = "Document".personId AND p.ownerId = auth.uid()))
       WITH CHECK (EXISTS (SELECT 1 FROM "Person" p WHERE p.id = "Document".personId AND p.ownerId = auth.uid()));
+    CREATE POLICY IF NOT EXISTS doc_owner_insert ON "Document"
+      FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "Person" p WHERE p.id = "Document".personId AND p.ownerId = auth.uid()));
 
     -- Observation: via owning Person
     CREATE POLICY IF NOT EXISTS obs_owner_select ON "Observation"
@@ -75,9 +79,24 @@ BEGIN
           WHERE sp.id = "ShareEvent".packId AND p.ownerId = auth.uid()
         )
       );
+
+    -- ChatMessage: user-owned
+    CREATE POLICY IF NOT EXISTS chat_owner_select ON "ChatMessage"
+      FOR SELECT USING ("userId" = auth.uid());
+    CREATE POLICY IF NOT EXISTS chat_owner_insert ON "ChatMessage"
+      FOR INSERT WITH CHECK ("userId" = auth.uid());
+    CREATE POLICY IF NOT EXISTS chat_owner_mod ON "ChatMessage"
+      FOR ALL USING ("userId" = auth.uid()) WITH CHECK ("userId" = auth.uid());
+
+    -- Storage objects: bucket path `documents/<ownerId>/...`
+    CREATE POLICY IF NOT EXISTS storage_documents_manage ON "storage"."objects"
+      FOR ALL USING (
+        bucket_id = 'documents' AND split_part(name, '/', 1) = auth.uid()::text
+      ) WITH CHECK (
+        bucket_id = 'documents' AND split_part(name, '/', 1) = auth.uid()::text
+      );
   ELSE
     RAISE NOTICE 'auth.uid() missing; skipping policy creation (non-Supabase environment)';
   END IF;
 END
 $$;
-

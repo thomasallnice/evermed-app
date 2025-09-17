@@ -34,15 +34,15 @@ export default function Nav() {
             <>
               <span className="text-neutral-600">{email}</span>
               <form action="/" onSubmit={async (e) => {
-                e.preventDefault(); await getSupabase().auth.signOut(); window.location.href = '/login'
+                e.preventDefault(); await getSupabase().auth.signOut(); window.location.href = '/auth/login'
               }}>
                 <button type="submit">Logout</button>
               </form>
             </>
           ) : (
             <>
-              <a href="/login">Login</a>
-              <a href="/signup">Sign up</a>
+              <a href="/auth/login">Login</a>
+              <a href="/auth/signup">Sign up</a>
             </>
           )}
         </nav>
@@ -68,8 +68,8 @@ export default function Nav() {
               </>
             ) : (
               <>
-                <a href="/login" onClick={() => setOpen(false)}>Login</a>
-                <a href="/signup" onClick={() => setOpen(false)}>Sign up</a>
+                <a href="/auth/login" onClick={() => setOpen(false)}>Login</a>
+                <a href="/auth/signup" onClick={() => setOpen(false)}>Sign up</a>
               </>
             )}
           </div>

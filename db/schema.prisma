@@ -100,17 +100,30 @@ model ShareEvent {
 }
 
 model DocChunk {
-  id          String   @id @default(uuid())
-  documentId  String
-  chunkId     Int
-  text        String
-  // embedding remains Unsupported("vector") via raw SQL migration
+  id           String   @id @default(uuid())
+  documentId   String
+  chunkId      Int
+  text         String
   sourceAnchor String?
-  createdAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+  embedding    Unsupported("vector")?
 
-  document    Document @relation(fields: [documentId], references: [id])
+  document Document @relation(fields: [documentId], references: [id])
 
   @@unique([documentId, chunkId])
+}
+
+model ChatMessage {
+  id         String   @id @default(uuid())
+  userId     String
+  role       String
+  content    String
+  documentId String?
+  createdAt  DateTime @default(now())
+
+  document Document? @relation(fields: [documentId], references: [id])
+
+  @@index([userId, createdAt])
 }
 
 model TokenUsage {
