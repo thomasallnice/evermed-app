@@ -7,3 +7,4 @@ Then do a DRY-RUN (no writes):
 - Print the planned changeset (files to add/edit/delete, grouped by path).
 
 Stop after opening your PR and printing the PR link + summary.
+Current target: PR12 — UI polish + staging deploy readiness.

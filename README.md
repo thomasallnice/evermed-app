@@ -12,13 +12,6 @@ Monorepo aligned with `docs/CODEX_REFIT_PLAN.md`.
 - `docs` — product spec, refit notes, ground truth
 - `tests` — Vitest unit suites and fixtures (non-PHI)
 
-## Features (PR #10 stack)
-
-- Uploads stream files to Supabase Storage, run Cloud Run OCR, chunk text into `DocChunk`, and embed via OpenAI (pgvector backed).
-- Chat `/api/chat` performs semantic retrieval with citations and guardrails.
-- Trends page surfaces lab timelines, trend snippets, and related context.
-- Share Packs bundle selected documents **and** observations with passcode, logs, revoke, and signed-viewer URLs.
-- Smoke script (`./scripts/smoke-e2e.sh`) exercises upload → signed URL → share pack flow.
 
 ## Quick Start (local)
 
@@ -47,11 +40,16 @@ Smoke test (optional)
 ./scripts/smoke-e2e.sh
 ```
 
-## Deployment & Testing
+## Deployment & Staging (PR12)
+- Deploy backend on Vercel with Supabase staging project.
+- Required env vars listed in `.env.local` and Vercel settings.
+- Run `./scripts/smoke-e2e.sh --auth` after deploy to validate.
 
-- Deploy Supabase migrations (`prisma migrate deploy`) and Vercel project (set env vars: Supabase keys, OCR envs, `OPENAI_API_KEY`).
-- After each deploy run `./scripts/smoke-e2e.sh` against the environment to validate upload → share.
-- Recommended suites: Playwright/Cypress E2E (auth → upload → share), load tests (large PDFs/concurrency), security review (RLS, passcodes, signed URLs, revocation), monitoring/alerting setup.
+## UI Polish
+- Upload page: previews & OCR text snippet.
+- Vault: doc list with metadata.
+- Trends: polished charts, mobile-friendly.
+- Share Pack viewer: styled, responsive, includes disclaimers.
 
 ### Troubleshooting
 
@@ -59,6 +57,8 @@ Smoke test (optional)
 - If uploads fail with Supabase RLS errors, re-apply policies (`db/policies.sql`) and confirm documents/storage policies reference `auth.uid()`.
 - If chat responds with OpenAI errors, ensure `OPENAI_API_KEY` is set in `.env.local` or deployment env vars.
 - If OCR returns blank text, confirm `PDF_EXTRACT_URL` / `PDF_EXTRACT_BEARER` are configured and `/apps/web/src/lib/ocr.ts` exists.
+- If lint fails: run `npm run clean:next`.
+- If `/api/chat` fails: ensure `OPENAI_API_KEY` is set.
 
 ## CI
 

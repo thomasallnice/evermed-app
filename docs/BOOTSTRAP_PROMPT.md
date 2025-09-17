@@ -67,24 +67,26 @@ When this prompt runs, **first output** a short report:
 
 ## Tasks Codex Should Execute Next (in any fresh chat)
 
-1. **Read** the three Ground Truth docs and restate the **10-point Working Contract**.
-    
-2. **Print Repo & Branch Health** (see above).
-    
-3. **If PR #2.1 is not open:**
-    
-    - `git checkout refit/mvp-skeleton && git pull`
-        
-    - `git checkout -b refit/supabase-cloud-refit`
-        
-    - Apply Supabase Cloud refit (remove local DB artifacts; simplify `.env.example`; update CI to use `SUPABASE_DB_URL`; adjust tests; update docs).
-        
-    - Open PR: **“PR #2.1 — Supabase Cloud refit”** with base = `refit/mvp-skeleton`.
-        
-4. **Pause** (do **not** start PR #3) until review is complete.
+1. **Read** the Ground Truth docs (`CODEX_REFIT_PLAN.md`, `project-description.md`, `README.md`, `agents.md`, `BOOTSTRAP_PROMPT.md`) and restate the **Working Contract**.
 
-- Keep guard files intact: `docs/CODEX_START_PROMPT.txt`, `scripts/smoke-e2e.sh`, `docs/BOOTSTRAP_PROMPT.md`, `AGENTS.md`.
-- Run `./scripts/smoke-e2e.sh` as the end-to-end smoke when verifying uploads/share packs.
+2. **Print Repo & Branch Health** (branch, envs, guard files, CI status).
+
+3. **Plan PR #12 — UI Polish & Staging Deploy Readiness**:
+   - Propose dry-run changeset only.
+   - Goals: staging/prod deploy instructions, smoke script `--auth` mode, CI clean/lint/test, UI polish for Upload, Vault, Trends, and Share Pack.
+   - Update docs with deployment/testing workflows.
+   - Stop after dry-run until “CHANGES APPROVED”.
+
+4. **Guard files must never be deleted**:
+   - `docs/CODEX_START_PROMPT.txt`
+   - `scripts/smoke-e2e.sh`
+   - `docs/BOOTSTRAP_PROMPT.md`
+   - `docs/CODEX_REFIT_PLAN.md`
+   - `docs/project-description.md`
+   - `agents.md`
+   - `README.md`
+
+5. **Use `./scripts/smoke-e2e.sh`** (with optional `--auth`) as the end-to-end smoke test.
     
 
 ## Testing & CI Expectations

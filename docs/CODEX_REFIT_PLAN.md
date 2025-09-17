@@ -472,6 +472,18 @@ Any change to these files must be called out explicitly in the dry-run and PR no
 - Real-life pilot/dogfooding with trusted users; collect feedback and metrics.
 - PR #11 — User Onboarding & Auth: Supabase Auth, onboarding wizard, invites, RLS updates.
 
+## PR12 — UI Polish & Staging Deploy Readiness
+Goals:
+- Prepare staging and production deploy (Vercel + Supabase).
+- Ensure smoke script runs with real auth sessions (`--auth` mode).
+- Add CI steps: clean build, lint, smoke, Playwright login/upload/share test.
+- Polish UI:
+  - Upload page → show previews & OCR text snippets.
+  - Vault → list uploaded docs with metadata.
+  - Trends → cleaner charts, better mobile layout.
+  - Share Pack viewer → responsive, styled, clear disclaimers.
+  - Monitoring/alerting plan for staging/prod.
+
 ---
 
 ## **15) Recommended Tests & Workflows**
