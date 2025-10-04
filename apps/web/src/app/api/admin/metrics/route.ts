@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, AnalyticsEvent, TokenUsage } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 export const runtime = 'nodejs';
 
@@ -39,9 +39,9 @@ type Tiles = {
 async function computeTiles(days: number): Promise<Tiles> {
   const now = new Date();
   const since = new Date(now.getTime() - days * 24 * 3600 * 1000);
-  const ev: AnalyticsEvent[] = await prisma.analyticsEvent.findMany({ where: { createdAt: { gte: since } } });
+  const ev = await prisma.analyticsEvent.findMany({ where: { createdAt: { gte: since } } });
 
-  const byUser = new Map<string, AnalyticsEvent[]>();
+  const byUser = new Map<string, (typeof ev)[number][]>();
   for (const e of ev) {
     const uid = String(e.userId || '');
     if (!byUser.has(uid)) byUser.set(uid, []);
@@ -119,7 +119,7 @@ async function computeTiles(days: number): Promise<Tiles> {
   const avgPagesPerDoc: number | null = null;
 
   // Tokens/Costs aggregation
-  const tus: TokenUsage[] = await prisma.tokenUsage.findMany({ where: { createdAt: { gte: since } } });
+  const tus = await prisma.tokenUsage.findMany({ where: { createdAt: { gte: since } } });
   const tokensMap = new Map<string, { feature: string; model: string; tokensIn: number; tokensOut: number; costUsd: number }>();
   for (const t of tus) {
     const k = `${t.feature}|${t.model}`;

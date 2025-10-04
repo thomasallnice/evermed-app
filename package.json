@@ -23,9 +23,9 @@
     "db:policies": "node -e \"console.log('Apply db/policies.sql on Supabase (SQL editor) — extensions enabled by project')\"",
     "seed": "tsx db/seed.ts",
     "deploy:staging": "node scripts/deploy-db.js staging",
-    "deploy:production": "node scripts/deploy-db.js production"
+    "deploy:production": "node scripts/deploy-db.js production",
+    "postinstall": "prisma generate --schema=db/schema.prisma"
   },
-  "postinstall": "prisma generate --schema=db/schema.prisma",
   "devDependencies": {
     "@prisma/client": "^5.19.1",
     "dotenv": "^17.2.3",
