@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireUserId } from '@/lib/auth'
 export const runtime = 'nodejs'
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY
@@ -25,6 +26,9 @@ function withTimeout(p: Promise<Response>, ms: number) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth check
+    const userId = await requireUserId(req)
+
     const { documentId, text, fileUrl } = await req.json()
 
     // Resolve content if only documentId provided
@@ -174,17 +178,41 @@ export async function POST(req: NextRequest) {
             additionalProperties: false,
             properties: {
               title: { type: 'string' },
-              key_points: { type: 'array', items: { type: 'string' }, minItems: 1 },
-              risks: { type: 'array', items: { type: 'string' } },
-              next_steps: { type: 'array', items: { type: 'string' } }
+              key_points: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 3 },
+              questions_for_clinician: { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 3 },
+              what_to_watch: { type: 'array', items: { type: 'string' } },
+              sources: { type: 'array', items: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                  reference: { type: 'string' },
+                  section: { type: 'string' }
+                },
+                required: ['reference']
+              } },
+              disclaimer: { type: 'string' }
             },
-            required: ['title','key_points']
+            required: ['title', 'key_points', 'questions_for_clinician', 'what_to_watch', 'disclaimer']
           },
           strict: true
         }
         const body = {
           model: OPENAI_MODEL,
-          input: `Summarize the following medical text into the required fields. Keep it concise.\n\n${textIn.slice(0, 12000)}`,
+          input: `You are a medical preparation assistant helping patients understand their health records in plain language.
+
+Analyze the following medical text and provide a structured summary with these fields:
+
+1. title: One sentence describing what this document is (e.g., "CBC from Mar 5, 2025")
+2. key_points: Up to 3 key findings with direction + plain-English significance (e.g., "Hemoglobin slightly low (11.2 g/dL) - may cause fatigue")
+3. questions_for_clinician: 2-3 specific questions the patient should ask their doctor based on these results
+4. what_to_watch: Specific thresholds or time windows to monitor (e.g., "If fever exceeds 38.5°C within 48 hours", "Monitor blood pressure - contact doctor if >140/90")
+5. sources: Document references with specific page/section anchors when possible (e.g., "Page 2, Lab Results section")
+6. disclaimer: Short, human-friendly disclaimer (reference that this is for preparation, not diagnosis, and to seek care if urgent)
+
+Keep language clear and accessible. Avoid medical jargon where possible. Focus on actionable information.
+
+Medical text:
+${textIn.slice(0, 12000)}`,
           response_format: { type: 'json_schema', json_schema: schema },
           reasoning: { effort: 'minimal' },
           text: { verbosity: 'low' }
@@ -230,9 +258,19 @@ export async function POST(req: NextRequest) {
           }
         }
         if (!structured) return { summary: '', structured: null as any }
-        let sum = `${structured.title}\n\n- ${Array.isArray(structured.key_points) ? structured.key_points.join('\n- ') : ''}`
-        if (Array.isArray(structured.risks) && structured.risks.length) sum += `\n\nRisks:\n- ${structured.risks.join('\n- ')}`
-        if (Array.isArray(structured.next_steps) && structured.next_steps.length) sum += `\n\nNext steps:\n- ${structured.next_steps.join('\n- ')}`
+        let sum = `${structured.title}\n\n**Key Findings:**\n- ${Array.isArray(structured.key_points) ? structured.key_points.join('\n- ') : ''}`
+        if (Array.isArray(structured.questions_for_clinician) && structured.questions_for_clinician.length) {
+          sum += `\n\n**Questions for Your Clinician:**\n- ${structured.questions_for_clinician.join('\n- ')}`
+        }
+        if (Array.isArray(structured.what_to_watch) && structured.what_to_watch.length) {
+          sum += `\n\n**What to Watch:**\n- ${structured.what_to_watch.join('\n- ')}`
+        }
+        if (Array.isArray(structured.sources) && structured.sources.length) {
+          sum += `\n\n**Sources:**\n- ${structured.sources.map((s: any) => s.section ? `${s.reference} (${s.section})` : s.reference).join('\n- ')}`
+        }
+        if (structured.disclaimer) {
+          sum += `\n\n**Note:** ${structured.disclaimer}`
+        }
         return { summary: sum, structured }
       }
       const extractFactsFromText = async (textIn: string) => {
@@ -466,12 +504,13 @@ export async function POST(req: NextRequest) {
         if (structured) record.structured_json = structured
         await admin.from('summaries').upsert(record, { onConflict: 'document_id' })
         // Extract & save facts for text/PDF documents when we have text
-        try {
-          if (user_id && resolvedText && typeof resolvedText === 'string') {
-            const facts = await extractFactsFromText(resolvedText)
-            if (facts) await admin.from('doc_facts').upsert({ user_id, document_id: documentId, facts, model: OPENAI_MODEL, kind: (doc as any)?.file_type?.startsWith('application/pdf') ? 'pdf' : 'text' }, { onConflict: 'user_id,document_id' })
-          }
-        } catch {}
+        // TODO: Implement extractFactsFromText function
+        // try {
+        //   if (user_id && resolvedText && typeof resolvedText === 'string') {
+        //     const facts = await extractFactsFromText(resolvedText)
+        //     if (facts) await admin.from('doc_facts').upsert({ user_id, document_id: documentId, facts, model: OPENAI_MODEL, kind: (doc as any)?.file_type?.startsWith('application/pdf') ? 'pdf' : 'text' }, { onConflict: 'user_id,document_id' })
+        //   }
+        // } catch {}
       }
     }
 

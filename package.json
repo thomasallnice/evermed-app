@@ -10,7 +10,7 @@
     "clean:next": "node -e \"const fs=require('fs');['.next','apps/web/.next'].forEach(p=>{try{fs.rmSync(p,{recursive:true,force:true});}catch{}});\"",
     "predev": "npm run clean:next",
     "prebuild": "npm run clean:next",
-    "build": "npm run -w @evermed/web build",
+    "build": "npm run build --workspace=@evermed/web",
     "dev": "npm run -w @evermed/web dev",
     "lint": "npm run -w @evermed/web lint:ci",
     "typecheck": "tsc -p tests/tsconfig.json --noEmit",
@@ -21,16 +21,21 @@
     "prisma:migrate:deploy": "prisma migrate deploy --schema=db/schema.prisma",
     "prisma:format": "prisma format --schema=db/schema.prisma",
     "db:policies": "node -e \"console.log('Apply db/policies.sql on Supabase (SQL editor) — extensions enabled by project')\"",
-    "seed": "tsx db/seed.ts"
+    "seed": "tsx db/seed.ts",
+    "deploy:staging": "node scripts/deploy-db.js staging",
+    "deploy:production": "node scripts/deploy-db.js production"
   },
+  "postinstall": "prisma generate --schema=db/schema.prisma",
   "devDependencies": {
     "@prisma/client": "^5.19.1",
+    "dotenv": "^17.2.3",
     "prisma": "^5.19.1",
     "tsx": "^4.17.0",
     "typescript": "^5.5.4",
     "vitest": "^2.0.5"
   },
   "dependencies": {
-    "@supabase/auth-helpers-nextjs": "^0.10.0"
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "openai": "^4.104.0"
   }
 }

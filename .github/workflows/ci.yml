@@ -33,12 +33,26 @@ jobs:
         run: npm run lint --if-present
       - name: Typecheck
         run: npm run typecheck --if-present
-      - name: Build
-        run: npm run build --if-present
       - name: Unit tests
         env:
           SUPABASE_DB_URL: ${{ env.SUPABASE_DB_URL }}
           DATABASE_URL: ${{ env.SUPABASE_DB_URL }}
         run: npm run test --if-present
+      - name: Monorepo build
+        run: npm run build
       - name: E2E (placeholder)
         run: npm run e2e --if-present
+      - name: Codex review QA
+        env:
+          SUPABASE_DB_URL: ${{ env.SUPABASE_DB_URL }}
+          DATABASE_URL: ${{ env.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          npm run lint --if-present
+          npm run typecheck --if-present
+          npm run test --if-present
+          if [ -n "${SUPABASE_DB_URL:-}" ]; then
+            ./scripts/smoke-e2e.sh
+          else
+            echo "[codex-qa] SUPABASE_DB_URL not set – skipping smoke script"
+          fi

@@ -99,7 +99,7 @@ async function computeTiles(days: number): Promise<Tiles> {
   const p0 = incidents.filter((x) => String(((x.meta ?? {}) as any)?.severity || '').toUpperCase() === 'P0').length;
   const p1 = incidents.filter((x) => String(((x.meta ?? {}) as any)?.severity || '').toUpperCase() === 'P1').length;
   const answers = ev.filter((x) => x.name === 'answer_generated');
-  const noCite = answers.filter((x) => !Boolean(((x.meta ?? {}) as any)?.citations));
+  const noCite = answers.filter((x) => !(((x.meta ?? {}) as any)?.citations));
   const noCitationPct = pct(noCite.length, answers.length || 0);
 
   // Latency: p95 of latency_ms meta.ms

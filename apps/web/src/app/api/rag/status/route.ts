@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireUserId } from '@/lib/auth'
 
 export async function GET(req: NextRequest) {
   try {
+    // Auth check
+    const userId = await requireUserId(req)
+
     const documentId = req.nextUrl.searchParams.get('documentId')
     if (!documentId) return NextResponse.json({ error: 'documentId required' }, { status: 400 })
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL

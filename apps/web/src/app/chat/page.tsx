@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { visit } from 'unist-util-visit'
 import { getSupabase } from '@/lib/supabase/client'
+import { MEDICAL_DISCLAIMER } from '@/lib/copy'
 
 type Msg = { role: 'user' | 'assistant'; content: string; attachment?: { id?: string; url: string; type: string; name: string } }
 
@@ -87,6 +88,7 @@ export default function ChatPage() {
   const [profileToast, setProfileToast] = useState<{ text: string; previous: any } | null>(null)
   const [pendingAttach, setPendingAttach] = useState<{ id: string; file_name: string; file_type: string; signedUrl: string } | null>(null)
   const [optsOpen, setOptsOpen] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<{ state: 'uploading' | 'summarizing' | 'indexing' | null; fileName: string } | null>(null)
 
   useEffect(() => {
     ;(async () => {
@@ -308,11 +310,54 @@ export default function ChatPage() {
   }, [])
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-120px)] md:h-[calc(100vh-140px)]">
-      <div className="mb-1"><h1 className="text-2xl font-semibold">AI Chat</h1></div>
-      <div ref={scrollRef} className="flex-1 overflow-auto border rounded-md bg-white">
-        <div className="p-2 sm:p-3 space-y-4">
-          {messages.length === 0 && <p className="text-neutral-600">Ask about your documents, medications, or conditions.</p>}
+    <div className="flex flex-col h-[calc(100dvh-120px)] md:h-[calc(100vh-140px)] bg-gray-50">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Chat</h1>
+      </div>
+
+      {/* Messages Container */}
+      <div ref={scrollRef} className="flex-1 overflow-auto bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="p-4 sm:p-6 space-y-4">
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center min-h-[400px] px-4 py-12 text-center">
+              <div className="mb-8">
+                <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-blue-50 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">Start a conversation</h2>
+                <p className="text-sm text-gray-600 max-w-md mx-auto leading-relaxed">
+                  Ask questions about your medical documents, medications, or general health information.
+                </p>
+              </div>
+
+              <div className="w-full max-w-xl mb-8">
+                <div className="bg-white border border-gray-200 rounded-lg p-5 text-left shadow-sm">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">What you can ask:</h3>
+                  <ul className="text-sm text-gray-700 space-y-2">
+                    <li className="flex items-start">
+                      <span className="text-blue-600 mr-2">•</span>
+                      <span>Questions about your uploaded medical documents</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-blue-600 mr-2">•</span>
+                      <span>Information about medications and interactions</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-blue-600 mr-2">•</span>
+                      <span>Help understanding medical terminology</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="text-sm text-gray-500">
+                <p>Type your question below or upload a document to get started</p>
+              </div>
+            </div>
+          )}
           {messages.map((m, i) => {
             if (m.role === 'user') {
               if (m.attachment) {
@@ -320,15 +365,15 @@ export default function ChatPage() {
                 const isImg = att.type?.startsWith('image/')
                 return (
                   <div key={i} className="flex justify-end">
-                    <div className="max-w-[80%] rounded-2xl px-3 py-2 bg-neutral-900 text-white">
+                    <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-gray-100 shadow-sm">
                       {m.content?.trim() && (
-                        <div className="mb-2 whitespace-pre-wrap">{m.content}</div>
+                        <div className="mb-2 whitespace-pre-wrap text-gray-900">{m.content}</div>
                       )}
-                      <div className="text-xs mb-1 opacity-80">{att.name}</div>
+                      <div className="text-xs mb-1 text-gray-600 font-medium">{att.name}</div>
                       {isImg ? (
-                        <img src={att.url} alt={att.name} className="max-h-40 rounded" />
+                        <img src={att.url} alt={att.name} className="max-h-40 rounded-lg border border-gray-200" />
                       ) : (
-                        <a href={att.url} target="_blank" rel="noreferrer" className="underline">Open</a>
+                        <a href={att.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-700 text-sm font-medium underline">Open</a>
                       )}
                     </div>
                   </div>
@@ -336,7 +381,7 @@ export default function ChatPage() {
               }
               return (
                 <div key={i} className="flex justify-end">
-                  <div className="max-w-[80%] rounded-2xl px-4 py-2 bg-neutral-900 text-white">{m.content}</div>
+                  <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-gray-100 shadow-sm text-gray-900">{m.content}</div>
                 </div>
               )
             }
@@ -352,164 +397,272 @@ export default function ChatPage() {
             })()
             const block = (
               <div className="flex">
-                <div className="prose prose-neutral max-w-none">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm, remarkCitations as any]}
-                    components={{
-                      sup({node, children, ...props}: any) {
-                        const cls = String(props.className || '')
-                        if (!cls.includes('citation')) return <sup {...props}>{children}</sup>
-                        const raw = String(children?.[0] || '')
-                        const m = raw.match(/\[(\d+)\]/)
-                        const num = m ? Number(m[1]) : undefined
-                        const target = (cited || []).find((s) => Number(s.i) === num)?.docId
-                        if (target) return <a href={`/doc/${target}#c${num}`} className="citation-link"><sup {...props}>{children}</sup></a>
-                        return <sup {...props}>{children}</sup>
-                      },
-                      // @ts-ignore simplify types for custom code renderer
-                      code({ inline, children, ...props }: any) {
-                        const text = String(children || '')
-                        if (inline) return <code {...props}>{children}</code>
-                        return (
-                          <div className="relative group">
-                            <pre {...props}>{children}</pre>
-                            <button
-                              type="button"
-                              className="absolute top-2 right-2 rounded-md border border-neutral-300 bg-white/80 px-2 py-1 text-xs text-neutral-700 hover:bg-white"
-                              onClick={() => navigator.clipboard.writeText(text)}
-                            >Copy</button>
-                          </div>
-                        )
-                      }
-                    }}
-                  >{clean}</ReactMarkdown>
-                  {cited && cited.length > 0 && (
-                    <span className="not-prose ml-2 inline-flex flex-wrap gap-2 align-middle">
-                      {cited.map((s) => (
-                        s.docId ? (
-                          <a key={s.i} href={`/doc/${s.docId}`} className="pill">[{s.i}] {s.file} #{s.chunk}</a>
-                        ) : (
-                          <span key={s.i} className="pill">[{s.i}] {s.file} #{s.chunk}</span>
-                        )
-                      ))}
-                    </span>
-                  )}
+                <div className="w-full max-w-none bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
+                  <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-800 prose-strong:text-gray-900 prose-code:text-gray-900 prose-p:leading-relaxed">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm, remarkCitations as any]}
+                      components={{
+                        sup({node, children, ...props}: any) {
+                          const cls = String(props.className || '')
+                          if (!cls.includes('citation')) return <sup {...props}>{children}</sup>
+                          const raw = String(children?.[0] || '')
+                          const m = raw.match(/\[(\d+)\]/)
+                          const num = m ? Number(m[1]) : undefined
+                          const target = (cited || []).find((s) => Number(s.i) === num)?.docId
+                          if (target) return <a href={`/doc/${target}#c${num}`} className="text-blue-600 hover:text-blue-700 no-underline font-medium"><sup {...props}>{children}</sup></a>
+                          return <sup {...props}>{children}</sup>
+                        },
+                        // @ts-ignore simplify types for custom code renderer
+                        code({ inline, children, ...props }: any) {
+                          const text = String(children || '')
+                          if (inline) return <code className="bg-gray-100 text-gray-900 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>{children}</code>
+                          return (
+                            <div className="relative group">
+                              <pre className="bg-gray-50 border border-gray-200 rounded-lg p-4 overflow-x-auto font-mono text-sm" {...props}>{children}</pre>
+                              <button
+                                type="button"
+                                className="absolute top-2 right-2 rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 shadow-sm"
+                                onClick={() => navigator.clipboard.writeText(text)}
+                              >Copy</button>
+                            </div>
+                          )
+                        }
+                      }}
+                    >{clean}</ReactMarkdown>
+                    {cited && cited.length > 0 && (
+                      <div className="not-prose mt-4 pt-4 border-t border-gray-100">
+                        <div className="text-xs font-semibold text-gray-700 mb-2">Sources:</div>
+                        <div className="flex flex-wrap gap-2">
+                          {cited.map((s) => (
+                            s.docId ? (
+                              <a
+                                key={s.i}
+                                href={`/doc/${s.docId}`}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"
+                              >
+                                <span className="font-semibold text-blue-600">[{s.i}]</span>
+                                <span className="truncate max-w-[120px]">{s.file}</span>
+                                <span className="text-gray-500">#{s.chunk}</span>
+                              </a>
+                            ) : (
+                              <span
+                                key={s.i}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white border border-gray-200 rounded-lg text-gray-700 shadow-sm"
+                              >
+                                <span className="font-semibold text-blue-600">[{s.i}]</span>
+                                <span className="truncate max-w-[120px]">{s.file}</span>
+                                <span className="text-gray-500">#{s.chunk}</span>
+                              </span>
+                            )
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )
             return (
-              <div key={`msg-${i}`}>
+              <div key={`msg-${i}`} className="space-y-4">
                 {block}
-                <hr className="my-6 border-neutral-200" />
               </div>
             )
           })}
           <div ref={bottomRef} />
           {thinking && (
-            <div className="flex items-center gap-2 text-sm text-neutral-500">
-              <span className="inline-block h-2 w-2 rounded-full bg-neutral-400 animate-pulse"></span>
-              <span className="inline-block h-2 w-2 rounded-full bg-neutral-400 animate-pulse [animation-delay:150ms]"></span>
-              <span className="inline-block h-2 w-2 rounded-full bg-neutral-400 animate-pulse [animation-delay:300ms]"></span>
-              <span>Thinking…</span>
+            <div className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-white border border-gray-200 shadow-sm w-fit">
+              <span className="inline-block h-2 w-2 rounded-full bg-gray-400 animate-pulse"></span>
+              <span className="inline-block h-2 w-2 rounded-full bg-gray-400 animate-pulse [animation-delay:150ms]"></span>
+              <span className="inline-block h-2 w-2 rounded-full bg-gray-400 animate-pulse [animation-delay:300ms]"></span>
+              <span className="text-sm text-gray-600 ml-1">Thinking…</span>
             </div>
           )}
         </div>
       </div>
-      <div className="sticky bottom-0 pt-2 bg-neutral-50 border-t pb-[env(safe-area-inset-bottom,0px)]">
-        <div className="relative flex gap-2 items-center">
-          {/* Attach document */}
-          <AttachButton onUploaded={async (doc) => {
-            // Hold as pending attachment (show chip until send)
-            setPendingAttach(doc)
-            notify(`Uploaded ${doc.file_name}`, 'success')
-            // Kick off Explain in the background so Vault shows a summary for images
-            ;(async () => {
-              try {
-                notify(`Summarizing ${doc.file_name}…`, 'info')
-                const e = await fetch('/api/explain', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ documentId: doc.id }) })
-                const ej = await e.json().catch(() => ({}))
-                if (e.ok) notify(`Summary ready for ${doc.file_name}`, 'success')
-                else notify(`Summary failed: ${ej.error || 'error'}`, 'error')
-              } catch (err:any) {
-                notify(`Summary error: ${err?.message || 'error'}`, 'error')
-              }
-            })()
-            // Then index for RAG
-            try {
-              notify(`Indexing ${doc.file_name}…`, 'info')
-              const r = await fetch('/api/rag/ingest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ documentId: doc.id }) })
-              const j = await r.json().catch(() => ({}))
-              if (r.ok) notify(`Indexed ${doc.file_name} (${j.chunks || 0} chunks)`, 'success')
-              else notify(`Indexing failed: ${j.error || 'error'}`, 'error')
-            } catch (e:any) {
-              notify(`Indexing error: ${e?.message || 'error'}`, 'error')
-            }
-          }} />
-          {/* Pending attachment chip/preview */}
-          {pendingAttach && (
-            <span className="inline-flex items-center gap-2 rounded-md bg-neutral-100 px-2 py-1 text-xs text-neutral-700 shrink-0">
-              <span className="truncate max-w-[140px]" title={pendingAttach.file_name}>{pendingAttach.file_name}</span>
-              <button className="button-quiet" onClick={() => setPendingAttach(null)} aria-label="Remove attachment">×</button>
-            </span>
-          )}
-          <input className="flex-1 min-w-0 h-10" value={input} onChange={(e) => setInput(e.target.value)} placeholder={editing ? 'Edit your last message' : 'Ask anything'} onKeyDown={(e) => { if (e.key === 'Enter' && (e.shiftKey || e.metaKey)) { e.preventDefault(); send() } }} />
-          {!loading ? (
-            <button className="shrink-0" onClick={send} disabled={loading || (!input.trim() && !pendingAttach)}>Send</button>
-          ) : (
-            <button className="button-quiet shrink-0" onClick={() => { if (abortRef.current) { try { abortRef.current.abort() } catch {} } }}>Stop</button>
-          )}
-          {/* Mobile options toggle */}
-          <button className="button-quiet sm:hidden" aria-label="Options" title="Options" onClick={() => setOptsOpen((v) => !v)}>⋯</button>
-          {optsOpen && (
-            <div className="sm:hidden absolute bottom-12 right-2 z-10 rounded-md border bg-white shadow p-2 text-xs text-neutral-800">
-              <div className="flex items-center gap-2 mb-2">
-                <span>Provider</span>
-                <select className="ml-1" value={providerOverride} onChange={(e) => setProviderOverride(e.target.value as any)}>
-                  <option value="auto">Auto</option>
-                  <option value="openai">OpenAI</option>
+
+      {/* Input Container */}
+      <div className="sticky bottom-0 pt-4 bg-gray-50 pb-[env(safe-area-inset-bottom,0px)]">
+        {/* Medical Disclaimer - Keep yellow for safety visibility */}
+        <div className="mb-3 rounded-lg bg-yellow-50 border border-yellow-200 px-4 py-2.5 shadow-sm">
+          <p className="text-xs text-gray-800 leading-relaxed">
+            <span className="font-semibold">Medical Disclaimer:</span> Ask about your uploaded documents. Not for diagnosis, dosing, or emergency advice.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+          <div className="relative flex gap-2 items-end">
+            {/* Attach button - Gray secondary */}
+            <AttachButton
+              onUploadStart={(fileName) => {
+                setUploadProgress({ state: 'uploading', fileName })
+              }}
+              onUploaded={async (doc) => {
+                setPendingAttach(doc)
+                setUploadProgress(null)
+                notify(`Uploaded ${doc.file_name}`, 'success')
+                ;(async () => {
+                  try {
+                    setUploadProgress({ state: 'summarizing', fileName: doc.file_name })
+                    notify(`Summarizing ${doc.file_name}…`, 'info')
+                    const e = await fetch('/api/explain', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ documentId: doc.id }) })
+                    const ej = await e.json().catch(() => ({}))
+                    if (e.ok) notify(`Summary ready for ${doc.file_name}`, 'success')
+                    else notify(`Summary failed: ${ej.error || 'error'}`, 'error')
+                  } catch (err:any) {
+                    notify(`Summary error: ${err?.message || 'error'}`, 'error')
+                  } finally {
+                    setUploadProgress(null)
+                  }
+                })()
+                try {
+                  setUploadProgress({ state: 'indexing', fileName: doc.file_name })
+                  notify(`Indexing ${doc.file_name}…`, 'info')
+                  const r = await fetch('/api/rag/ingest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ documentId: doc.id }) })
+                  const j = await r.json().catch(() => ({}))
+                  if (r.ok) notify(`Indexed ${doc.file_name} (${j.chunks || 0} chunks)`, 'success')
+                  else notify(`Indexing failed: ${j.error || 'error'}`, 'error')
+                } catch (e:any) {
+                  notify(`Indexing error: ${e?.message || 'error'}`, 'error')
+                } finally {
+                  setUploadProgress(null)
+                }
+              }}
+            />
+
+            {/* Upload progress indicator - Gray with blue accents */}
+            {uploadProgress && (
+              <div className="inline-flex items-center gap-2 rounded-lg bg-gray-100 border border-gray-200 px-3 py-2 text-xs text-gray-700 shrink-0">
+                <svg className="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="font-medium">
+                  {uploadProgress.state === 'uploading' && 'Uploading'}
+                  {uploadProgress.state === 'summarizing' && 'Summarizing'}
+                  {uploadProgress.state === 'indexing' && 'Indexing'}
+                </span>
+                <span className="truncate max-w-[120px] text-gray-600" title={uploadProgress.fileName}>{uploadProgress.fileName}</span>
+              </div>
+            )}
+
+            {/* Pending attachment chip - Clean white card */}
+            {pendingAttach && !uploadProgress && (
+              <div className="inline-flex items-center gap-2 rounded-lg bg-white border border-gray-200 px-2.5 py-2 text-xs text-gray-700 shrink-0 shadow-sm">
+                {pendingAttach.file_type.startsWith('image/') ? (
+                  <img
+                    src={pendingAttach.signedUrl}
+                    alt={pendingAttach.file_name}
+                    className="w-8 h-8 rounded-lg object-cover border border-gray-200"
+                  />
+                ) : pendingAttach.file_type === 'application/pdf' ? (
+                  <svg className="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                  </svg>
+                )}
+                <div className="flex flex-col min-w-0">
+                  <span className="truncate max-w-[140px] font-medium" title={pendingAttach.file_name}>{pendingAttach.file_name}</span>
+                  <span className="text-[10px] text-gray-500">{pendingAttach.file_type.split('/')[1] || 'file'}</span>
+                </div>
+                <button className="text-gray-400 hover:text-gray-600 ml-1" onClick={() => setPendingAttach(null)} aria-label="Remove attachment">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
+            {/* Input field - Blue focus ring */}
+            <input
+              className="flex-1 min-w-0 px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-gray-50 transition-colors"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={editing ? 'Edit your last message' : 'Ask anything'}
+              onKeyDown={(e) => { if (e.key === 'Enter' && (e.shiftKey || e.metaKey)) { e.preventDefault(); send() } }}
+            />
+
+            {/* Send/Stop buttons */}
+            {!loading ? (
+              <button
+                className="shrink-0 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                onClick={send}
+                disabled={loading || (!input.trim() && !pendingAttach)}
+              >
+                Send
+              </button>
+            ) : (
+              <button
+                className="shrink-0 px-5 py-2.5 border border-gray-300 bg-white text-gray-700 text-sm font-semibold rounded-lg hover:bg-red-50 hover:text-red-700 hover:border-red-300 transition-colors shadow-sm"
+                onClick={() => { if (abortRef.current) { try { abortRef.current.abort() } catch {} } }}
+              >
+                Stop
+              </button>
+            )}
+
+            {/* Mobile options toggle */}
+            <button className="text-gray-600 hover:text-gray-900 sm:hidden p-2" aria-label="Options" title="Options" onClick={() => setOptsOpen((v) => !v)}>
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
+              </svg>
+            </button>
+            {optsOpen && (
+              <div className="sm:hidden absolute bottom-16 right-2 z-10 rounded-lg border border-gray-200 bg-white shadow-lg p-4 text-xs text-gray-700 min-w-[200px]">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="font-medium">Provider</span>
+                  <select className="ml-auto border border-gray-300 rounded-lg px-2 py-1.5 text-xs bg-white" value={providerOverride} onChange={(e) => setProviderOverride(e.target.value as any)}>
+                    <option value="auto">Auto</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="mock">Mock</option>
+                  </select>
+                </div>
+                <label className="flex items-center justify-between gap-2">
+                  <span className="font-medium">Streaming</span>
+                  <input type="checkbox" className="rounded border-gray-300" checked={stream} onChange={async (e) => {
+                    const next = e.target.checked; setStream(next); if (userId) { try { const s = getSupabase(); await (s as any).from('user_graph').upsert({ user_id: userId, streaming_default: next }) } catch {} }
+                  }} />
+                </label>
+              </div>
+            )}
+
+            <div className="ml-auto hidden sm:flex items-center gap-4 text-xs text-gray-600">
+              <label className="flex items-center gap-2">
+                <span className="font-medium">Provider</span>
+                <select className="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs bg-white hover:bg-gray-50 transition-colors" value={providerOverride} onChange={(e) => setProviderOverride(e.target.value as any)}>
+                  <option value="auto">Auto (OpenAI)</option>
+                  <option value="openai">OpenAI only</option>
                   <option value="mock">Mock</option>
                 </select>
-              </div>
+              </label>
               <label className="flex items-center gap-2">
-                <span>Streaming</span>
-                <input type="checkbox" checked={stream} onChange={async (e) => {
-                  const next = e.target.checked; setStream(next); if (userId) { try { const s = getSupabase(); await (s as any).from('user_graph').upsert({ user_id: userId, streaming_default: next }) } catch {} }
-                }} />
+                <span className="font-medium">Streaming</span>
+                <input
+                  type="checkbox" className="rounded border-gray-300" checked={stream}
+                  onChange={async (e) => {
+                    const next = e.target.checked
+                    setStream(next)
+                    if (userId) {
+                      try { const supabase = getSupabase(); await (supabase as any).from('user_graph').upsert({ user_id: userId, streaming_default: next }) } catch {}
+                    }
+                  }}
+                />
               </label>
             </div>
-          )}
-
-          <div className="ml-auto hidden sm:flex items-center gap-3 text-xs text-neutral-700">
-            <label className="flex items-center gap-1">Provider
-              <select className="ml-1" value={providerOverride} onChange={(e) => setProviderOverride(e.target.value as any)}>
-                <option value="auto">Auto (OpenAI)</option>
-                <option value="openai">OpenAI only</option>
-                <option value="mock">Mock</option>
-              </select>
-            </label>
-            <label className="flex items-center gap-2">Streaming
-              <input
-                type="checkbox" checked={stream}
-                onChange={async (e) => {
-                  const next = e.target.checked
-                  setStream(next)
-                  if (userId) {
-                    try { const supabase = getSupabase(); await (supabase as any).from('user_graph').upsert({ user_id: userId, streaming_default: next }) } catch {}
-                  }
-                }}
-              />
-            </label>
           </div>
         </div>
+
+        {/* Toast notifications */}
         {toast && (
-          <div className={`mt-2 text-xs inline-flex items-center gap-2 rounded-md px-2 py-1 ${toast.type==='error' ? 'bg-red-100 text-red-700' : toast.type==='success' ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-700'}`}>
+          <div className={`mt-3 text-xs inline-flex items-center gap-2 rounded-lg px-4 py-2.5 shadow-sm ${toast.type==='error' ? 'bg-red-50 border border-red-200 text-red-800' : toast.type==='success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-gray-100 border border-gray-200 text-gray-800'}`}>
             {toast.text}
           </div>
         )}
         {profileToast && (
-          <div className={`mt-2 text-xs inline-flex items-center gap-2 rounded-md px-2 py-1 bg-neutral-100 text-neutral-700`}>
+          <div className="mt-3 text-xs inline-flex items-center gap-3 rounded-lg px-4 py-2.5 bg-gray-100 border border-gray-200 text-gray-800 shadow-sm">
             <span>{profileToast.text}</span>
-            <button className="button-quiet" onClick={async () => {
+            <button className="text-blue-600 hover:text-blue-700 font-semibold" onClick={async () => {
               try {
                 if (userId) {
                   await fetch('/api/profile/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, profilePartial: profileToast.previous }) })
@@ -517,7 +670,7 @@ export default function ChatPage() {
                 }
               } finally { setProfileToast(null) }
             }}>Undo</button>
-            <button className="button-quiet" onClick={() => setProfileToast(null)}>×</button>
+            <button className="text-gray-400 hover:text-gray-600 ml-auto" onClick={() => setProfileToast(null)}>×</button>
           </div>
         )}
       </div>
@@ -525,7 +678,13 @@ export default function ChatPage() {
   )
 }
 
-function AttachButton({ onUploaded }: { onUploaded: (doc: { id: string; file_name: string; file_type: string; signedUrl: string }) => void }) {
+function AttachButton({
+  onUploaded,
+  onUploadStart,
+}: {
+  onUploaded: (doc: { id: string; file_name: string; file_type: string; signedUrl: string }) => void
+  onUploadStart?: (fileName: string) => void
+}) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [busy, setBusy] = useState(false)
   return (
@@ -534,26 +693,78 @@ function AttachButton({ onUploaded }: { onUploaded: (doc: { id: string; file_nam
         const f = e.target.files?.[0]
         if (!f) return
         setBusy(true)
+        onUploadStart?.(f.name)
         try {
           const supabase = getSupabase()
           const { data: { user } } = await supabase.auth.getUser()
           if (!user) { window.location.href = '/login'; return }
-          const path = `${user.id}/${Date.now()}_${f.name}`
-          const { error: upErr } = await supabase.storage.from('documents').upload(path, f, { upsert: false })
-          if (upErr) { alert(`Upload error: ${upErr.message}`); return }
-          const { data: urlData } = await supabase.storage.from('documents').createSignedUrl(path, 60*60)
-          const signedUrl = (urlData as any)?.signedUrl || (urlData as any)?.signedURL || ''
-          const { data: ins, error: insErr } = await supabase.from('documents').insert({ user_id: user.id, storage_path: path, file_name: f.name, file_type: f.type || 'application/octet-stream', tags: [] } as any).select('id,file_name,file_type').single()
-          if (insErr || !ins) { alert(`Insert error: ${insErr?.message || 'failed'}`); return }
-          onUploaded({ id: (ins as any).id, file_name: (ins as any).file_name, file_type: (ins as any).file_type || 'application/octet-stream', signedUrl })
+
+          // Get user's Person record
+          const personsRes = await fetch('/api/persons')
+          if (!personsRes.ok) {
+            alert('Failed to load user profile')
+            return
+          }
+          const personsData = await personsRes.json()
+          const persons = personsData.persons || []
+          if (persons.length === 0) {
+            alert('No person profile found. Please complete onboarding.')
+            return
+          }
+          const personId = persons[0].id
+
+          // Upload via API endpoint
+          const formData = new FormData()
+          formData.append('file', f)
+          formData.append('personId', personId)
+
+          const uploadRes = await fetch('/api/uploads', {
+            method: 'POST',
+            body: formData,
+          })
+
+          if (!uploadRes.ok) {
+            const errData = await uploadRes.json().catch(() => ({}))
+            alert(`Upload failed: ${errData.error || 'unknown error'}`)
+            return
+          }
+
+          const uploadData = await uploadRes.json()
+          const docId = uploadData.documentId
+          if (!docId) {
+            alert('Upload succeeded but no document ID returned')
+            return
+          }
+
+          // Get document details to create signed URL for preview
+          const docRes = await fetch(`/api/documents/${docId}`)
+          if (!docRes.ok) {
+            alert('Failed to get document details')
+            return
+          }
+          const docData = await docRes.json()
+
+          onUploaded({
+            id: docId,
+            file_name: f.name,
+            file_type: f.type || 'application/octet-stream',
+            signedUrl: docData.signedUrl || ''
+          })
         } finally {
           setBusy(false)
           if (inputRef.current) inputRef.current.value = ''
         }
       }} />
-      <button type="button" className="button-quiet" onClick={() => inputRef.current?.click()} disabled={busy} aria-label="Add attachment" title="Add attachment">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+      <button
+        type="button"
+        className="shrink-0 p-2.5 border border-gray-300 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+        onClick={() => inputRef.current?.click()}
+        disabled={busy}
+        aria-label="Add attachment"
+        title="Add attachment"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
         </svg>
       </button>
     </>

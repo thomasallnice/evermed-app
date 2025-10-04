@@ -7,28 +7,85 @@ html, body {
 }
 
 body {
-  @apply bg-neutral-50 text-neutral-900;
+  @apply bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 text-slate-900;
 }
 
 a {
-  @apply text-blue-600 hover:underline;
+  @apply text-blue-600 hover:text-blue-700 transition-colors duration-200;
 }
 
-button {
-  @apply rounded-md px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50;
+/* Primary button style - use class .button-primary when needed */
+.button-primary {
+  @apply rounded-lg px-4 py-3 min-h-[44px] bg-blue-600 text-white hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 font-medium shadow-md hover:shadow-lg text-base;
 }
 
 /* Subtle, secondary button style for destructive/low‑emphasis actions */
 .button-quiet {
-  @apply rounded-md px-3 py-2 bg-transparent text-neutral-700 hover:text-red-600 disabled:opacity-50;
+  @apply rounded-lg px-3 py-3 min-h-[44px] bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 transition-all duration-200 text-base;
+}
+
+/* Destructive variant for quiet buttons */
+.button-quiet-destructive {
+  @apply rounded-lg px-3 py-3 min-h-[44px] bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed border border-red-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 text-base;
+}
+
+/* Secondary button variant */
+.button-secondary {
+  @apply rounded-lg px-3 py-3 min-h-[44px] bg-white text-slate-700 hover:bg-slate-50 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed border-2 border-slate-200 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 text-base;
+}
+
+/* Purple/Violet gradient button variant */
+.button-gradient-purple {
+  @apply rounded-lg px-4 py-3 min-h-[44px] bg-gradient-to-r from-purple-600 to-violet-600 text-white hover:from-purple-700 hover:to-violet-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-all duration-200 font-medium shadow-sm hover:shadow-md text-base;
 }
 
 input, textarea, select {
-  @apply border border-neutral-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+  @apply border-2 border-slate-200 rounded-lg px-3 py-3 min-h-[44px] text-base outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white hover:border-slate-300;
 }
 
 .container {
-  @apply mx-auto max-w-5xl px-3 sm:px-4;
+  @apply mx-auto max-w-6xl px-4 sm:px-6;
+}
+
+/* Gradient text utilities */
+.gradient-text-blue-purple {
+  @apply bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent;
+}
+
+.gradient-text-blue {
+  @apply bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent;
+}
+
+/* Card animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+  background: linear-gradient(to right, #f3f4f6 0%, #e5e7eb 20%, #f3f4f6 40%, #f3f4f6 100%);
+  background-size: 1000px 100%;
 }
 
 /* Markdown / prose polish */

@@ -19,3 +19,9 @@
 - Invite flow: wire email delivery + acceptance path.
 - Add Supabase email templates and audit logging.
 - Expand E2E coverage for signup → onboarding → upload → share.
+
+### Dev Notes
+- `openai` must remain in the root `package.json` so all workspaces pull the shared client; run `npm install` from the repo root after changing dependencies.
+- Always execute `npm run clean:next` from the repository root before linting/building if stale `.next` artifacts appear.
+- Prisma schema now exposes `Document.chatMessages` to mirror `ChatMessage.document`, resolving missing relation warnings during client generation.
+- Codex code review: follow `CODE_REVIEW.md`, schedule Tuesday/Thursday async runs, and ensure the CI “Codex review QA” step succeeds before tagging `@codex review` or applying the `codex-review` label on auth/onboarding PRs.

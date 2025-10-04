@@ -132,6 +132,7 @@ model Document {
 
   person       Person   @relation(fields: [personId], references: [id])
   chunks       DocChunk[]
+  chatMessages ChatMessage[]
 }
 
 model Observation {
@@ -210,6 +211,9 @@ model AnalyticsEvent {
   createdAt   DateTime @default(now())
 }
 ```
+
+`ChatMessage` rows capture the RAG/chat transcript history and optionally reference a source document (`documentId`).
+`Document.chatMessages` exposes the reverse relation for retrieval, analytics, and cascade cleanup when users delete a document.
 
 **RLS (SQL, apply in Supabase SQL editor) — enforce per-owner**
 
@@ -467,6 +471,7 @@ Any change to these files must be called out explicitly in the dry-run and PR no
 ## **14) Next Steps after PR #10**
 
 - Deploy current stack (uploads + OCR + embeddings + semantic retrieval + share packs) to **staging** (Supabase + Vercel) and run the smoke script.
+- Vercel build command stays `npm run build` at repo root (delegates to `@evermed/web`); set output directory to `apps/web/.next` and rely on root `postinstall` (`prisma generate --schema=db/schema.prisma`) to keep Prisma client fresh.
 - Promote to **production** once staging smoke passes; enable monitoring/alerting on both environments.
 - UI polish: upload, vault, chat, trends, share-pack viewer/onboarding.
 - Real-life pilot/dogfooding with trusted users; collect feedback and metrics.
@@ -492,6 +497,7 @@ Goals:
 - Load testing for large PDFs and concurrent uploads/OCR jobs.
 - Security review: passcode hashing, Supabase RLS, signed URLs, revocation flows.
 - Monitoring & alerting for staging/prod (Supabase logs, Vercel analytics, latency/error dashboards).
+- Codex review cadence: schedule asynchronous GPT-5 Codex reviews every Tuesday/Thursday and before staging promotions. Complete `CODE_REVIEW.md`, ensure CI's `Codex review QA` job is green, then trigger via `@codex review` PR comment or `codex-review` label (automation listens when PR is ready for review).
 
 ---
 

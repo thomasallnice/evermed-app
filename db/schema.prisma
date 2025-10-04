@@ -12,7 +12,7 @@ generator client {
 // Prisma schema for EverMed MVP (Postgres/Supabase)
 model Person {
   id         String   @id @default(uuid())
-  ownerId    String // supabase auth.uid()
+  ownerId    String   @unique // supabase auth.uid()
   givenName  String?
   familyName String?
   birthYear  Int?
@@ -40,6 +40,7 @@ model Document {
   chunks         DocChunk[]
   observations   Observation[]   @relation("DocToObs")
   sharePackItems SharePackItem[] // back-relation
+  chatMessages   ChatMessage[]
 }
 
 model Observation {
@@ -100,15 +101,15 @@ model ShareEvent {
 }
 
 model DocChunk {
-  id           String   @id @default(uuid())
+  id           String                 @id @default(uuid())
   documentId   String
   chunkId      Int
   text         String
   sourceAnchor String?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime               @default(now())
   embedding    Unsupported("vector")?
 
-  document Document @relation(fields: [documentId], references: [id])
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@unique([documentId, chunkId])
 }

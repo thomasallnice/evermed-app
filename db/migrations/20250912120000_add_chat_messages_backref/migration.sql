@@ -1,0 +1,2 @@
+-- No-op migration: added Document.chatMessages back relation in Prisma schema.
+-- This maintains migration history even though no database DDL changes are required.

@@ -98,6 +98,13 @@ When this prompt runs, **first output** a short report:
 - No Postgres service container in CI.
     
 
+## Codex Code Review Workflow
+
+- Treat `CODE_REVIEW.md` as the authoritative checklist before requesting a review (tests, typecheck, lint, smoke, migrations, env vars, guard files, OCR/embedding behavior).
+- Run the CI “Codex review QA” step; it must be green prior to tagging Codex.
+- Trigger Codex by commenting `@codex review` (template in README) or applying the `codex-review` label once the PR is ready for review.
+- Run Codex reviews asynchronously every Tuesday/Thursday and at least 24h before staging/production deploys.
+
 ## If Anything is Ambiguous
 
 Make the safest assumption consistent with the three Ground Truth docs, leave a `TODO(reason)` inline, proceed, and flag in the PR description.

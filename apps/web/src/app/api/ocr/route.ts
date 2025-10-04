@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireUserId } from '@/lib/auth'
 
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth check
+    const userId = await requireUserId(req)
+
     const { documentId } = await req.json()
     if (!documentId) return NextResponse.json({ error: 'documentId required' }, { status: 400 })
 

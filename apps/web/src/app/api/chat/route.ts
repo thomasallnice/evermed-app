@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { retrieveChunks, type RetrievedChunk } from '@/lib/rag'
 import { ESCALATION_RED_FLAGS, REFUSAL_BANNED } from '@/lib/copy'
+import { requireUserId } from '@/lib/auth'
 
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth check
+    const userId = await requireUserId(req)
+
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ error: 'OPENAI_API_KEY missing' }, { status: 500 });
     }

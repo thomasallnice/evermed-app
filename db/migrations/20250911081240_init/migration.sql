@@ -1,3 +1,6 @@
+-- Ensure pgvector is available for embedding columns
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- CreateTable
 CREATE TABLE "Person" (
     "id" TEXT NOT NULL,

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import { MEDICAL_DISCLAIMER } from '@/lib/copy'
 
 export default function SharePage() {
   const params = useParams<{ token: string }>()
@@ -34,6 +35,10 @@ export default function SharePage() {
     <div className="space-y-3">
       <h1 className="text-xl font-semibold">{data.title} ({data.audience})</h1>
       <div className="text-sm text-neutral-600">Expires: {new Date(data.expiresAt).toLocaleString()}</div>
+      {/* Medical Disclaimer */}
+      <div className="rounded-md bg-yellow-50 border border-yellow-200 px-3 py-2">
+        <p className="text-xs text-yellow-900">{MEDICAL_DISCLAIMER}</p>
+      </div>
       <ul className="space-y-2">
         {(data.documents || []).map((d: any) => (
           <li key={d.id} className="border rounded-md p-3 bg-white">

@@ -1,6 +1,11 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { maybeExtractAndUpsertProfile } from '@/lib/profile/update'
+import {
+  MEDICAL_SAFETY_SYSTEM_PROMPT,
+  checkForBannedContent,
+  checkForEmergencyKeywords
+} from '@/lib/safety'
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ''
 const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
@@ -156,6 +161,35 @@ export async function POST(req: NextRequest) {
     try { if (userId && !hasImage && last) { void maybeExtractAndUpsertProfile(userId, last) } } catch {}
 
     const trimLast = last.trim()
+
+    // SAFETY CHECK 1: Check for emergency keywords first
+    if (trimLast) {
+      const emergencyCheck = checkForEmergencyKeywords(trimLast)
+      if (emergencyCheck) {
+        return new Response(emergencyCheck.escalation, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'X-Safety-Trigger': 'emergency',
+          }
+        })
+      }
+    }
+
+    // SAFETY CHECK 2: Check for banned content (diagnosis/dosing/triage)
+    if (trimLast) {
+      const bannedCheck = checkForBannedContent(trimLast)
+      if (bannedCheck) {
+        return new Response(bannedCheck.refusal, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'X-Safety-Trigger': 'banned-content',
+          }
+        })
+      }
+    }
+
     const [{ rag, best, n, sources }, profile] = await Promise.all([
       userId ? (trimLast ? retrieveRagWithScore(userId, last) as any : Promise.resolve(emptyRag)) : Promise.resolve(emptyRag),
       buildContext(userId),
@@ -196,6 +230,10 @@ export async function POST(req: NextRequest) {
 
     const transcript = buildTranscript(messages)
     const preface: string[] = []
+
+    // SAFETY: Inject medical safety system prompt first
+    preface.push(MEDICAL_SAFETY_SYSTEM_PROMPT)
+
     if (profile) preface.push(`User profile context (may help):\n\n${profile}`)
     // If the last message includes an image, avoid injecting RAG to keep the answer focused on the picture
     if (!hasImage && trimLast && rag) preface.push(rag)
@@ -235,7 +273,7 @@ export async function POST(req: NextRequest) {
           }
         }
       } catch {}
-      const focus = `You have been provided an image. Base your answer primarily on that image. If any retrieved text context conflicts with what is visible in the image, the image takes precedence.`
+      const focus = `You have been provided an image. Base your answer primarily on that image. If any retrieved text context conflicts with what is visible in the image, the image takes precedence. IMPORTANT: Do not diagnose medical conditions from images. Only describe what is factually visible.`
       // Optionally include a small snippet of extracted text/caption for the attached document to enable citations
       let extractedSnippet = ''
       try {
@@ -251,6 +289,8 @@ export async function POST(req: NextRequest) {
       const helper = extractedSnippet ? `\n\nExtracted text/caption (for reference):\n${extractedSnippet}` : ''
       // If user sent only an image with no text, avoid repeating transcript; focus on image
       const includeTranscript = Boolean(trimLast)
+      // Build image prompt with safety instructions first
+      const imagePromptParts = [MEDICAL_SAFETY_SYSTEM_PROMPT, preface.slice(1).join('\n\n'), includeTranscript ? transcript : '', focus, helper, formatting].filter(Boolean)
       payload = {
         model,
         stream: streamWanted,
@@ -258,7 +298,7 @@ export async function POST(req: NextRequest) {
         text: { verbosity: 'low' },
         input: [
           { role: 'user', content: [
-            { type: 'input_text', text: [preface.join('\n\n'), includeTranscript ? transcript : '', focus, helper, formatting].filter(Boolean).join('\n\n') },
+            { type: 'input_text', text: imagePromptParts.join('\n\n') },
             { type: 'input_image', image_url: imageUrl },
           ]}
         ],
@@ -279,10 +319,12 @@ export async function POST(req: NextRequest) {
           }
         }
       } catch {}
-      const docFocus = `You have been provided a document. Summarize it clearly, list key findings, and note any clinically relevant details.`
+      const docFocus = `You have been provided a document. Summarize it clearly, list key findings, and note any clinically relevant details. Remember: provide factual information only, no diagnosis or treatment recommendations.`
       const includeTranscript = Boolean(trimLast)
       // Prefer stronger model when summarizing a document with no user question
       if (!includeTranscript) { model = OPENAI_MODEL_INTERPRET }
+      // Build document prompt with safety instructions first
+      const docPromptParts = [MEDICAL_SAFETY_SYSTEM_PROMPT, preface.slice(1).join('\n\n'), includeTranscript ? transcript : '', docFocus, (docSnippet ? `Document excerpt:\n${docSnippet}` : ''), formatting].filter(Boolean)
       payload = {
         model,
         stream: streamWanted,
@@ -290,7 +332,7 @@ export async function POST(req: NextRequest) {
         text: { verbosity: 'low' },
         input: [
           { role: 'user', content: [
-            { type: 'input_text', text: [preface.join('\n\n'), includeTranscript ? transcript : '', docFocus, (docSnippet ? `Document excerpt:\n${docSnippet}` : ''), formatting].filter(Boolean).join('\n\n') },
+            { type: 'input_text', text: docPromptParts.join('\n\n') },
           ]}
         ],
       }

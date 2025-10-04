@@ -8,3 +8,20 @@ export type DocumentRow = {
   uploaded_at: string | null
 }
 
+export type Person = {
+  id: string
+  givenName: string | null
+  familyName: string | null
+}
+
+export type Document = {
+  id: string
+  personId: string
+  kind: string
+  topic: string | null
+  filename: string
+  storagePath: string
+  uploadedAt: string
+  person: Person
+}
+

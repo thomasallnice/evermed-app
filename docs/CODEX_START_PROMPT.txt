@@ -2,6 +2,8 @@ MODEL: GPT-5-Codex
 
 Read `/docs/BOOTSTRAP_PROMPT.md` and follow it exactly.
 
+Before proposing work, review `CODE_REVIEW.md` and plan how the Codex review workflow (QA step, @codex trigger) will be satisfied.
+
 Then do a DRY-RUN (no writes):
 - Print Repo & Branch Health.
 - Print the planned changeset (files to add/edit/delete, grouped by path).

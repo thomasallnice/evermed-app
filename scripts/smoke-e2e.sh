@@ -120,3 +120,29 @@ echo "PersonId:  $PERSON_ID"
 echo "DocumentId:$DOC_ID"
 echo "PackId:    $PACK_ID"
 echo "Embeddings:$EMBED_COUNT"
+
+# ---------- ChatMessage relation test ----------
+echo "[chatmsg] inserting a dummy ChatMessage for $DOC_ID"
+CHATMSG_ID=$(psql "$PSQL_URL" -Atc "
+  insert into \"ChatMessage\" (id, \"userId\", content, \"documentId\") 
+  values (gen_random_uuid(), '${OWNER_ID}', 'Test message linked to doc', '${DOC_ID}')
+  returning id;
+")
+if [ -z \"$CHATMSG_ID\" ]; then
+  echo "[chatmsg] ERROR: failed to insert ChatMessage"
+  exit 1
+fi
+echo "[chatmsg] Created ChatMessage: $CHATMSG_ID"
+
+echo "[chatmsg] verifying ChatMessage is linked to Document"
+MSG_CONTENT=$(psql "$PSQL_URL" -Atc "
+  select content 
+  from \"ChatMessage\" 
+  where id='${CHATMSG_ID}' and \"documentId\"='${DOC_ID}'
+  limit 1;
+")
+if [ -z \"$MSG_CONTENT\" ]; then
+  echo "[chatmsg] ERROR: no ChatMessage found linked to $DOC_ID"
+  exit 1
+fi
+echo "[chatmsg] Verified ChatMessage linked: $MSG_CONTENT"

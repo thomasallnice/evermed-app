@@ -34,6 +34,51 @@ function getAdmin() {
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
+export async function GET(req: NextRequest) {
+  try {
+    const userId = await requireUserId(req);
+
+    // Get all packs for persons owned by this user
+    const packs = await prisma.sharePack.findMany({
+      where: {
+        person: {
+          ownerId: userId
+        }
+      },
+      include: {
+        person: {
+          select: {
+            id: true,
+            givenName: true,
+            familyName: true
+          }
+        },
+        items: {
+          include: {
+            document: { select: { id: true, filename: true } },
+            observation: { select: { id: true, code: true, display: true } }
+          }
+        },
+        events: {
+          select: {
+            id: true,
+            kind: true,
+            createdAt: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return NextResponse.json({ packs });
+  } catch (e: any) {
+    if (e?.message === 'unauthorized') {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    }
+    return NextResponse.json({ error: e?.message || 'Unexpected' }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const userId = await requireUserId(req);

@@ -40,6 +40,13 @@ Whenever code, schema, CI, or process change, update this file.
 - Schema migrations via Prisma must compile (`prisma generate`).  
 - DB-shape tests (e.g. checking vector column, etc.) skip if `SUPABASE_DB_URL` is not set.
 
+### Codex Code Review
+
+- Follow `CODE_REVIEW.md` before requesting a review (lint, typecheck, tests, smoke, migrations, env/guard checks).
+- CI contains a `Codex review QA` step on every PR; it must pass before tagging Codex.
+- Trigger reviews with an `@codex review` PR comment (template in README) or the `codex-review` label once the PR is ready.
+- Default cadence: Tuesday & Thursday async reviews plus mandatory runs ≥24h before staging/production deploys.
+
 ---
 
 ## 📝 Docs & Ground Truth
