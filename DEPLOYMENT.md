@@ -44,7 +44,20 @@ SUPABASE_PRODUCTION_DB_PASSWORD=your_production_db_password
 - **Project Ref**: Supabase Dashboard → Project → Settings → General → Reference ID
 - **DB Password**: The password you set when creating the project (reset in Settings → Database if needed)
 
-### 1.2 Create Vercel Environment Variables
+### 1.2 Configure Vercel Monorepo Settings
+
+**⚠️ CRITICAL**: This is a monorepo project. You MUST configure Vercel correctly or deployments will fail.
+
+In Vercel Dashboard → Your Project → Settings → General:
+
+1. **Root Directory**: Set to `apps/web` (click Override and enter `apps/web`)
+2. **Build Command**: Leave as default (`npm run build`)
+3. **Output Directory**: Leave as default (`.next`)
+4. **Install Command**: Leave as default (`npm install`)
+
+**Without setting Root Directory to `apps/web`, the build will fail with "routes-manifest.json not found".**
+
+### 1.3 Create Vercel Environment Variables
 
 You'll need to add environment variables in Vercel for each project.
 
