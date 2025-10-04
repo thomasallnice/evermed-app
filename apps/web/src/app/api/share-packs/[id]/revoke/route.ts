@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { requireUserId } from '@/lib/auth';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {

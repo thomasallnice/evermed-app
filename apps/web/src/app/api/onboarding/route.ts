@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { requireUserId } from '@/lib/auth';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 const prisma = new PrismaClient();
 

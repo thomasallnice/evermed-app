@@ -5,6 +5,7 @@ import { hashPasscode } from '@/lib/passcode';
 import { requireUserId } from '@/lib/auth';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 const prisma = new PrismaClient();
 
 type NormalizedItem = { documentId?: string; observationId?: string };
