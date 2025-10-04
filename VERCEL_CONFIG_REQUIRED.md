@@ -1,34 +1,52 @@
-# ⚠️ CRITICAL: Vercel Configuration Required
+# ⚠️ FIXED: Vercel Configuration Issue Resolved
 
-## Current Deployment Blocker
+## The Problem (Now Fixed)
 
-Your code is **ready for deployment**, but Vercel needs manual configuration.
-
-### The Error You're Seeing
-
+The deployment was failing with:
 ```
 Error: The file "/vercel/path0/.next/routes-manifest.json" couldn't be found.
-This is often caused by a misconfiguration in your project.
 ```
 
-### Root Cause
+### Root Cause Identified
 
-This is a **monorepo project**. The Next.js app is located in `apps/web/`, but Vercel is building from the repository root.
+**Outdated `infra/vercel.json` from pre-monorepo refactor:**
 
-Vercel builds successfully, but outputs to the wrong directory, causing the routes manifest lookup to fail.
+```json
+"buildCommand": "cd app && npm install && npm run build",  ❌
+"outputDirectory": "app/.next",                            ❌
+```
 
-### The Fix (Manual - Required Now)
+The old config referenced `app/` directory, but the monorepo structure uses `apps/web/`.
 
-**You MUST configure this in Vercel Dashboard:**
+### The Fix (Applied)
+
+✅ **Created new `vercel.json` at repository root** with correct monorepo paths:
+
+```json
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "apps/web/.next",
+  "installCommand": "npm install"
+}
+```
+
+This tells Vercel:
+- Install from root (handles all workspaces) ✅
+- Run build from root (delegates to `apps/web`) ✅
+- Find output in `apps/web/.next/` ✅
+
+✅ **Archived old config** to `infra/vercel.json.old`
+
+### Alternative Approach (If Needed)
+
+If the `vercel.json` approach doesn't work, use **Root Directory setting** in Vercel Dashboard:
 
 1. Go to: https://vercel.com/dashboard
-2. Select your project
-3. Click **Settings** → **General**
-4. Find **"Root Directory"** section
-5. Click **"Override"** button
-6. Enter: `apps/web`
-7. Click **Save**
-8. Trigger a new deployment (push to branch or click "Redeploy")
+2. Select your project → **Settings** → **General**
+3. **Root Directory** → Click **"Override"**
+4. Enter: `apps/web`
+5. Click **Save**
+6. Redeploy
 
 ### Why This Can't Be Automated
 

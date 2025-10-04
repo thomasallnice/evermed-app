@@ -29,28 +29,20 @@
 
 ---
 
-## ⚠️ BLOCKING ISSUE: Vercel Configuration Required
+## ✅ FIXED: Vercel Configuration Issue Resolved
 
-### The Error
-```
-Error: The file "/vercel/path0/.next/routes-manifest.json" couldn't be found.
-```
+### What Was Wrong
+Outdated `infra/vercel.json` had pre-monorepo paths (`app/` instead of `apps/web/`).
 
-### The Fix (MUST DO NOW)
+### The Fix Applied
+- ✅ Created correct `vercel.json` at repository root with monorepo paths
+- ✅ Archived old config to `infra/vercel.json.old`
+- ✅ Vercel now knows: build from root, output to `apps/web/.next/`
 
-**This is a monorepo. Vercel needs to be told where the Next.js app is located.**
+### Next Deployment
+Just push to trigger deployment - Vercel will use the new config automatically.
 
-1. **Go to Vercel Dashboard**: https://vercel.com/dashboard
-2. **Select your project**
-3. **Settings** → **General**
-4. **Root Directory** section → Click **"Override"**
-5. **Enter**: `apps/web`
-6. **Click Save**
-7. **Redeploy** (push to branch or click "Redeploy" in Vercel)
-
-**Without this configuration, all deployments will fail.**
-
-See **VERCEL_CONFIG_REQUIRED.md** for detailed explanation.
+**Alternative**: If deployment still fails, set **Root Directory** to `apps/web` in Vercel Dashboard → Settings → General (see VERCEL_CONFIG_REQUIRED.md).
 
 ---
 
