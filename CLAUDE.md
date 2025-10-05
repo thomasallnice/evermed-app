@@ -46,6 +46,40 @@ npm run prisma:format
 npm run seed
 ```
 
+### Supabase CLI
+```bash
+# Link to Supabase project (interactive)
+supabase link
+
+# List all projects
+supabase projects list
+
+# Diff local schema vs remote
+supabase db diff
+
+# Pull remote schema to local
+supabase db pull
+
+# Push local migrations to remote
+supabase db push
+
+# Reset local database
+supabase db reset
+
+# Create database branch for testing
+supabase db branch create test-branch
+
+# Deploy edge functions
+supabase functions deploy function-name
+
+# List/set secrets
+supabase secrets list
+supabase secrets set KEY=value
+
+# Generate types from database
+supabase gen types typescript --local > types/supabase.ts
+```
+
 ### Single Test
 ```bash
 # Run specific test file
@@ -171,11 +205,40 @@ See `.env.example` and README. Key vars:
 - Set all required env vars in Vercel project settings
 
 ### Staging/Production
-1. Deploy to Vercel with Supabase staging/prod project
-2. Apply migrations: `npm run prisma:migrate:deploy`
-3. Run smoke test: `./scripts/smoke-e2e.sh --auth`
-4. Verify CI "Codex review QA" step passes
-5. Monitor Supabase logs and Vercel analytics
+1. **Link to target environment**:
+   ```bash
+   supabase link --project-ref <staging-or-prod-ref>
+   ```
+
+2. **Preview and apply migrations**:
+   ```bash
+   # Preview changes
+   supabase db diff
+
+   # Option A: Prisma migrations (for schema-only changes)
+   npm run prisma:migrate:deploy
+
+   # Option B: Supabase push (when RLS policies, triggers, or functions are involved)
+   supabase db push
+   ```
+
+3. **Deploy edge functions** (if applicable):
+   ```bash
+   supabase functions deploy <function-name>
+   ```
+
+4. **Sync environment secrets**:
+   ```bash
+   supabase secrets set KEY=value
+   ```
+
+5. **Deploy to Vercel** with Supabase staging/prod project
+
+6. **Run smoke test**: `./scripts/smoke-e2e.sh --auth`
+
+7. **Verify CI** "Codex review QA" step passes
+
+8. **Monitor** Supabase logs and Vercel analytics
 
 ## CI/CD
 
@@ -240,10 +303,25 @@ Before implementing ANY technical change, ask yourself:
    - **NEVER SKIP**: Even "minor" text changes to medical content require review
 
 2. **database-architect**
-   - **ALWAYS USE FOR**: Database schema changes, Prisma migrations, relation modifications, deployment validation
-   - **WITHOUT EXCEPTION**: All Prisma schema edits, new tables, foreign key changes, index additions
-   - **WHY CRITICAL**: Prevents migration corruption, ensures relation integrity, validates RLS compatibility
+   - **ALWAYS USE FOR**: Database schema changes, Prisma migrations, relation modifications, deployment validation, Supabase infrastructure setup
+   - **WITHOUT EXCEPTION**: All Prisma schema edits, new tables, foreign key changes, index additions, Supabase CLI operations
+   - **WHY CRITICAL**: Prevents migration corruption, ensures relation integrity, validates RLS compatibility, manages Supabase infrastructure
    - **NEVER SKIP**: Even single-field additions can have cascading effects
+   - **SUPABASE CLI CAPABILITIES**:
+     - Project linking and environment management (`supabase link`, `supabase projects list`)
+     - Database migrations and deployments (`supabase db push`, `supabase db diff`, `supabase db reset`)
+     - Schema introspection and validation (`supabase db pull`)
+     - Function and trigger management (`supabase functions deploy`)
+     - Edge Functions deployment (`supabase functions new`, `supabase functions serve`)
+     - Storage bucket creation and policy management
+     - Environment variable synchronization (`supabase secrets set/list`)
+     - Branch database creation for testing (`supabase db branch create`)
+   - **DEPLOYMENT WORKFLOWS**:
+     - Always validate migrations locally before deploying to staging/production
+     - Use `supabase db diff` to preview schema changes before applying
+     - Leverage `supabase db branch` for testing destructive migrations
+     - Sync RLS policies via CLI rather than manual SQL when possible
+     - Use `supabase db push` for deployment instead of direct Prisma migrate deploy when RLS/triggers are involved
 
 3. **rag-pipeline-manager**
    - **ALWAYS USE FOR**: RAG pipeline changes, embedding logic, semantic search modifications, chunking strategies
