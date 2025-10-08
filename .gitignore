@@ -199,3 +199,6 @@ memory/
 !.claude/memory/
 *.db
 VERCEL_ENV_VARS.txt
+
+# Archive directory (tracked but noted in gitignore for reference)
+# archive/ files are preserved for historical reference

@@ -4,6 +4,56 @@
 
 ---
 
+## 2025-10-08: Repository Cleanup & File Archival ✅
+**Type:** Maintenance
+**Branch:** refit/user-auth-onboarding
+**Commits:** TBD
+
+### What Changed
+**Created Archive Structure:**
+- `archive/deployment-docs/` - Obsolete deployment documentation
+- `archive/db-validation-reports/` - One-time validation reports
+- `archive/old-configs/` - Pre-monorepo configurations
+- `archive/duplicate-docs/` - Duplicate documentation
+- `archive/README.md` - Complete archive index with replacements
+
+**Files Archived (11 total):**
+1. **Deployment docs** (3 files):
+   - `DEPLOYMENT_QUICK_START.md` → Superseded by `.claude/sops/deployment.md`
+   - `VERCEL_FIX.md` → Issues resolved
+   - `VERCEL_CONFIG_REQUIRED.md` → Issues resolved
+
+2. **DB validation reports** (4 files):
+   - `DEPLOYMENT_VALIDATION_REPORT.md` → One-time validation
+   - `SECURITY_VALIDATION_REPORT.md` → One-time validation
+   - `VALIDATION_SUMMARY.md` → Issues resolved
+   - `DEPLOYMENT_FIX_PLAN.md` → Plan completed
+
+3. **Old configs** (1 file):
+   - `infra/vercel.json.old` → Pre-monorepo config
+
+4. **Duplicate docs** (3 files):
+   - `db/DEPLOYMENT_CHECKLIST.md` → Duplicate of root checklist
+   - `db/QUICK_START.md` → Superseded by SOPs
+   - `db/RLS_IMPLEMENTATION_SUMMARY.md` → Now in database-changes.md SOP
+
+### Why
+- Reduce clutter in repository
+- Eliminate duplicate documentation
+- Preserve historical context while improving discoverability
+- Make root directory cleaner and more navigable
+- Consolidate documentation in `.claude/sops/`
+
+### Impact
+- ✅ Repository root is cleaner (3 fewer MD files)
+- ✅ `db/` directory tidier (7 fewer files)
+- ✅ `infra/` directory cleaned up
+- ✅ All archived files preserved with git history
+- ✅ Clear references to replacement documentation
+- ✅ Easier to find current, relevant documentation
+
+---
+
 ## 2025-10-08: Claude Code 2.0 Memory System & Chrome DevTools MCP Integration ✅
 **Type:** Infrastructure
 **Branch:** refit/user-auth-onboarding

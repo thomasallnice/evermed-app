@@ -6,6 +6,14 @@
 **Deployment & Infrastructure** ✅ (98% Complete)
 
 ### Latest Accomplishment
+✅ **Repository Cleanup & File Archival** (Complete)
+- 11 obsolete files archived to `archive/` directory
+- Deployment docs consolidated in `.claude/sops/deployment.md`
+- Duplicate documentation eliminated
+- Clear archive index with replacement references
+- Repository root and `db/` directory significantly cleaner
+
+### Recent Accomplishment
 ✅ **Claude Code 2.0 Memory System & Chrome DevTools MCP Integration** (Complete)
 - Memory files created with current state, recent changes, active issues
 - SOPs documented for database, API, testing, deployment
