@@ -195,5 +195,7 @@ hive-mind-prompt-*.txt
 .claude-flow/
 .swarm/
 memory/
+# Exception: .claude/memory/ should be tracked for persistent context
+!.claude/memory/
 *.db
 VERCEL_ENV_VARS.txt
