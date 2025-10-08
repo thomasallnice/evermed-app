@@ -134,11 +134,156 @@ All API routes in `apps/web/src/app/api/`:
 - Onboarding wizard creates Person record
 - RLS policies enforce row-level security (Person.ownerId = auth.uid())
 
+## Chrome DevTools MCP Integration
+
+**Project uses chrome-devtools-mcp from:** https://github.com/ChromeDevTools/chrome-devtools-mcp
+
+**Configuration:** Add to MCP config with isolated + headless mode:
+```json
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest", "--isolated", "--headless"]
+    }
+  }
+}
+```
+
+**Available Chrome DevTools MCP Tools (26 total):**
+
+### Input Automation (7 tools)
+- `click` — Click on elements
+- `drag` — Drag elements
+- `fill` — Fill input fields
+- `fill_form` — Fill out entire forms
+- `handle_dialog` — Manage browser dialogs
+- `hover` — Hover over elements
+- `upload_file` — Upload files
+
+### Navigation Automation (7 tools)
+- `close_page` — Close browser pages
+- `list_pages` — List open browser pages
+- `navigate_page` — Navigate to web pages
+- `navigate_page_history` — Navigate browser history
+- `new_page` — Open a new browser page
+- `select_page` — Switch between browser pages
+- `wait_for` — Wait for specific conditions
+
+### Emulation (3 tools)
+- `emulate_cpu` — Simulate CPU performance
+- `emulate_network` — Simulate network conditions
+- `resize_page` — Change browser viewport size
+
+### Performance (3 tools)
+- `performance_analyze_insight` — Analyze performance traces
+- `performance_start_trace` — Start performance tracing
+- `performance_stop_trace` — Stop performance tracing
+
+### Network (2 tools)
+- `get_network_request` — Retrieve specific network requests
+- `list_network_requests` — List all network requests
+
+### Debugging (4 tools)
+- `evaluate_script` — Run JavaScript in browser context
+- `list_console_messages` — Retrieve browser console logs
+- `take_screenshot` — Capture browser screenshots
+- `take_snapshot` — Create browser state snapshots
+
+**When to use:**
+- After making frontend changes, use `performance_start_trace` + `performance_analyze_insight`
+- When investigating bugs, use `list_console_messages` and `list_network_requests`
+- Before committing UI changes, take screenshots with `take_screenshot`
+- To validate PRD NFR requirements (p95 < 10s), use performance tracing tools
+- When debugging API calls, check `list_network_requests`
+- For automated testing, use input automation tools (click, fill, fill_form)
+
+**Example workflow:**
+```typescript
+// 1. Start dev server first
+// npm run dev
+
+// 2. Open browser to app
+mcp__chrome_devtools__navigate_page({ url: 'http://localhost:3000' });
+
+// 3. Capture current state
+mcp__chrome_devtools__take_screenshot({ path: 'baseline.png' });
+
+// 4. Start performance trace
+mcp__chrome_devtools__performance_start_trace();
+
+// 5. Perform user interactions
+mcp__chrome_devtools__click({ selector: '#upload-button' });
+mcp__chrome_devtools__fill({ selector: '#file-input', value: 'test.pdf' });
+
+// 6. Stop trace and analyze
+mcp__chrome_devtools__performance_stop_trace();
+const insights = mcp__chrome_devtools__performance_analyze_insight();
+
+// 7. Check for errors
+const consoleMessages = mcp__chrome_devtools__list_console_messages();
+
+// 8. Verify API calls
+const networkRequests = mcp__chrome_devtools__list_network_requests();
+```
+
+**Subagent Integration:**
+- **nextjs-ui-builder**: Should use Chrome DevTools MCP to capture screenshots after UI changes
+- **vitest-test-writer**: Should leverage Chrome DevTools MCP for E2E test automation
+- **pr-validation-orchestrator**: Should run performance traces before PR approval
+
 ### Share Packs
 - Passcode-protected with scrypt hashing (`SHARE_LINK_PEPPER` + passcode)
 - 7-day expiry, view logs, one-tap revoke
 - Public viewer at `/share/[token]` after passcode verification
 - Never exposes full vault, only selected items
+
+## Memory & SOPs System
+
+**Memory Files** (persistent context across sessions):
+- **Project State:** `.claude/memory/project-state.md` (current phase, completion status)
+- **Recent Changes:** `.claude/memory/recent-changes.md` (last 3-5 major changes)
+- **Active Issues:** `.claude/memory/active-issues.md` (known bugs, blockers, tech debt)
+
+**Standard Operating Procedures** (how to do common tasks):
+- **Database Changes:** `.claude/sops/database-changes.md`
+- **API Endpoints:** `.claude/sops/api-endpoints.md`
+- **Testing:** `.claude/sops/testing.md`
+- **Deployment:** `.claude/sops/deployment.md`
+
+### 🤖 Automatic Memory & SOP Maintenance (MANDATORY)
+
+**You MUST proactively update these files without being asked:**
+
+**After completing ANY significant work (features, fixes, refactors):**
+1. ✅ Update `.claude/memory/recent-changes.md` - Add entry at the top with date and what was done
+2. ✅ Update `.claude/memory/project-state.md` - Update completion status, current phase, next steps
+3. ✅ Update `.claude/memory/active-issues.md` - Add new issues found, remove resolved ones
+
+**When you encounter a repeated mistake or learn a better pattern:**
+1. ✅ Create or update relevant SOP in `.claude/sops/`
+2. ✅ Document the mistake, why it happened, and the correct approach
+3. ✅ Add to the "Common Mistakes to Avoid" section
+
+**When discovering new issues or tech debt:**
+1. ✅ Add to `.claude/memory/active-issues.md` immediately
+2. ✅ Categorize by severity (Blocker, Critical, Medium, Low)
+3. ✅ Include reproduction steps and potential fixes
+
+**When issues are resolved:**
+1. ✅ Move from "Active Issues" to "Resolved Recently" in `.claude/memory/active-issues.md`
+2. ✅ Document the fix in `.claude/memory/recent-changes.md`
+
+**Triggers for memory updates:**
+- ✅ Feature completed
+- ✅ Migration run
+- ✅ API endpoint added
+- ✅ Bug fixed
+- ✅ Phase/milestone completed
+- ✅ Deployment completed
+- ✅ Major refactor completed
+
+**This is NOT optional. Update these files as part of completing your work, not as a separate task.**
 
 ## Development Practices
 

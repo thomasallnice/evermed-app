@@ -1,0 +1,9 @@
+{
+  "$schema": "https://github.com/anthropics/claude-code/blob/main/config-schema.json",
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest", "--isolated", "--headless"]
+    }
+  }
+}
