@@ -41,6 +41,7 @@ model Document {
   observations   Observation[]   @relation("DocToObs")
   sharePackItems SharePackItem[] // back-relation
   chatMessages   ChatMessage[]
+  summary        Summary?        // one-to-one relation
 }
 
 model Observation {
@@ -146,4 +147,18 @@ model AnalyticsEvent {
   createdAt DateTime @default(now())
 
   @@index([name, createdAt])
+}
+
+model Summary {
+  id             String   @id @default(uuid())
+  documentId     String   @unique
+  userId         String?  // For RLS compatibility
+  summaryText    String   @db.Text
+  structuredJson Json?    // Structured summary output
+  model          String   // AI model used (e.g., "gpt-5-mini")
+  createdAt      DateTime @default(now())
+
+  document       Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
