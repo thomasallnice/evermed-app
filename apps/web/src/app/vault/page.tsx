@@ -325,13 +325,13 @@ export default function VaultPage() {
               </svg>
             </div>
             <p className="text-gray-700 text-base mb-8">
-              You need to create a person profile before uploading documents.
+              Complete onboarding to start uploading documents. We'll collect your name and preferences.
             </p>
             <a
-              href="/profile"
+              href="/auth/onboarding"
               className="inline-block px-6 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
             >
-              Create Person Profile
+              Complete Onboarding
             </a>
           </div>
         </div>
