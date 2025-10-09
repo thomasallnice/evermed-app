@@ -4,6 +4,56 @@
 
 ---
 
+## 2025-10-09: Chrome DevTools MCP Subagent Integration ✅
+**Type:** Enhancement
+**Branch:** refit/user-auth-onboarding
+**Commits:** TBD
+
+### What Changed
+**Enhanced Subagent Documentation with Chrome DevTools MCP:**
+- Updated **nextjs-ui-builder** subagent with MCP integration:
+  - Screenshot capture workflow after UI changes
+  - Console error validation before commits
+  - Responsive design testing with device emulation
+  - Performance tracing for interactive components
+
+- Updated **vitest-test-writer** subagent with MCP integration:
+  - E2E test automation with navigate, click, fill_form tools
+  - Visual regression testing with screenshot baselines
+  - Console error assertions (zero tolerance)
+  - Network request validation for API contracts
+  - Performance assertions (p95 < 10s requirement)
+
+- Updated **pr-validation-orchestrator** subagent with MCP integration:
+  - Mandatory performance traces before PR approval
+  - Screenshot-based UI validation with baseline comparison
+  - Console error gate (BLOCK PR if errors detected)
+  - API contract validation with network request checks
+  - Accessibility audits (WCAG 2.1 AA compliance)
+
+**Updated CLAUDE.md Subagent Integration Section:**
+- Detailed MCP workflows for each subagent
+- MUST requirements for Chrome DevTools usage
+- Screenshot storage convention (`tests/screenshots/`)
+- Performance targets and blocking criteria
+
+### Why
+- Standardize Chrome DevTools MCP usage across all subagents
+- Enforce quality gates (performance, console errors, accessibility)
+- Enable automated visual regression testing
+- Ensure consistent E2E test automation patterns
+- Make subagent capabilities explicit and mandatory
+
+### Impact
+- ✅ All subagents now have clear MCP integration workflows
+- ✅ Performance validation mandatory before PR approval
+- ✅ Console errors will block PRs automatically
+- ✅ Visual regression testing framework established
+- ✅ E2E test automation patterns standardized
+- ✅ Accessibility validation enforced at PR level
+
+---
+
 ## 2025-10-08: Repository Cleanup & File Archival ✅
 **Type:** Maintenance
 **Branch:** refit/user-auth-onboarding

@@ -6,6 +6,14 @@
 **Deployment & Infrastructure** ✅ (98% Complete)
 
 ### Latest Accomplishment
+✅ **Chrome DevTools MCP Subagent Integration** (Complete)
+- Enhanced nextjs-ui-builder with screenshot capture and performance testing workflows
+- Enhanced vitest-test-writer with E2E automation and visual regression testing
+- Enhanced pr-validation-orchestrator with mandatory quality gates
+- Updated CLAUDE.md subagent integration section with detailed MCP workflows
+- Established screenshot storage convention and performance targets
+
+### Recent Accomplishments
 ✅ **Repository Cleanup & File Archival** (Complete)
 - 11 obsolete files archived to `archive/` directory
 - Deployment docs consolidated in `.claude/sops/deployment.md`
@@ -13,7 +21,6 @@
 - Clear archive index with replacement references
 - Repository root and `db/` directory significantly cleaner
 
-### Recent Accomplishment
 ✅ **Claude Code 2.0 Memory System & Chrome DevTools MCP Integration** (Complete)
 - Memory files created with current state, recent changes, active issues
 - SOPs documented for database, API, testing, deployment

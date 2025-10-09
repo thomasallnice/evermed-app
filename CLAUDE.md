@@ -228,9 +228,23 @@ const networkRequests = mcp__chrome_devtools__list_network_requests();
 ```
 
 **Subagent Integration:**
-- **nextjs-ui-builder**: Should use Chrome DevTools MCP to capture screenshots after UI changes
-- **vitest-test-writer**: Should leverage Chrome DevTools MCP for E2E test automation
-- **pr-validation-orchestrator**: Should run performance traces before PR approval
+- **nextjs-ui-builder**:
+  - MUST capture screenshots with `take_screenshot` after implementing UI components
+  - MUST validate console errors with `list_console_messages` before committing
+  - MUST test responsive design with `emulate_device` across all breakpoints
+  - MUST run performance traces with `performance_start_trace` + `performance_analyze_insight` for interactive components
+- **vitest-test-writer**:
+  - MUST use `navigate_page`, `click`, `fill_form` for E2E test automation
+  - MUST capture screenshots for visual regression testing (store in `tests/screenshots/`)
+  - MUST assert zero console errors with `list_console_messages`
+  - MUST validate network requests with `list_network_requests` for API contract testing
+  - MUST include performance assertions (p95 < 10s) using `performance_start_trace`
+- **pr-validation-orchestrator**:
+  - MUST run performance traces on key user flows before PR approval
+  - MUST capture screenshots for UI change validation
+  - MUST check console errors across all modified pages (BLOCK PR if errors found)
+  - MUST validate API contracts with `list_network_requests`
+  - MUST run accessibility audits for WCAG 2.1 AA compliance
 
 ### Share Packs
 - Passcode-protected with scrypt hashing (`SHARE_LINK_PEPPER` + passcode)
@@ -491,12 +505,57 @@ Before implementing ANY technical change, ask yourself:
    - **WITHOUT EXCEPTION**: Every single PR, no matter how small
    - **WHY CRITICAL**: Validates CODE_REVIEW.md checklist, runs full CI, ensures merge readiness
    - **NEVER SKIP**: Incomplete PRs waste review time and delay shipping
+   - **CHROME DEVTOOLS MCP INTEGRATION**:
+     - **Mandatory Performance Validation**:
+       - Before PR approval, run `mcp__chrome_devtools__performance_start_trace` on key user flows
+       - Use `mcp__chrome_devtools__performance_analyze_insight` to detect performance regressions
+       - Block PR if p95 render time exceeds 10s for medical data processing
+       - Validate Core Web Vitals (LCP, FID, CLS) meet targets
+     - **Screenshot-Based UI Validation**:
+       - For UI changes, capture screenshots with `mcp__chrome_devtools__take_screenshot`
+       - Compare against baseline screenshots in `tests/screenshots/`
+       - Flag visual regressions for manual review
+       - Ensure responsive design works across breakpoints (use `mcp__chrome_devtools__emulate_device`)
+     - **Console Error Gate**:
+       - Run `mcp__chrome_devtools__list_console_messages` on all modified pages
+       - **BLOCK PR** if any console.error or unhandled exceptions detected
+       - Zero tolerance for console warnings in production code
+     - **Network Request Validation**:
+       - Use `mcp__chrome_devtools__list_network_requests` to validate API contracts
+       - Ensure no broken endpoints or unauthorized requests
+       - Verify proper error handling for 4xx/5xx responses
+     - **Accessibility Checks**:
+       - Run accessibility audits via Chrome DevTools
+       - Validate WCAG 2.1 AA compliance for medical app standards
+       - Ensure keyboard navigation and screen reader support
 
 7. **vitest-test-writer**
    - **ALWAYS USE FOR**: Adding features or fixing bugs that need test coverage
    - **WITHOUT EXCEPTION**: All new features, bug fixes, performance-critical code, medical safety features
    - **WHY CRITICAL**: Ensures comprehensive test coverage, validates safety requirements, prevents regressions
    - **NEVER SKIP**: Untested code is broken code
+   - **CHROME DEVTOOLS MCP INTEGRATION**:
+     - **E2E Test Automation**:
+       - Use `mcp__chrome_devtools__navigate_page` to navigate to test URLs
+       - Use `mcp__chrome_devtools__click`, `mcp__chrome_devtools__fill`, `mcp__chrome_devtools__fill_form` for user interactions
+       - Use `mcp__chrome_devtools__wait_for` to wait for elements/navigation
+       - Example: Navigate → Fill form → Click submit → Wait for result → Assert with screenshot
+     - **Visual Regression Testing**:
+       - Capture screenshots with `mcp__chrome_devtools__take_screenshot` for baseline comparisons
+       - Store screenshots in `tests/screenshots/` for visual diff tracking
+       - Compare before/after screenshots for UI changes
+     - **Console Error Assertions**:
+       - Use `mcp__chrome_devtools__list_console_messages` to assert zero console errors
+       - Add console error checks to all E2E tests
+       - Fail tests if any console.error or unhandled exceptions detected
+     - **Performance Validation**:
+       - Use `mcp__chrome_devtools__performance_start_trace` for performance-critical tests
+       - Assert p95 render time < 10s for medical data processing
+       - Use `mcp__chrome_devtools__performance_analyze_insight` for bottleneck detection
+     - **Network Request Testing**:
+       - Use `mcp__chrome_devtools__list_network_requests` to validate API calls
+       - Assert correct endpoints are hit with expected payloads
+       - Verify proper error handling for network failures
 
 8. **nextjs-ui-builder**
    - **ALWAYS USE FOR**: UI components, styling, UX flows, frontend development, onboarding flows
@@ -570,6 +629,22 @@ Before implementing ANY technical change, ask yourself:
      - **NO GLOBAL BUTTON STYLES**: Never use global `button { }` CSS that overrides inline classes
        - All button styles must be explicit classes or inline Tailwind
        - This prevents unwanted blue gradients on all buttons
+   - **CHROME DEVTOOLS MCP INTEGRATION**:
+     - **Screenshot Capture After UI Changes**:
+       - Always capture screenshots with `mcp__chrome_devtools__take_screenshot` after implementing UI components
+       - Use for visual regression testing and documentation
+       - Example workflow: Implement component → Navigate to page → Take screenshot → Commit with visual proof
+     - **Performance Testing for Components**:
+       - Use `mcp__chrome_devtools__performance_start_trace` before user interactions
+       - Use `mcp__chrome_devtools__performance_analyze_insight` to check render performance
+       - Target: All interactive elements should respond within 100ms
+     - **Console Error Validation**:
+       - Always check `mcp__chrome_devtools__list_console_messages` before committing
+       - Zero console errors/warnings required for production code
+     - **Responsive Design Verification**:
+       - Use `mcp__chrome_devtools__emulate_device` to test mobile/tablet breakpoints
+       - Verify touch targets (44px minimum) on emulated devices
+       - Test all breakpoints: base (mobile) → sm: → md: → lg: → xl:
 
 ### How to Invoke Subagents
 
