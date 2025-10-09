@@ -20,6 +20,14 @@ model Person {
   locale     String?  @default("de-DE")
   createdAt  DateTime @default(now())
 
+  // Health profile fields (FHIR Patient extensions)
+  heightCm   Float?   // FHIR Observation (vital signs)
+  weightKg   Float?   // FHIR Observation (vital signs)
+  allergies  String[] // FHIR AllergyIntolerance - stored as array for quick access
+  diet       String[] // FHIR NutritionOrder preferences (e.g., ["vegetarian", "gluten-free"])
+  behaviors  String[] // FHIR Observation (e.g., ["smoking", "exercise"])
+  updatedAt  DateTime @updatedAt
+
   documents    Document[]
   observations Observation[]
   sharePacks   SharePack[]
@@ -41,7 +49,7 @@ model Document {
   observations   Observation[]   @relation("DocToObs")
   sharePackItems SharePackItem[] // back-relation
   chatMessages   ChatMessage[]
-  summary        Summary?        // one-to-one relation
+  summary        Summary? // one-to-one relation
 }
 
 model Observation {
@@ -152,13 +160,13 @@ model AnalyticsEvent {
 model Summary {
   id             String   @id @default(uuid())
   documentId     String   @unique
-  userId         String?  // For RLS compatibility
+  userId         String? // For RLS compatibility
   summaryText    String   @db.Text
-  structuredJson Json?    // Structured summary output
-  model          String   // AI model used (e.g., "gpt-5-mini")
+  structuredJson Json? // Structured summary output
+  model          String // AI model used (e.g., "gpt-5-mini")
   createdAt      DateTime @default(now())
 
-  document       Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }

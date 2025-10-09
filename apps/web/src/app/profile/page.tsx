@@ -3,15 +3,24 @@ import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase/client'
 
 type Profile = {
-  age?: number
-  sex?: string
-  height_cm?: number
-  weight_kg?: number
-  bmi?: number
+  givenName?: string
+  familyName?: string
+  birthYear?: number
+  sexAtBirth?: string
+  heightCm?: number
+  weightKg?: number
   diet?: string[]
   behaviors?: string[]
   allergies?: string[]
+  age?: number // Calculated field (read-only)
+  bmi?: number // Calculated field (read-only)
   [key: string]: any
+}
+
+type ToastMessage = {
+  id: number
+  message: string
+  type: 'success' | 'error'
 }
 
 export default function ProfilePage() {
@@ -28,6 +37,30 @@ export default function ProfilePage() {
   const [profilePicture, setProfilePicture] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploadingPicture, setUploadingPicture] = useState(false)
+  const [toasts, setToasts] = useState<ToastMessage[]>([])
+
+  // Chip-based field states
+  const [showDietInput, setShowDietInput] = useState(false)
+  const [customDiet, setCustomDiet] = useState('')
+  const [showBehaviorsInput, setShowBehaviorsInput] = useState(false)
+  const [customBehavior, setCustomBehavior] = useState('')
+  const [showAllergiesInput, setShowAllergiesInput] = useState(false)
+  const [customAllergy, setCustomAllergy] = useState('')
+
+  // Toast notification helper
+  const showToast = (message: string, type: 'success' | 'error') => {
+    const id = Date.now()
+    setToasts((prev) => [...prev, { id, message, type }])
+
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id))
+    }, 4000)
+  }
+
+  const dismissToast = (id: number) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id))
+  }
 
   useEffect(() => {
     ;(async () => {
@@ -43,10 +76,31 @@ export default function ProfilePage() {
         setProfilePicture(avatarUrl)
       }
 
+      // Fetch profile from new API endpoint
       try {
-        const { data: row } = await (supabase as any).from('user_graph').select('profile').eq('user_id', user.id).maybeSingle()
-        const p = (row as any)?.profile || {}
-        setProfile(p)
+        const res = await fetch('/api/profile', {
+          method: 'GET',
+          credentials: 'include',
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          setProfile({
+            givenName: data.givenName || undefined,
+            familyName: data.familyName || undefined,
+            birthYear: data.birthYear || undefined,
+            sexAtBirth: data.sexAtBirth || undefined,
+            heightCm: data.heightCm || undefined,
+            weightKg: data.weightKg || undefined,
+            diet: data.diet || [],
+            behaviors: data.behaviors || [],
+            allergies: data.allergies || [],
+            age: data.age || undefined,
+            bmi: data.bmi || undefined,
+          })
+        }
+      } catch (e) {
+        console.error('Failed to load profile:', e)
       } finally {
         setLoading(false)
       }
@@ -59,7 +113,9 @@ export default function ProfilePage() {
       const supabase = getSupabase()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.href = '/login'; return }
+
       const normalized: Profile = { ...profile }
+
       // Normalize CSV inputs to arrays
       if (typeof (normalized as any)._dietCsv === 'string') {
         normalized.diet = (normalized as any)._dietCsv.split(',').map((s: string) => s.trim()).filter(Boolean)
@@ -73,32 +129,62 @@ export default function ProfilePage() {
         normalized.allergies = (normalized as any)._allergiesCsv.split(',').map((s: string) => s.trim()).filter(Boolean)
         delete (normalized as any)._allergiesCsv
       }
-      if (normalized.height_cm && normalized.weight_kg) {
-        const bmi = Number(normalized.weight_kg) / Math.pow(Number(normalized.height_cm) / 100, 2)
-        normalized.bmi = Math.round(bmi * 10) / 10
+
+      // Prepare payload for PATCH /api/profile
+      const payload: any = {
+        name, // Update auth metadata
       }
-      const uid = (await supabase.auth.getUser()).data.user?.id
-      // Update auth metadata (name)
-      try { await supabase.auth.updateUser({ data: { name } }) } catch {}
-      const { error } = await (supabase as any).from('user_graph').upsert({ user_id: uid, profile: normalized }, { onConflict: 'user_id' })
-      if (error) throw error
-      // Insert metrics for time-series tracking if present
-      try {
-        if (normalized.weight_kg) {
-          await (supabase as any).from('user_metrics').insert({ user_id: uid, kind: 'weight_kg', value_num: normalized.weight_kg, unit: 'kg', source: 'profile-page' })
-        }
-        if (normalized.height_cm) {
-          await (supabase as any).from('user_metrics').insert({ user_id: uid, kind: 'height_cm', value_num: normalized.height_cm, unit: 'cm', source: 'profile-page' })
-        }
-        if (normalized.bmi) {
-          await (supabase as any).from('user_metrics').insert({ user_id: uid, kind: 'bmi', value_num: normalized.bmi, unit: '', source: 'profile-page' })
-        }
-      } catch {}
+
+      if (normalized.givenName !== undefined) payload.givenName = normalized.givenName
+      if (normalized.familyName !== undefined) payload.familyName = normalized.familyName
+      if (normalized.birthYear !== undefined) payload.birthYear = normalized.birthYear
+      if (normalized.sexAtBirth !== undefined) payload.sexAtBirth = normalized.sexAtBirth
+      if (normalized.heightCm !== undefined) payload.heightCm = normalized.heightCm
+      if (normalized.weightKg !== undefined) payload.weightKg = normalized.weightKg
+      if (normalized.diet !== undefined) payload.diet = normalized.diet
+      if (normalized.behaviors !== undefined) payload.behaviors = normalized.behaviors
+      if (normalized.allergies !== undefined) payload.allergies = normalized.allergies
+
+      // Call new API endpoint
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Save failed')
+      }
+
+      // Update local state with server response (includes calculated BMI and age)
+      setProfile({
+        givenName: data.givenName || undefined,
+        familyName: data.familyName || undefined,
+        birthYear: data.birthYear || undefined,
+        sexAtBirth: data.sexAtBirth || undefined,
+        heightCm: data.heightCm || undefined,
+        weightKg: data.weightKg || undefined,
+        diet: data.diet || [],
+        behaviors: data.behaviors || [],
+        allergies: data.allergies || [],
+        age: data.age || undefined,
+        bmi: data.bmi || undefined,
+      })
+
+      showToast('Profile saved successfully', 'success')
       setOk('Saved')
-      setProfile(normalized)
     } catch (e: any) {
-      setError(e?.message || 'Save failed')
-    } finally { setSaving(false) }
+      const errorMsg = e?.message || 'Save failed'
+      showToast(errorMsg, 'error')
+      setError(errorMsg)
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function changeEmail() {
@@ -107,11 +193,20 @@ export default function ProfilePage() {
       const supabase = getSupabase()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.href = '/login'; return }
-      if (!newEmail || newEmail === email) { setOk('No changes'); return }
+      if (!newEmail || newEmail === email) {
+        showToast('No changes to email', 'success')
+        setOk('No changes')
+        return
+      }
       const { error } = await supabase.auth.updateUser({ email: newEmail })
       if (error) throw error
+      showToast('Check your inbox to confirm the new email', 'success')
       setOk('Check your inbox to confirm the new email')
-    } catch (e:any) { setError(e?.message || 'Change email failed') } finally { setSaving(false) }
+    } catch (e:any) {
+      const errorMsg = e?.message || 'Change email failed'
+      showToast(errorMsg, 'error')
+      setError(errorMsg)
+    } finally { setSaving(false) }
   }
 
   async function changePassword() {
@@ -120,12 +215,21 @@ export default function ProfilePage() {
       const supabase = getSupabase()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.href = '/login'; return }
-      if (!newPassword || newPassword.length < 8) { setError('Password too short'); return }
+      if (!newPassword || newPassword.length < 8) {
+        showToast('Password too short (minimum 8 characters)', 'error')
+        setError('Password too short')
+        return
+      }
       const { error } = await supabase.auth.updateUser({ password: newPassword })
       if (error) throw error
+      showToast('Password updated successfully', 'success')
       setOk('Password updated')
       setNewPassword('')
-    } catch (e:any) { setError(e?.message || 'Change password failed') } finally { setSaving(false) }
+    } catch (e:any) {
+      const errorMsg = e?.message || 'Change password failed'
+      showToast(errorMsg, 'error')
+      setError(errorMsg)
+    } finally { setSaving(false) }
   }
 
   async function deleteAccount() {
@@ -207,9 +311,12 @@ export default function ProfilePage() {
 
       setProfilePicture(publicUrl)
       setSelectedFile(null)
+      showToast('Profile picture updated successfully', 'success')
       setOk('Profile picture updated')
     } catch (e: any) {
-      setError(e?.message || 'Upload failed')
+      const errorMsg = e?.message || 'Upload failed'
+      showToast(errorMsg, 'error')
+      setError(errorMsg)
       // Revert preview on error
       const supabase = getSupabase()
       const { data: { user } } = await supabase.auth.getUser()
@@ -248,12 +355,97 @@ export default function ProfilePage() {
 
       setProfilePicture(null)
       setSelectedFile(null)
+      showToast('Profile picture removed successfully', 'success')
       setOk('Profile picture removed')
     } catch (e: any) {
-      setError(e?.message || 'Remove failed')
+      const errorMsg = e?.message || 'Remove failed'
+      showToast(errorMsg, 'error')
+      setError(errorMsg)
     } finally {
       setUploadingPicture(false)
     }
+  }
+
+  // Common options for chip-based fields
+  const COMMON_DIET_OPTIONS = [
+    'Vegetarian',
+    'Vegan',
+    'Pescatarian',
+    'Ketogenic',
+    'Gluten-free',
+    'Lactose-free',
+    'Halal',
+    'Kosher',
+    'Omnivore'
+  ]
+
+  const COMMON_BEHAVIOR_OPTIONS = [
+    'Regular Exercise',
+    'Non-smoker',
+    'Smoking',
+    'Social Drinking',
+    'Meditation',
+    'Yoga',
+    'Running',
+    'Cycling'
+  ]
+
+  const COMMON_ALLERGY_OPTIONS = [
+    'Peanuts',
+    'Tree nuts',
+    'Shellfish',
+    'Fish',
+    'Eggs',
+    'Milk/Dairy',
+    'Soy',
+    'Wheat/Gluten',
+    'Penicillin',
+    'Latex',
+    'Bee stings',
+    'Pollen'
+  ]
+
+  // Helper functions for chip management
+  const addDietItem = (item: string) => {
+    const trimmedItem = item.trim()
+    if (!trimmedItem) return
+    const currentDiet = Array.isArray(profile.diet) ? profile.diet : []
+    if (!currentDiet.includes(trimmedItem)) {
+      setProfile({ ...profile, diet: [...currentDiet, trimmedItem] })
+    }
+  }
+
+  const removeDietItem = (item: string) => {
+    const currentDiet = Array.isArray(profile.diet) ? profile.diet : []
+    setProfile({ ...profile, diet: currentDiet.filter((d) => d !== item) })
+  }
+
+  const addBehaviorItem = (item: string) => {
+    const trimmedItem = item.trim()
+    if (!trimmedItem) return
+    const currentBehaviors = Array.isArray(profile.behaviors) ? profile.behaviors : []
+    if (!currentBehaviors.includes(trimmedItem)) {
+      setProfile({ ...profile, behaviors: [...currentBehaviors, trimmedItem] })
+    }
+  }
+
+  const removeBehaviorItem = (item: string) => {
+    const currentBehaviors = Array.isArray(profile.behaviors) ? profile.behaviors : []
+    setProfile({ ...profile, behaviors: currentBehaviors.filter((b) => b !== item) })
+  }
+
+  const addAllergyItem = (item: string) => {
+    const trimmedItem = item.trim()
+    if (!trimmedItem) return
+    const currentAllergies = Array.isArray(profile.allergies) ? profile.allergies : []
+    if (!currentAllergies.includes(trimmedItem)) {
+      setProfile({ ...profile, allergies: [...currentAllergies, trimmedItem] })
+    }
+  }
+
+  const removeAllergyItem = (item: string) => {
+    const currentAllergies = Array.isArray(profile.allergies) ? profile.allergies : []
+    setProfile({ ...profile, allergies: currentAllergies.filter((a) => a !== item) })
   }
 
   if (loading) {
@@ -270,10 +462,6 @@ export default function ProfilePage() {
       </div>
     )
   }
-
-  const dietCsv = Array.isArray(profile.diet) ? profile.diet.join(', ') : ((profile as any)._dietCsv || '')
-  const behaviorsCsv = Array.isArray(profile.behaviors) ? profile.behaviors.join(', ') : ((profile as any)._behaviorsCsv || '')
-  const allergiesCsv = Array.isArray(profile.allergies) ? profile.allergies.join(', ') : ((profile as any)._allergiesCsv || '')
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -548,32 +736,107 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label htmlFor="age" className="block text-sm font-semibold text-gray-700">
-                Age
+              <label htmlFor="given-name" className="block text-sm font-semibold text-gray-700">
+                Given Name
               </label>
               <input
-                id="age"
-                type="number"
-                value={profile.age ?? ''}
-                onChange={(e) => setProfile({ ...profile, age: e.target.value ? Number(e.target.value) : undefined })}
+                id="given-name"
+                type="text"
+                value={profile.givenName ?? ''}
+                onChange={(e) => setProfile({ ...profile, givenName: e.target.value || undefined })}
+                autoComplete="given-name"
                 className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white transition-all"
-                placeholder="Enter age"
-                aria-label="Age"
+                placeholder="Enter given name"
+                aria-label="Given name"
               />
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="sex" className="block text-sm font-semibold text-gray-700">
-                Sex
+              <label htmlFor="family-name" className="block text-sm font-semibold text-gray-700">
+                Family Name
               </label>
               <input
-                id="sex"
+                id="family-name"
                 type="text"
-                value={profile.sex ?? ''}
-                onChange={(e) => setProfile({ ...profile, sex: e.target.value || undefined })}
+                value={profile.familyName ?? ''}
+                onChange={(e) => setProfile({ ...profile, familyName: e.target.value || undefined })}
+                autoComplete="family-name"
                 className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white transition-all"
-                placeholder="e.g., Male, Female"
-                aria-label="Sex"
+                placeholder="Enter family name"
+                aria-label="Family name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="date-of-birth" className="block text-sm font-semibold text-gray-700">
+                Date of Birth
+              </label>
+              <input
+                id="date-of-birth"
+                type="date"
+                value={
+                  profile.birthYear
+                    ? `${profile.birthYear}-01-01`
+                    : ''
+                }
+                onChange={(e) => {
+                  const selectedDate = e.target.value
+                  if (selectedDate) {
+                    const year = new Date(selectedDate).getFullYear()
+                    setProfile({ ...profile, birthYear: year })
+                  } else {
+                    setProfile({ ...profile, birthYear: undefined })
+                  }
+                }}
+                className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white transition-all"
+                aria-label="Date of birth"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="age" className="block text-sm font-semibold text-gray-700">
+                Age (Calculated)
+              </label>
+              <input
+                id="age"
+                type="text"
+                value={profile.age ?? '—'}
+                readOnly
+                className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                aria-label="Age (calculated from birth year, read-only)"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="sex-at-birth" className="block text-sm font-semibold text-gray-700">
+                Sex at Birth
+              </label>
+              <select
+                id="sex-at-birth"
+                value={profile.sexAtBirth ?? ''}
+                onChange={(e) => setProfile({ ...profile, sexAtBirth: e.target.value || undefined })}
+                className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white transition-all"
+                aria-label="Sex at birth"
+              >
+                <option value="">Select...</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Intersex">Intersex</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="bmi" className="block text-sm font-semibold text-gray-700">
+                BMI (Calculated)
+              </label>
+              <input
+                id="bmi"
+                type="text"
+                value={profile.bmi ?? '—'}
+                readOnly
+                className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                aria-label="BMI (calculated from height and weight, read-only)"
               />
             </div>
 
@@ -584,12 +847,16 @@ export default function ProfilePage() {
               <input
                 id="height"
                 type="number"
-                value={profile.height_cm ?? ''}
-                onChange={(e) => setProfile({ ...profile, height_cm: e.target.value ? Number(e.target.value) : undefined })}
+                min="0"
+                max="300"
+                step="1"
+                value={profile.heightCm ?? ''}
+                onChange={(e) => setProfile({ ...profile, heightCm: e.target.value ? Number(e.target.value) : undefined })}
                 className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white transition-all"
                 placeholder="Enter height in cm"
                 aria-label="Height in centimeters"
               />
+              <p className="text-xs text-gray-600">Typical range: 140-210 cm</p>
             </div>
 
             <div className="space-y-2">
@@ -599,57 +866,360 @@ export default function ProfilePage() {
               <input
                 id="weight"
                 type="number"
-                value={profile.weight_kg ?? ''}
-                onChange={(e) => setProfile({ ...profile, weight_kg: e.target.value ? Number(e.target.value) : undefined })}
+                min="0"
+                max="500"
+                step="0.1"
+                value={profile.weightKg ?? ''}
+                onChange={(e) => setProfile({ ...profile, weightKg: e.target.value ? Number(e.target.value) : undefined })}
                 className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white transition-all"
                 placeholder="Enter weight in kg"
                 aria-label="Weight in kilograms"
               />
+              <p className="text-xs text-gray-600">Typical range: 40-200 kg</p>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="diet" className="block text-sm font-semibold text-gray-700">
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-700">
                 Diet
               </label>
-              <input
-                id="diet"
-                type="text"
-                value={dietCsv}
-                onChange={(e) => setProfile({ ...profile, _dietCsv: e.target.value })}
-                className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white transition-all"
-                placeholder="e.g., vegetarian, gluten-free"
-                aria-label="Dietary preferences (comma-separated)"
-              />
+
+              {/* Common diet options */}
+              <div className="flex flex-wrap gap-2">
+                {COMMON_DIET_OPTIONS.map((option) => {
+                  const isSelected = Array.isArray(profile.diet) && profile.diet.includes(option)
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => isSelected ? removeDietItem(option) : addDietItem(option)}
+                      className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${
+                        isSelected
+                          ? 'bg-green-100 text-green-700 border border-green-200 hover:bg-green-200'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                      aria-label={`${isSelected ? 'Remove' : 'Add'} ${option}`}
+                      aria-pressed={isSelected}
+                    >
+                      {option}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Selected items as chips */}
+              {Array.isArray(profile.diet) && profile.diet.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <span className="text-xs font-medium text-green-700 uppercase tracking-wide self-center">Selected:</span>
+                  {profile.diet.map((item) => (
+                    <span
+                      key={item}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium bg-green-100 text-green-700 border border-green-200 rounded-full transition-all hover:bg-green-200"
+                    >
+                      {item}
+                      <button
+                        type="button"
+                        onClick={() => removeDietItem(item)}
+                        className="ml-0.5 hover:text-green-900 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-1 rounded-full transition-all"
+                        aria-label={`Remove ${item}`}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Add custom input */}
+              {showDietInput ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customDiet}
+                    onChange={(e) => setCustomDiet(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addDietItem(customDiet)
+                        setCustomDiet('')
+                        setShowDietInput(false)
+                      } else if (e.key === 'Escape') {
+                        setCustomDiet('')
+                        setShowDietInput(false)
+                      }
+                    }}
+                    placeholder="Enter custom diet..."
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600 bg-white transition-all"
+                    autoFocus
+                    aria-label="Custom diet entry"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      addDietItem(customDiet)
+                      setCustomDiet('')
+                      setShowDietInput(false)
+                    }}
+                    className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 transition-all shadow-sm"
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomDiet('')
+                      setShowDietInput(false)
+                    }}
+                    className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowDietInput(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-green-700 bg-white border border-green-300 rounded-lg hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 transition-all"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add custom
+                </button>
+              )}
+
+              <p className="text-xs text-gray-600">Select common options or add your own dietary preferences</p>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="behaviors" className="block text-sm font-semibold text-gray-700">
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-700">
                 Behaviors
               </label>
-              <input
-                id="behaviors"
-                type="text"
-                value={behaviorsCsv}
-                onChange={(e) => setProfile({ ...profile, _behaviorsCsv: e.target.value })}
-                className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white transition-all"
-                placeholder="e.g., exercise, smoking"
-                aria-label="Health behaviors (comma-separated)"
-              />
+
+              {/* Common behavior options */}
+              <div className="flex flex-wrap gap-2">
+                {COMMON_BEHAVIOR_OPTIONS.map((option) => {
+                  const isSelected = Array.isArray(profile.behaviors) && profile.behaviors.includes(option)
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => isSelected ? removeBehaviorItem(option) : addBehaviorItem(option)}
+                      className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
+                        isSelected
+                          ? 'bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                      aria-label={`${isSelected ? 'Remove' : 'Add'} ${option}`}
+                      aria-pressed={isSelected}
+                    >
+                      {option}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Selected items as chips */}
+              {Array.isArray(profile.behaviors) && profile.behaviors.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <span className="text-xs font-medium text-blue-700 uppercase tracking-wide self-center">Selected:</span>
+                  {profile.behaviors.map((item) => (
+                    <span
+                      key={item}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium bg-blue-100 text-blue-700 border border-blue-200 rounded-full transition-all hover:bg-blue-200"
+                    >
+                      {item}
+                      <button
+                        type="button"
+                        onClick={() => removeBehaviorItem(item)}
+                        className="ml-0.5 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-1 rounded-full transition-all"
+                        aria-label={`Remove ${item}`}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Add custom input */}
+              {showBehaviorsInput ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customBehavior}
+                    onChange={(e) => setCustomBehavior(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addBehaviorItem(customBehavior)
+                        setCustomBehavior('')
+                        setShowBehaviorsInput(false)
+                      } else if (e.key === 'Escape') {
+                        setCustomBehavior('')
+                        setShowBehaviorsInput(false)
+                      }
+                    }}
+                    placeholder="Enter custom behavior..."
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white transition-all"
+                    autoFocus
+                    aria-label="Custom behavior entry"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      addBehaviorItem(customBehavior)
+                      setCustomBehavior('')
+                      setShowBehaviorsInput(false)
+                    }}
+                    className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 transition-all shadow-sm"
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomBehavior('')
+                      setShowBehaviorsInput(false)
+                    }}
+                    className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowBehaviorsInput(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-700 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 transition-all"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add custom
+                </button>
+              )}
+
+              <p className="text-xs text-gray-600">Select common options or add your own health behaviors</p>
             </div>
 
-            <div className="space-y-2 sm:col-span-2">
-              <label htmlFor="allergies" className="block text-sm font-semibold text-gray-700">
+            <div className="space-y-3 sm:col-span-2">
+              <label className="block text-sm font-semibold text-gray-700">
                 Allergies
               </label>
-              <input
-                id="allergies"
-                type="text"
-                value={allergiesCsv}
-                onChange={(e) => setProfile({ ...profile, _allergiesCsv: e.target.value })}
-                className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white transition-all"
-                placeholder="e.g., peanuts, penicillin"
-                aria-label="Allergies (comma-separated)"
-              />
+
+              {/* Common allergy options */}
+              <div className="flex flex-wrap gap-2">
+                {COMMON_ALLERGY_OPTIONS.map((option) => {
+                  const isSelected = Array.isArray(profile.allergies) && profile.allergies.includes(option)
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => isSelected ? removeAllergyItem(option) : addAllergyItem(option)}
+                      className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 ${
+                        isSelected
+                          ? 'bg-red-100 text-red-700 border border-red-200 hover:bg-red-200'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                      aria-label={`${isSelected ? 'Remove' : 'Add'} ${option}`}
+                      aria-pressed={isSelected}
+                    >
+                      {option}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Selected items as chips */}
+              {Array.isArray(profile.allergies) && profile.allergies.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <span className="text-xs font-medium text-red-700 uppercase tracking-wide self-center">Selected:</span>
+                  {profile.allergies.map((item) => (
+                    <span
+                      key={item}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium bg-red-100 text-red-700 border border-red-200 rounded-full transition-all hover:bg-red-200"
+                    >
+                      {item}
+                      <button
+                        type="button"
+                        onClick={() => removeAllergyItem(item)}
+                        className="ml-0.5 hover:text-red-900 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-1 rounded-full transition-all"
+                        aria-label={`Remove ${item}`}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Add custom input */}
+              {showAllergiesInput ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customAllergy}
+                    onChange={(e) => setCustomAllergy(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addAllergyItem(customAllergy)
+                        setCustomAllergy('')
+                        setShowAllergiesInput(false)
+                      } else if (e.key === 'Escape') {
+                        setCustomAllergy('')
+                        setShowAllergiesInput(false)
+                      }
+                    }}
+                    placeholder="Enter custom allergy..."
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 bg-white transition-all"
+                    autoFocus
+                    aria-label="Custom allergy entry"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      addAllergyItem(customAllergy)
+                      setCustomAllergy('')
+                      setShowAllergiesInput(false)
+                    }}
+                    className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 transition-all shadow-sm"
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomAllergy('')
+                      setShowAllergiesInput(false)
+                    }}
+                    className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowAllergiesInput(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-700 bg-white border border-red-300 rounded-lg hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 transition-all"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add custom
+                </button>
+              )}
+
+              <p className="text-xs text-gray-600">
+                <strong className="text-red-700">Important:</strong> Select common options or add your own allergies. This information helps personalize health recommendations.
+              </p>
             </div>
           </div>
 
@@ -712,6 +1282,108 @@ export default function ProfilePage() {
           </div>
         </section>
       </div>
+
+      {/* Toast Notification Container */}
+      <div
+        className="fixed top-4 right-4 z-50 flex flex-col gap-3 max-w-md"
+        aria-live="polite"
+        aria-atomic="true"
+        role="status"
+      >
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={`flex items-start gap-3 p-4 rounded-lg shadow-lg border transition-all duration-300 ease-out animate-slide-in ${
+              toast.type === 'success'
+                ? 'bg-green-100 text-green-700 border-green-200'
+                : 'bg-red-100 text-red-700 border-red-200'
+            }`}
+            style={{
+              animation: 'slideIn 0.3s ease-out forwards'
+            }}
+          >
+            {/* Icon */}
+            {toast.type === 'success' ? (
+              <svg
+                className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            )}
+
+            {/* Message */}
+            <p className="flex-1 text-sm font-medium">{toast.message}</p>
+
+            {/* Close Button */}
+            <button
+              onClick={() => dismissToast(toast.id)}
+              className={`flex-shrink-0 hover:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-1 rounded transition-all ${
+                toast.type === 'success'
+                  ? 'focus:ring-green-600'
+                  : 'focus:ring-red-600'
+              }`}
+              aria-label="Dismiss notification"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Keyframe animation styles */}
+      <style jsx>{`
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateX(100%);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        .animate-slide-in {
+          animation: slideIn 0.3s ease-out forwards;
+        }
+      `}</style>
     </div>
   )
 }
