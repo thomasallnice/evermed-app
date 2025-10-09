@@ -646,6 +646,22 @@ Before implementing ANY technical change, ask yourself:
        - Verify touch targets (44px minimum) on emulated devices
        - Test all breakpoints: base (mobile) → sm: → md: → lg: → xl:
 
+9. **deployment-validator**
+   - **ALWAYS USE FOR**: Validating deployed applications after deployment completes
+   - **WITHOUT EXCEPTION**: After Vercel/staging/production deployment, after infrastructure fixes, after database migrations deploy, before promoting staging to production
+   - **WHY CRITICAL**: Automates comprehensive post-deployment testing, catches deployment-specific issues, validates critical blockers are resolved
+   - **NEVER SKIP**: Manual testing misses edge cases and deployment-specific errors
+   - **CHROME DEVTOOLS MCP INTEGRATION**:
+     - Navigate to all critical pages (auth, vault, upload, profile, packs, chat)
+     - Take screenshots for visual verification (stored in `tests/screenshots/deployment-verification/`)
+     - Check `list_console_messages` for zero console errors (BLOCK deployment if found)
+     - Validate performance with `performance_start_trace` + `performance_analyze_insight` (p95 < 10s)
+     - Test mobile responsiveness with `emulate_device` across all breakpoints
+     - Verify API health with `list_network_requests` (no 500 errors, no broken endpoints)
+     - Confirm DATABASE_URL works (no Prisma errors)
+     - Confirm storage bucket exists (no "Bucket not found" errors)
+     - Returns summary report with pass/fail counts, console errors, performance metrics, and "ready for production" verdict
+
 ### How to Invoke Subagents
 
 **IMMEDIATELY invoke the Task tool when a subagent is required:**

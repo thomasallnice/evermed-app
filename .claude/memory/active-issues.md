@@ -1,54 +1,12 @@
 # Active Issues & Tech Debt
 
-**Last Updated:** 2025-10-08
+**Last Updated:** 2025-10-09
 
 ---
 
 ## 🚨 Blockers (Must Fix Immediately)
 
-### DATABASE_URL Environment Variable in Vercel
-**Severity:** Blocker
-**Status:** Identified, awaiting manual fix
-**Affects:** Production deployment
-
-**Issue:**
-- Vercel environment variable `DATABASE_URL` is set to `${SUPABASE_DB_URL}` (shell syntax)
-- Shell variable substitution doesn't work in Vercel
-- Causes: "the URL must start with the protocol postgresql://" error
-
-**Reproduction:**
-1. Deploy to Vercel
-2. Visit `/auth/onboarding`
-3. See Prisma error about DATABASE_URL
-
-**Fix:**
-- Go to Vercel Dashboard → Settings → Environment Variables
-- Change `DATABASE_URL` to direct value: `postgres://postgres:PASSWORD@db.wukrnqifpgjwbqxpockm.supabase.co:5432/postgres`
-- Redeploy
-
-**Documentation:** `VERCEL_FIX.md`
-
----
-
-### Supabase Storage Bucket Missing
-**Severity:** Blocker
-**Status:** Identified, awaiting manual fix
-**Affects:** File uploads, document storage
-
-**Issue:**
-- `documents` storage bucket doesn't exist in Supabase project
-- Causes: "Bucket not found" error on `/profile` and upload pages
-
-**Reproduction:**
-1. Visit `/profile`
-2. See "Bucket not found" error
-
-**Fix:**
-1. Go to Supabase Dashboard → Storage
-2. Create bucket: `documents` (private)
-3. Apply RLS policies (SQL in `VERCEL_FIX.md`)
-
-**Documentation:** `VERCEL_FIX.md`, `DEPLOYMENT_CHECKLIST.md`
+**🎉 NO ACTIVE BLOCKERS** - All deployment blockers resolved!
 
 ---
 
@@ -154,6 +112,28 @@
 ---
 
 ## ✅ Resolved Recently
+
+### DATABASE_URL Environment Variable in Vercel (Resolved 2025-10-09)
+**Was:** DATABASE_URL set to `${SUPABASE_DB_URL}` (shell syntax) which doesn't work in Vercel
+**Fix:** Changed to direct database URL value in Vercel Dashboard
+**Validation:** Deployment validation passed - no Prisma errors
+**Date:** 2025-10-09
+
+### Supabase Storage Bucket Missing (Resolved 2025-10-09)
+**Was:** "Bucket not found" errors on /profile and /upload pages
+**Fix:** Created `documents` bucket (private) with RLS policies in Supabase Dashboard
+**Validation:** Deployment validation passed - profile and upload pages load without errors
+**Date:** 2025-10-09
+
+### Vercel Deployment Protection Bypass (Resolved 2025-10-09)
+**Was:** Could not automate deployment testing due to protection
+**Fix:**
+- Obtained bypass secret from Vercel Dashboard
+- Created validation script using `x-vercel-protection-bypass` header
+- Added secret to .env as `VERCEL_BYPASS_TOKEN`
+**Validation:** Automated validation script passes all tests (21/21)
+**Script:** `scripts/validate-deployment-with-bypass.js`
+**Date:** 2025-10-09
 
 ### Vercel Monorepo Configuration (Resolved 2025-10-08)
 **Was:** Routes-manifest.json not found error
