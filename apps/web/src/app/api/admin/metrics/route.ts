@@ -1,9 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, AnalyticsEvent, TokenUsage } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 export const runtime = 'nodejs';
 
 const prisma = new PrismaClient();
+
+// Type aliases for Prisma models
+type AnalyticsEvent = {
+  id: string;
+  userId: string | null;
+  name: string;
+  meta: any;
+  createdAt: Date;
+};
+
+type TokenUsage = {
+  id: string;
+  feature: string;
+  model: string;
+  tokensIn: number;
+  tokensOut: number;
+  costUsd: number | null;
+  createdAt: Date;
+};
 
 function isAdmin(req: NextRequest) {
   return req.headers.get('x-admin') === '1'; // TODO: replace with Supabase role check
