@@ -10,6 +10,19 @@ const prisma = new PrismaClient();
 type AnalyticsEvent = Prisma.AnalyticsEventGetPayload<{}>;
 type TokenUsage = Prisma.TokenUsageGetPayload<{}>;
 
+// Compatibility helpers for old schema (userId/name/meta) vs new schema (sessionId/eventName/metadata)
+function getSessionId(e: AnalyticsEvent): string {
+  return String((e as any).sessionId || (e as any).userId || '');
+}
+
+function getEventName(e: AnalyticsEvent): string {
+  return String((e as any).eventName || (e as any).name || '');
+}
+
+function getMetadata(e: AnalyticsEvent): any {
+  return (e as any).metadata || (e as any).meta || {};
+}
+
 function isAdmin(req: NextRequest) {
   return req.headers.get('x-admin') === '1'; // TODO: replace with Supabase role check
 }
@@ -49,7 +62,7 @@ async function computeTiles(days: number): Promise<Tiles> {
   // Group events by sessionId (privacy-preserving aggregation)
   const bySession = new Map<string, AnalyticsEvent[]>();
   for (const e of ev) {
-    const sid = String(e.sessionId || '');
+    const sid = getSessionId(e);
     if (!bySession.has(sid)) bySession.set(sid, []);
     bySession.get(sid)!.push(e);
   }
@@ -58,9 +71,9 @@ async function computeTiles(days: number): Promise<Tiles> {
   let activated = 0;
   let newSessions = 0;
   for (const [sid, list] of bySession.entries()) {
-    const ups = list.filter((x) => x.eventName === 'first_upload_done');
+    const ups = list.filter((x) => getEventName(x) === 'first_upload_done');
     if (ups.length) newSessions++;
-    const expl = list.filter((x) => x.eventName === 'explain_viewed');
+    const expl = list.filter((x) => getEventName(x) === 'explain_viewed');
     if (ups.length && expl.length) {
       const ok = ups.some((u) => expl.some((x) => within24h(u.createdAt, x.createdAt)));
       if (ok) activated++;
@@ -69,26 +82,26 @@ async function computeTiles(days: number): Promise<Tiles> {
   const activation = pct(activated, Math.max(1, newSessions));
 
   // Clarity: % "Explain helpful = Yes"
-  const helpful = ev.filter((x) => x.eventName === 'explain_helpful');
+  const helpful = ev.filter((x) => getEventName(x) === 'explain_helpful');
   const helpfulYes = helpful.filter((x) => {
-    const m = (x.metadata ?? {}) as any;
+    const m = getMetadata(x);
     const v = String(m?.value ?? m?.thumbs ?? '').toLowerCase();
     return v === 'yes' || v === 'up';
   }).length;
   const clarity = pct(helpfulYes, helpful.length || 0);
 
   // Preparation: % WAU sessions creating ≥1 pack; recipient thumbs-up %
-  const wauSessions = new Set(ev.map((x) => String(x.sessionId || '')));
-  const shareCreatedSessions = new Set(ev.filter((x) => x.eventName === 'share_pack_created').map((x) => String(x.sessionId || '')));
+  const wauSessions = new Set(ev.map((x) => getSessionId(x)));
+  const shareCreatedSessions = new Set(ev.filter((x) => getEventName(x) === 'share_pack_created').map((x) => getSessionId(x)));
   const prepPct = pct(shareCreatedSessions.size, Math.max(1, wauSessions.size));
-  const recip = ev.filter((x) => x.eventName === 'share_pack_recipient_feedback');
-  const recipUp = recip.filter((x) => String(((x.metadata ?? {}) as any)?.thumbs || '').toLowerCase() === 'up').length;
+  const recip = ev.filter((x) => getEventName(x) === 'share_pack_recipient_feedback');
+  const recipUp = recip.filter((x) => String(getMetadata(x)?.thumbs || '').toLowerCase() === 'up').length;
   const recipientThumbsUpPct = pct(recipUp, recip.length || 0);
 
   // Retention (simple): sessions with any event ≥30d ago who are active in this window
   const pastSince = new Date(now.getTime() - 60 * 24 * 3600 * 1000);
-  const pastEv = await prisma.analyticsEvent.findMany({ where: { createdAt: { gte: pastSince, lt: since } }, select: { sessionId: true } });
-  const cohort = new Set(pastEv.map((x) => String(x.sessionId || '')));
+  const pastEv = await prisma.analyticsEvent.findMany({ where: { createdAt: { gte: pastSince, lt: since } } });
+  const cohort = new Set(pastEv.map((x) => getSessionId(x)));
   let retained = 0;
   for (const sid of cohort) {
     if (wauSessions.has(sid)) retained++;
@@ -96,29 +109,35 @@ async function computeTiles(days: number): Promise<Tiles> {
   const retention = pct(retained, cohort.size || 0);
 
   // Trust: profile_suggestion_accept_rate
-  const shown = ev.filter((x) => x.eventName === 'profile_suggestion_shown').length;
-  const accepted = ev.filter((x) => x.eventName === 'profile_suggestion_accepted').length;
+  const shown = ev.filter((x) => getEventName(x) === 'profile_suggestion_shown').length;
+  const accepted = ev.filter((x) => getEventName(x) === 'profile_suggestion_accepted').length;
   const trust = pct(accepted, shown || 0);
 
   // Safety: incidents and % answers without citations
-  const incidents = ev.filter((x) => x.eventName === 'unsafe_report');
-  const p0 = incidents.filter((x) => String(((x.metadata ?? {}) as any)?.severity || '').toUpperCase() === 'P0').length;
-  const p1 = incidents.filter((x) => String(((x.metadata ?? {}) as any)?.severity || '').toUpperCase() === 'P1').length;
-  const answers = ev.filter((x) => x.eventName === 'answer_generated');
-  const noCite = answers.filter((x) => !Boolean(((x.metadata ?? {}) as any)?.citations));
+  const incidents = ev.filter((x) => getEventName(x) === 'unsafe_report');
+  const p0 = incidents.filter((x) => String(getMetadata(x)?.severity || '').toUpperCase() === 'P0').length;
+  const p1 = incidents.filter((x) => String(getMetadata(x)?.severity || '').toUpperCase() === 'P1').length;
+  const answers = ev.filter((x) => getEventName(x) === 'answer_generated');
+  const noCite = answers.filter((x) => !Boolean(getMetadata(x)?.citations));
   const noCitationPct = pct(noCite.length, answers.length || 0);
 
   // Latency: p95 of latency_ms metadata.latency_ms
-  const lats = ev.filter((x) => x.eventName === 'api_latency' || x.eventName === 'latency_ms').map((x) => Number(((x.metadata ?? {}) as any)?.latency_ms || ((x.metadata ?? {}) as any)?.ms || 0)).filter((n) => n > 0);
+  const lats = ev.filter((x) => getEventName(x) === 'api_latency' || getEventName(x) === 'latency_ms').map((x) => {
+    const m = getMetadata(x);
+    return Number(m?.latency_ms || m?.ms || 0);
+  }).filter((n) => n > 0);
   const latencyP95Ms = p95(lats);
 
   // Usage (using sessions as proxy for users - privacy-preserving)
   const oneDayAgo = new Date(now.getTime() - 1 * 24 * 3600 * 1000);
-  const dau = new Set(ev.filter((x) => x.createdAt >= oneDayAgo).map((x) => String(x.sessionId || ''))).size;
+  const dau = new Set(ev.filter((x) => x.createdAt >= oneDayAgo).map((x) => getSessionId(x))).size;
   const wau = wauSessions.size;
-  const mau = new Set((await prisma.analyticsEvent.findMany({ where: { createdAt: { gte: new Date(now.getTime() - 30 * 24 * 3600 * 1000) } }, select: { sessionId: true, createdAt: true } })).map((x) => String(x.sessionId || ''))).size;
-  const uploads = ev.filter((x) => x.eventName === 'first_upload_done');
-  const uploadSessions = new Set(uploads.map((x) => String(x.sessionId || ''))).size;
+  const mauEvents = await prisma.analyticsEvent.findMany({
+    where: { createdAt: { gte: new Date(now.getTime() - 30 * 24 * 3600 * 1000) } }
+  });
+  const mau = new Set(mauEvents.map((x) => getSessionId(x))).size;
+  const uploads = ev.filter((x) => getEventName(x) === 'first_upload_done');
+  const uploadSessions = new Set(uploads.map((x) => getSessionId(x))).size;
   const uploadsPerUser = uploadSessions ? Math.round((uploads.length / uploadSessions) * 10) / 10 : 0;
 
   // Avg pages/doc unavailable from events in MVP
