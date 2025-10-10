@@ -27,29 +27,59 @@ export default function DocumentDetailPage() {
     async function load() {
       if (!id) return
       setLoading(true)
-      const supabase = getSupabase()
-      const { data } = await supabase.from('documents').select('*').eq('id', id).single()
-      setDoc(data)
-      const { data: s } = await supabase.from('summaries').select('summary_text, structured_json').eq('document_id', id).maybeSingle()
-      setSummary((s as any)?.summary_text || null)
-      setStructured((s as any)?.structured_json || null)
-      // Create a temporary signed URL for preview/download
-      if ((data as any)?.storage_path) {
-        const { data: urlData } = await supabase.storage.from('documents').createSignedUrl((data as any).storage_path, 60 * 60)
-        const url = (urlData as any)?.signedUrl || (urlData as any)?.signedURL || null
-        setSignedUrl(url)
-        // For text files, fetch content for inline preview
-        if (url && typeof (data as any).file_type === 'string' && (data as any).file_type.startsWith('text/')) {
-          try {
-            const res = await fetch(url)
-            if (res.ok) setTextPreview(await res.text())
-          } catch {}
+
+      // Fetch document via API route
+      try {
+        const docRes = await fetch(`/api/documents/${id}`)
+        if (!docRes.ok) {
+          setLoading(false)
+          return
         }
+        const docData = await docRes.json()
+
+        // Map Prisma fields to expected format
+        const mappedDoc = {
+          id: docData.id,
+          file_name: docData.filename,
+          file_type: getMimeType(docData.kind),
+          storage_path: docData.storagePath,
+          topic: docData.topic,
+          uploaded_at: docData.uploadedAt,
+        }
+        setDoc(mappedDoc)
+
+        // Create signed URL for preview/download
+        if (docData.storagePath) {
+          const supabase = getSupabase()
+          const { data: urlData } = await supabase.storage.from('documents').createSignedUrl(docData.storagePath, 60 * 60)
+          const url = (urlData as any)?.signedUrl || (urlData as any)?.signedURL || null
+          setSignedUrl(url)
+
+          // For text files, fetch content for inline preview
+          if (url && mappedDoc.file_type.startsWith('text/')) {
+            try {
+              const res = await fetch(url)
+              if (res.ok) setTextPreview(await res.text())
+            } catch {}
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load document:', error)
       }
+
       setLoading(false)
     }
     load()
   }, [id])
+
+  function getMimeType(kind: string): string {
+    switch (kind) {
+      case 'pdf': return 'application/pdf'
+      case 'image': return 'image/jpeg'
+      case 'note': return 'text/plain'
+      default: return 'application/octet-stream'
+    }
+  }
 
   useEffect(() => {
     ;(async () => {

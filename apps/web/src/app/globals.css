@@ -62,3 +62,47 @@ sup.citation {
 .pill {
   @apply inline-flex items-center rounded-full bg-neutral-100 text-neutral-700 text-[11px] px-2 py-1 leading-none hover:bg-neutral-200 transition-colors;
 }
+
+/* PWA Install Prompt Animation */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Mobile-first optimizations */
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+
+  /* Larger touch targets for mobile */
+  button, a.button {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Better mobile spacing */
+  main {
+    @apply pb-20; /* Space for potential bottom nav */
+  }
+}
+
+/* PWA-specific styles */
+@media (display-mode: standalone) {
+  body {
+    /* Add safe area insets for notch devices */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}

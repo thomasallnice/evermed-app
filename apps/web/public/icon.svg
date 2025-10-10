@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="128" fill="#2563eb"/>
+
+  <!-- Medical Cross Symbol -->
+  <rect x="196" y="128" width="120" height="256" rx="16" fill="white"/>
+  <rect x="128" y="196" width="256" height="120" rx="16" fill="white"/>
+
+  <!-- Heart Rate Line Accent -->
+  <path d="M128 340 L180 340 L200 300 L220 380 L240 340 L384 340" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+</svg>
