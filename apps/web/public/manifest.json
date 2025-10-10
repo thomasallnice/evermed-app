@@ -1,0 +1,50 @@
+{
+  "name": "EverMed.ai - Personal Health Records",
+  "short_name": "EverMed",
+  "description": "Your personal health records and metabolic insights, organized and accessible anywhere.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "health",
+    "medical",
+    "lifestyle"
+  ],
+  "shortcuts": [
+    {
+      "name": "Upload Document",
+      "short_name": "Upload",
+      "description": "Upload a new medical document",
+      "url": "/upload"
+    },
+    {
+      "name": "Document Vault",
+      "short_name": "Vault",
+      "description": "View your document vault",
+      "url": "/vault"
+    },
+    {
+      "name": "Chat with AI",
+      "short_name": "Chat",
+      "description": "Ask questions about your health records",
+      "url": "/chat"
+    },
+    {
+      "name": "Metabolic Insights",
+      "short_name": "Insights",
+      "description": "View your metabolic insights dashboard",
+      "url": "/metabolic/dashboard"
+    }
+  ]
+}

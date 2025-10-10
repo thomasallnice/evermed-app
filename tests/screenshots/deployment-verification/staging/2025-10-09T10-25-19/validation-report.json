@@ -1,0 +1,88 @@
+{
+  "timestamp": "2025-10-09T10:25:19.269Z",
+  "environment": "staging",
+  "url": "https://staging.evermed.ai",
+  "tests": [
+    {
+      "name": "Homepage loads",
+      "passed": true,
+      "details": "HTTP 200",
+      "screenshot": "01-homepage.png"
+    },
+    {
+      "name": "Login page loads",
+      "passed": true,
+      "details": "HTTP 200",
+      "screenshot": "02-auth-login.png"
+    },
+    {
+      "name": "Signup page loads",
+      "passed": true,
+      "details": "HTTP 200",
+      "screenshot": "03-auth-signup.png"
+    },
+    {
+      "name": "Upload page loads",
+      "passed": true,
+      "details": "HTTP 200",
+      "screenshot": "04-upload.png"
+    },
+    {
+      "name": "Vault page loads",
+      "passed": true,
+      "details": "HTTP 200",
+      "screenshot": "05-vault.png"
+    },
+    {
+      "name": "API health endpoint",
+      "passed": true,
+      "details": "HTTP 200",
+      "screenshot": "06-api-health.png"
+    },
+    {
+      "name": "Zero console errors",
+      "passed": false,
+      "details": "2 console errors found - BLOCKER",
+      "screenshot": null
+    },
+    {
+      "name": "No critical network errors",
+      "passed": false,
+      "details": "2 network failures detected",
+      "screenshot": null
+    }
+  ],
+  "consoleErrors": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 ()",
+      "location": {
+        "url": "https://staging.evermed.ai/api/documents",
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 ()",
+      "location": {
+        "url": "https://staging.evermed.ai/api/persons",
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    }
+  ],
+  "networkErrors": [
+    {
+      "url": "https://staging.evermed.ai/api/persons",
+      "method": "GET",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://staging.evermed.ai/api/documents",
+      "method": "GET",
+      "failure": "net::ERR_ABORTED"
+    }
+  ],
+  "status": "BLOCKED"
+}

@@ -1,0 +1,119 @@
+{
+  "timestamp": "2025-10-09T13:40:56.071Z",
+  "deploymentUrl": "http://localhost:3200",
+  "bypassTokenUsed": true,
+  "summary": {
+    "passed": 21,
+    "failed": 0,
+    "warnings": 0
+  },
+  "consoleErrors": [],
+  "performanceMetrics": {
+    "login": {
+      "loadTime": 291,
+      "domContentLoaded": 36,
+      "firstPaint": 21,
+      "measuredLoadTime": 986,
+      "viewport": "desktop"
+    },
+    "onboarding": {
+      "loadTime": 301,
+      "domContentLoaded": 57,
+      "firstPaint": 24.19999998807907,
+      "measuredLoadTime": 1071,
+      "viewport": "desktop"
+    },
+    "vault": {
+      "loadTime": 581,
+      "domContentLoaded": 160,
+      "firstPaint": 78.80000001192093,
+      "measuredLoadTime": 1958,
+      "viewport": "desktop"
+    },
+    "upload": {
+      "loadTime": 320,
+      "domContentLoaded": 59,
+      "firstPaint": 28.100000023841858,
+      "measuredLoadTime": 983,
+      "viewport": "desktop"
+    },
+    "profile": {
+      "loadTime": 338,
+      "domContentLoaded": 80,
+      "firstPaint": 66.70000004768372,
+      "measuredLoadTime": 1984,
+      "viewport": "desktop"
+    },
+    "chat": {
+      "loadTime": 301,
+      "domContentLoaded": 80,
+      "firstPaint": 62,
+      "measuredLoadTime": 1991,
+      "viewport": "desktop"
+    },
+    "packs": {
+      "loadTime": 289,
+      "domContentLoaded": 52,
+      "firstPaint": 23.69999998807907,
+      "measuredLoadTime": 1063,
+      "viewport": "desktop"
+    }
+  },
+  "screenshotPaths": [
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/login-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/onboarding-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/vault-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/upload-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/profile-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/chat-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/packs-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/login-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/onboarding-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/vault-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/upload-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/profile-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/chat-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/packs-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/login-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/onboarding-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/vault-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/upload-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/profile-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/chat-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-40-56/packs-desktop.png"
+  ],
+  "mobileResponsiveness": {
+    "login": {
+      "hamburgerMenuVisible": true
+    },
+    "onboarding": {
+      "hamburgerMenuVisible": true
+    },
+    "vault": {
+      "hamburgerMenuVisible": true
+    },
+    "upload": {
+      "hamburgerMenuVisible": true
+    },
+    "profile": {
+      "hamburgerMenuVisible": true
+    },
+    "chat": {
+      "hamburgerMenuVisible": true
+    },
+    "packs": {
+      "hamburgerMenuVisible": true
+    }
+  },
+  "apiHealth": {
+    "total500Errors": 0,
+    "brokenEndpoints": [],
+    "networkIssues": []
+  },
+  "criticalBlockers": {
+    "databaseUrl": "WORKING",
+    "storageBucket": "EXISTS"
+  },
+  "verdict": "PASS - READY FOR PRODUCTION",
+  "blockers": []
+}

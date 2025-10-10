@@ -80,6 +80,7 @@ service-account-key.json
 evermed-ai-key.json
 credentials.json
 secrets/
+VERCEL_ENV_VARS.txt
 
 # Database
 *.db

@@ -1,0 +1,69 @@
+{
+  "timestamp": "2025-10-09T10:26:50.089Z",
+  "environment": "staging",
+  "url": "https://staging.evermed.ai",
+  "tests": [
+    {
+      "name": "Homepage loads",
+      "passed": true,
+      "details": "HTTP 200",
+      "screenshot": "01-homepage.png"
+    },
+    {
+      "name": "Login page loads",
+      "passed": true,
+      "details": "HTTP 200",
+      "screenshot": "02-auth-login.png"
+    },
+    {
+      "name": "Signup page loads",
+      "passed": true,
+      "details": "HTTP 200",
+      "screenshot": "03-auth-signup.png"
+    },
+    {
+      "name": "Upload page loads",
+      "passed": true,
+      "details": "HTTP 200",
+      "screenshot": "04-upload.png"
+    },
+    {
+      "name": "Vault page loads",
+      "passed": true,
+      "details": "HTTP 200",
+      "screenshot": "05-vault.png"
+    },
+    {
+      "name": "API health endpoint",
+      "passed": true,
+      "details": "HTTP 200",
+      "screenshot": "06-api-health.png"
+    },
+    {
+      "name": "Zero console errors",
+      "passed": true,
+      "details": "No console.error messages detected",
+      "screenshot": null
+    },
+    {
+      "name": "No critical network errors",
+      "passed": true,
+      "details": "All API requests succeeded or failed gracefully",
+      "screenshot": null
+    }
+  ],
+  "consoleErrors": [],
+  "networkErrors": [
+    {
+      "url": "https://staging.evermed.ai/api/persons",
+      "method": "GET",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "url": "https://staging.evermed.ai/api/documents",
+      "method": "GET",
+      "failure": "net::ERR_ABORTED"
+    }
+  ],
+  "status": "PASS"
+}

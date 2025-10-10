@@ -20,51 +20,35 @@ export default function UploadPage() {
       return
     }
 
-    // Upload to Supabase Storage
-    const path = `${user.id}/${Date.now()}_${file.name}`
-    const { error: uploadError } = await supabase.storage
-      .from('documents')
-      .upload(path, file, { upsert: false })
-
-    if (uploadError) {
-      setStatus(`Upload error: ${uploadError.message}`)
+    // Fetch Person record via API route
+    const personResponse = await fetch('/api/person/me')
+    if (!personResponse.ok) {
+      setStatus(`Error: Person record not found. Please complete onboarding.`)
       return
     }
 
-    // Insert metadata row and obtain id
-    const { data: ins, error: insertError } = await supabase
-      .from('documents')
-      .insert({
-        user_id: user.id,
-        storage_path: path,
-        file_name: file.name,
-        file_type: file.type || 'application/octet-stream',
-        tags: [
-          `kind:${kind}`,
-          ...(file.type.startsWith('image/') ? [`ocr:${ocr ? 1 : 0}`] : []),
-        ],
-      } as any)
-      .select('id')
-      .single()
+    const personData = await personResponse.json()
+    const personId = personData.id
 
-    if (insertError || !ins) {
-      setStatus(`Insert error: ${insertError?.message || 'unknown'}`)
+    // Upload via API route (handles storage + database insert + OCR + embeddings)
+    setStatus('Uploading…')
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('personId', personId)
+
+    const uploadResponse = await fetch('/api/uploads', {
+      method: 'POST',
+      body: formData
+    })
+
+    if (!uploadResponse.ok) {
+      const errorData = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }))
+      setStatus(`Upload error: ${errorData.error || 'Unknown error'}`)
       return
     }
 
-    const docId = (ins as any).id as string
-
-    // For images: optional OCR (if kind=document and OCR selected)
-    if (file.type.startsWith('image/') && kind === 'document' && ocr) {
-      try {
-        setStatus('Extracting text (OCR)…')
-        await fetch('/api/ocr', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ documentId: docId })
-        })
-      } catch {}
-    }
+    const { documentId } = await uploadResponse.json()
+    setStatus('Processing…')
 
     // Auto‑explain
     try {
@@ -72,27 +56,14 @@ export default function UploadPage() {
       await fetch('/api/explain', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ documentId: docId })
+        body: JSON.stringify({ documentId })
       })
     } catch {}
 
-    // Auto‑index (RAG)
-    if (kind !== 'photo') {
-      try {
-        setStatus('Indexing for RAG…')
-        const r = await fetch('/api/rag/ingest', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ documentId: docId })
-        })
-        const j = await r.json().catch(() => ({}))
-        if (r.ok) setStatus(`Done. Indexed ${j.chunks || 0} chunks.`)
-        else setStatus(`Indexing failed: ${j.error || 'error'}`)
-      } catch {}
-    }
+    setStatus('Done!')
 
     // Redirect to document page to review
-    setTimeout(() => (window.location.href = `/doc/${docId}`), 800)
+    setTimeout(() => (window.location.href = `/doc/${documentId}`), 800)
   }
 
   return (
