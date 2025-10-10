@@ -10,6 +10,46 @@ generator client {
 }
 
 // Prisma schema for EverMed MVP (Postgres/Supabase)
+
+// Enums for Metabolic Insights feature
+enum MealType {
+  breakfast
+  lunch
+  dinner
+  snack
+}
+
+enum AnalysisStatus {
+  pending
+  completed
+  failed
+}
+
+enum IngredientSource {
+  ai_detected
+  manual_entry
+  nutrition_api
+}
+
+enum GlucoseSource {
+  cgm
+  fingerstick
+  lab
+  interpolated
+}
+
+enum InsightType {
+  daily_summary
+  weekly_report
+  pattern_detected
+}
+
+enum TierLevel {
+  free
+  premium
+  family
+}
+
 model Person {
   id         String   @id @default(uuid())
   ownerId    String // supabase auth.uid()
@@ -20,9 +60,24 @@ model Person {
   locale     String?  @default("de-DE")
   createdAt  DateTime @default(now())
 
+  // Metabolic Insights preferences
+  cgmConnected      Boolean @default(false) @map("cgm_connected")
+  targetGlucoseMin  Float?  @map("target_glucose_min")
+  targetGlucoseMax  Float?  @map("target_glucose_max")
+
+  // Existing relations
   documents    Document[]
   observations Observation[]
   sharePacks   SharePack[]
+
+  // Metabolic Insights relations
+  foodEntries       FoodEntry[]
+  glucoseReadings   GlucoseReading[]
+  glucosePredictions GlucosePrediction[]
+  personalModel     PersonalModel?
+  mealTemplates     MealTemplate[]
+  metabolicInsights MetabolicInsight[]
+  subscription      SubscriptionTier?
 }
 
 model Document {
@@ -40,6 +95,7 @@ model Document {
   chunks         DocChunk[]
   observations   Observation[]   @relation("DocToObs")
   sharePackItems SharePackItem[] // back-relation
+  chatMessages   ChatMessage[]   // back-relation
 }
 
 model Observation {
@@ -145,4 +201,165 @@ model AnalyticsEvent {
   createdAt DateTime @default(now())
 
   @@index([name, createdAt])
+}
+
+// ============================================
+// Metabolic Insights Models (Premium Feature)
+// ============================================
+
+model FoodEntry {
+  id                    String    @id @default(uuid())
+  personId              String    @map("person_id")
+  timestamp             DateTime
+  mealType              MealType  @map("meal_type")
+  notes                 String?
+  predictedGlucosePeak  Float?    @map("predicted_glucose_peak")
+  actualGlucosePeak     Float?    @map("actual_glucose_peak")
+  totalCalories         Float     @map("total_calories")
+  totalCarbsG           Float     @map("total_carbs_g")
+  totalProteinG         Float     @map("total_protein_g")
+  totalFatG             Float     @map("total_fat_g")
+  totalFiberG           Float     @map("total_fiber_g")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  person             Person               @relation(fields: [personId], references: [id], onDelete: Cascade)
+  photos             FoodPhoto[]
+  ingredients        FoodIngredient[]
+  glucoseReadings    GlucoseReading[]
+  predictions        GlucosePrediction[]
+
+  @@index([personId, timestamp])
+  @@map("food_entries")
+}
+
+model FoodPhoto {
+  id                   String          @id @default(uuid())
+  foodEntryId          String          @map("food_entry_id")
+  storagePath          String          @map("storage_path")
+  thumbnailPath        String?         @map("thumbnail_path")
+  originalSizeBytes    Int             @map("original_size_bytes")
+  analysisStatus       AnalysisStatus  @default(pending) @map("analysis_status")
+  analysisCompletedAt  DateTime?       @map("analysis_completed_at")
+  createdAt            DateTime        @default(now()) @map("created_at")
+
+  foodEntry FoodEntry @relation(fields: [foodEntryId], references: [id], onDelete: Cascade)
+
+  @@map("food_photos")
+}
+
+model FoodIngredient {
+  id              String           @id @default(uuid())
+  foodEntryId     String           @map("food_entry_id")
+  name            String
+  quantity        Float
+  unit            String
+  confidenceScore Float            @map("confidence_score")
+  calories        Float
+  carbsG          Float            @map("carbs_g")
+  proteinG        Float            @map("protein_g")
+  fatG            Float            @map("fat_g")
+  fiberG          Float            @map("fiber_g")
+  source          IngredientSource
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  foodEntry FoodEntry @relation(fields: [foodEntryId], references: [id], onDelete: Cascade)
+
+  @@map("food_ingredients")
+}
+
+model GlucoseReading {
+  id           String        @id @default(uuid())
+  personId     String        @map("person_id")
+  timestamp    DateTime
+  value        Float // mg/dL
+  source       GlucoseSource
+  deviceId     String?       @map("device_id")
+  foodEntryId  String?       @map("food_entry_id")
+  confidence   Float?
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  person    Person     @relation(fields: [personId], references: [id], onDelete: Cascade)
+  foodEntry FoodEntry? @relation(fields: [foodEntryId], references: [id], onDelete: SetNull)
+
+  @@index([personId, timestamp])
+  @@map("glucose_readings")
+}
+
+model GlucosePrediction {
+  id                       String   @id @default(uuid())
+  foodEntryId              String   @map("food_entry_id")
+  personId                 String   @map("person_id")
+  predictedPeakValue       Float    @map("predicted_peak_value")
+  predictedPeakTimeMinutes Int      @map("predicted_peak_time_minutes")
+  confidenceScore          Float    @map("confidence_score")
+  modelVersion             String   @map("model_version")
+  createdAt                DateTime @default(now()) @map("created_at")
+
+  foodEntry FoodEntry @relation(fields: [foodEntryId], references: [id], onDelete: Cascade)
+  person    Person    @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@map("glucose_predictions")
+}
+
+model PersonalModel {
+  id                 String   @id @default(uuid())
+  personId           String   @unique @map("person_id")
+  modelVersion       String   @map("model_version")
+  trainingMealsCount Int      @map("training_meals_count")
+  lastTrainedAt      DateTime @map("last_trained_at")
+  accuracyRmse       Float?   @map("accuracy_rmse")
+  modelDataPath      String?  @map("model_data_path")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@map("personal_models")
+}
+
+model MealTemplate {
+  id              String   @id @default(uuid())
+  personId        String   @map("person_id")
+  name            String
+  ingredients     Json
+  nutritionTotals Json     @map("nutrition_totals")
+  usageCount      Int      @default(0) @map("usage_count")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@map("meal_templates")
+}
+
+model MetabolicInsight {
+  id          String      @id @default(uuid())
+  personId    String      @map("person_id")
+  date        DateTime    @db.Date
+  insightType InsightType @map("insight_type")
+  insightData Json        @map("insight_data")
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId, date])
+  @@map("metabolic_insights")
+}
+
+model SubscriptionTier {
+  id                   String    @id @default(uuid())
+  personId             String    @unique @map("person_id")
+  tier                 TierLevel
+  mealsLimitPerWeek    Int       @map("meals_limit_per_week")
+  mealsUsedThisWeek    Int       @default(0) @map("meals_used_this_week")
+  weekStartDate        DateTime  @db.Date @map("week_start_date")
+  stripeSubscriptionId String?   @map("stripe_subscription_id")
+  expiresAt            DateTime? @map("expires_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@map("subscription_tiers")
 }

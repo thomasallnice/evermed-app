@@ -1,0 +1,482 @@
+{
+  "timestamp": "2025-10-09T09:30:07.877Z",
+  "deploymentUrl": "https://staging.evermed.ai",
+  "bypassTokenUsed": true,
+  "summary": {
+    "passed": 0,
+    "failed": 21,
+    "warnings": 0
+  },
+  "consoleErrors": [
+    {
+      "page": "login",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "login",
+      "viewport": "mobile",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "login",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "mobile",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "onboarding",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "vault",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "vault",
+      "viewport": "mobile",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "vault",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "upload",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "upload",
+      "viewport": "mobile",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "upload",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "upload",
+      "viewport": "mobile",
+      "error": "[GSI_LOGGER]: FedCM get() rejects with NetworkError: Error retrieving a token."
+    },
+    {
+      "page": "profile",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "profile",
+      "viewport": "mobile",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "profile",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "chat",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "chat",
+      "viewport": "mobile",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "chat",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "packs",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "packs",
+      "viewport": "mobile",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "packs",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "login",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "login",
+      "viewport": "tablet",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "login",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "login",
+      "viewport": "tablet",
+      "error": "[GSI_LOGGER]: FedCM get() rejects with NetworkError: Error retrieving a token."
+    },
+    {
+      "page": "onboarding",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "tablet",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "onboarding",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "vault",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "vault",
+      "viewport": "tablet",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "vault",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "vault",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 429 ()"
+    },
+    {
+      "page": "vault",
+      "viewport": "tablet",
+      "error": "[GSI_LOGGER]: FedCM get() rejects with NetworkError: Error retrieving a token."
+    },
+    {
+      "page": "upload",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "upload",
+      "viewport": "tablet",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "upload",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "profile",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "profile",
+      "viewport": "tablet",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "profile",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "chat",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "chat",
+      "viewport": "tablet",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "chat",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "chat",
+      "viewport": "tablet",
+      "error": "[GSI_LOGGER]: FedCM get() rejects with NetworkError: Error retrieving a token."
+    },
+    {
+      "page": "packs",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "packs",
+      "viewport": "tablet",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "packs",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "login",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "login",
+      "viewport": "desktop",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "login",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "desktop",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "onboarding",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "vault",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "vault",
+      "viewport": "desktop",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "vault",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "upload",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "upload",
+      "viewport": "desktop",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "upload",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "profile",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "profile",
+      "viewport": "desktop",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "profile",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "chat",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "chat",
+      "viewport": "desktop",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "chat",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "page": "packs",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 401 ()"
+    },
+    {
+      "page": "packs",
+      "viewport": "desktop",
+      "error": "Not signed in with the identity provider."
+    },
+    {
+      "page": "packs",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 403 ()"
+    }
+  ],
+  "performanceMetrics": {
+    "login": {
+      "loadTime": 1000,
+      "domContentLoaded": 999,
+      "firstPaint": 288.5,
+      "measuredLoadTime": 2082,
+      "viewport": "desktop"
+    },
+    "onboarding": {
+      "loadTime": 997,
+      "domContentLoaded": 996,
+      "firstPaint": 296.10000002384186,
+      "measuredLoadTime": 2081,
+      "viewport": "desktop"
+    },
+    "vault": {
+      "loadTime": 1011,
+      "domContentLoaded": 1010,
+      "firstPaint": 288.0999999642372,
+      "measuredLoadTime": 2072,
+      "viewport": "desktop"
+    },
+    "upload": {
+      "loadTime": 982,
+      "domContentLoaded": 980,
+      "firstPaint": 281.10000002384186,
+      "measuredLoadTime": 2072,
+      "viewport": "desktop"
+    },
+    "profile": {
+      "loadTime": 989,
+      "domContentLoaded": 988,
+      "firstPaint": 286.5,
+      "measuredLoadTime": 2081,
+      "viewport": "desktop"
+    },
+    "chat": {
+      "loadTime": 1073,
+      "domContentLoaded": 1071,
+      "firstPaint": 319.69999998807907,
+      "measuredLoadTime": 2098,
+      "viewport": "desktop"
+    },
+    "packs": {
+      "loadTime": 1048,
+      "domContentLoaded": 1047,
+      "firstPaint": 304.19999998807907,
+      "measuredLoadTime": 2086,
+      "viewport": "desktop"
+    }
+  },
+  "screenshotPaths": [
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/login-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/onboarding-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/vault-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/upload-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/profile-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/chat-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/packs-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/login-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/onboarding-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/vault-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/upload-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/profile-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/chat-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/packs-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/login-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/onboarding-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/vault-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/upload-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/profile-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/chat-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-11-30-07/packs-desktop.png"
+  ],
+  "mobileResponsiveness": {
+    "login": {
+      "hamburgerMenuVisible": false
+    },
+    "onboarding": {
+      "hamburgerMenuVisible": false
+    },
+    "vault": {
+      "hamburgerMenuVisible": false
+    },
+    "upload": {
+      "hamburgerMenuVisible": false
+    },
+    "profile": {
+      "hamburgerMenuVisible": false
+    },
+    "chat": {
+      "hamburgerMenuVisible": false
+    },
+    "packs": {
+      "hamburgerMenuVisible": false
+    }
+  },
+  "apiHealth": {
+    "total500Errors": 0,
+    "brokenEndpoints": [],
+    "networkIssues": []
+  },
+  "criticalBlockers": {
+    "databaseUrl": "UNKNOWN",
+    "storageBucket": "UNKNOWN"
+  },
+  "verdict": "BLOCKED - CANNOT PROMOTE TO PRODUCTION",
+  "blockers": [
+    "login: 3 console error(s)",
+    "onboarding: 3 console error(s)",
+    "vault: 3 console error(s)",
+    "upload: 4 console error(s)",
+    "profile: 3 console error(s)",
+    "chat: 3 console error(s)",
+    "packs: 3 console error(s)",
+    "login: 4 console error(s)",
+    "onboarding: 3 console error(s)",
+    "vault: 5 console error(s)",
+    "upload: 3 console error(s)",
+    "profile: 3 console error(s)",
+    "chat: 4 console error(s)",
+    "packs: 3 console error(s)",
+    "login: 3 console error(s)",
+    "onboarding: 3 console error(s)",
+    "vault: 3 console error(s)",
+    "upload: 3 console error(s)",
+    "profile: 3 console error(s)",
+    "chat: 3 console error(s)",
+    "packs: 3 console error(s)"
+  ]
+}

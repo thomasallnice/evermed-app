@@ -1,0 +1,562 @@
+{
+  "timestamp": "2025-10-09T13:31:16.805Z",
+  "deploymentUrl": "http://localhost:3000",
+  "bypassTokenUsed": true,
+  "summary": {
+    "passed": 0,
+    "failed": 21,
+    "warnings": 0
+  },
+  "consoleErrors": [
+    {
+      "page": "login",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "login",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "login",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "login",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "vault",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "vault",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "vault",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "vault",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "upload",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "upload",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "upload",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "upload",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "profile",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "profile",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "profile",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "profile",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "chat",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "chat",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "chat",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "chat",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "packs",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "packs",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "packs",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "packs",
+      "viewport": "mobile",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "login",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "login",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "login",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "login",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "vault",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "vault",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "vault",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "vault",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "upload",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "upload",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "upload",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "upload",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "profile",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "profile",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "profile",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "profile",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "chat",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "chat",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "chat",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "chat",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "packs",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "packs",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "packs",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "packs",
+      "viewport": "tablet",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "login",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "login",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "login",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "login",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "onboarding",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "vault",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "vault",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "vault",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "vault",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "upload",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "upload",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "upload",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "upload",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "profile",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "profile",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "profile",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "profile",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "chat",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "chat",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "chat",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "chat",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "packs",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "packs",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "packs",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "page": "packs",
+      "viewport": "desktop",
+      "error": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "performanceMetrics": {
+    "login": {
+      "loadTime": 126,
+      "domContentLoaded": 73,
+      "firstPaint": 22.19999998807907,
+      "measuredLoadTime": 988,
+      "viewport": "desktop"
+    },
+    "onboarding": {
+      "loadTime": 124,
+      "domContentLoaded": 95,
+      "firstPaint": 35.89999997615814,
+      "measuredLoadTime": 986,
+      "viewport": "desktop"
+    },
+    "vault": {
+      "loadTime": 69,
+      "domContentLoaded": 68,
+      "firstPaint": 22.30000001192093,
+      "measuredLoadTime": 982,
+      "viewport": "desktop"
+    },
+    "upload": {
+      "loadTime": 123,
+      "domContentLoaded": 82,
+      "firstPaint": 23.69999998807907,
+      "measuredLoadTime": 988,
+      "viewport": "desktop"
+    },
+    "profile": {
+      "loadTime": 138,
+      "domContentLoaded": 101,
+      "firstPaint": 49.30000001192093,
+      "measuredLoadTime": 965,
+      "viewport": "desktop"
+    },
+    "chat": {
+      "loadTime": 334,
+      "domContentLoaded": 149,
+      "firstPaint": 42.19999998807907,
+      "measuredLoadTime": 981,
+      "viewport": "desktop"
+    },
+    "packs": {
+      "loadTime": 114,
+      "domContentLoaded": 72,
+      "firstPaint": 20.30000001192093,
+      "measuredLoadTime": 1069,
+      "viewport": "desktop"
+    }
+  },
+  "screenshotPaths": [
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/login-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/onboarding-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/vault-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/upload-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/profile-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/chat-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/packs-mobile.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/login-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/onboarding-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/vault-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/upload-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/profile-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/chat-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/packs-tablet.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/login-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/onboarding-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/vault-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/upload-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/profile-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/chat-desktop.png",
+    "/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/tests/screenshots/deployment-verification/2025-10-09-15-31-16/packs-desktop.png"
+  ],
+  "mobileResponsiveness": {
+    "login": {
+      "hamburgerMenuVisible": true
+    },
+    "onboarding": {
+      "hamburgerMenuVisible": true
+    },
+    "vault": {
+      "hamburgerMenuVisible": true
+    },
+    "upload": {
+      "hamburgerMenuVisible": true
+    },
+    "profile": {
+      "hamburgerMenuVisible": true
+    },
+    "chat": {
+      "hamburgerMenuVisible": true
+    },
+    "packs": {
+      "hamburgerMenuVisible": true
+    }
+  },
+  "apiHealth": {
+    "total500Errors": 0,
+    "brokenEndpoints": [],
+    "networkIssues": []
+  },
+  "criticalBlockers": {
+    "databaseUrl": "UNKNOWN",
+    "storageBucket": "UNKNOWN"
+  },
+  "verdict": "BLOCKED - CANNOT PROMOTE TO PRODUCTION",
+  "blockers": [
+    "login: 4 console error(s)",
+    "onboarding: 4 console error(s)",
+    "vault: 4 console error(s)",
+    "upload: 4 console error(s)",
+    "profile: 4 console error(s)",
+    "chat: 4 console error(s)",
+    "packs: 4 console error(s)",
+    "login: 4 console error(s)",
+    "onboarding: 4 console error(s)",
+    "vault: 4 console error(s)",
+    "upload: 4 console error(s)",
+    "profile: 4 console error(s)",
+    "chat: 4 console error(s)",
+    "packs: 4 console error(s)",
+    "login: 4 console error(s)",
+    "onboarding: 4 console error(s)",
+    "vault: 4 console error(s)",
+    "upload: 4 console error(s)",
+    "profile: 4 console error(s)",
+    "chat: 4 console error(s)",
+    "packs: 4 console error(s)"
+  ]
+}
