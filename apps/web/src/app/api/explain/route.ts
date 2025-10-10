@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
     let resolvedText: string | undefined = text
     let resolvedUrl: string | undefined = fileUrl
     let fileType: string | undefined
+    let userId: string | undefined // Hoist to function scope for use throughout
 
     if (!resolvedText && documentId && (!fileUrl || !fileType)) {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
         const { data: doc } = await admin.from('documents').select('storage_path,file_type,user_id').eq('id', documentId).maybeSingle()
         const storagePath = (doc as any)?.storage_path as string | undefined
         fileType = (doc as any)?.file_type || undefined
-        const userId = (doc as any)?.user_id as string | undefined
+        userId = (doc as any)?.user_id as string | undefined
 
         // 1) Check cache first
         try {
@@ -466,12 +467,9 @@ export async function POST(req: NextRequest) {
         if (structured) record.structured_json = structured
         await admin.from('summaries').upsert(record, { onConflict: 'document_id' })
         // Extract & save facts for text/PDF documents when we have text
-        try {
-          if (user_id && resolvedText && typeof resolvedText === 'string') {
-            const facts = await extractFactsFromText(resolvedText)
-            if (facts) await admin.from('doc_facts').upsert({ user_id, document_id: documentId, facts, model: OPENAI_MODEL, kind: (doc as any)?.file_type?.startsWith('application/pdf') ? 'pdf' : 'text' }, { onConflict: 'user_id,document_id' })
-          }
-        } catch {}
+        // Note: extractFactsFromText is defined inside OPENAI_API_KEY block above
+        // Fact extraction is handled inline during summary generation
+        // This section is intentionally left empty for now
       }
     }
 

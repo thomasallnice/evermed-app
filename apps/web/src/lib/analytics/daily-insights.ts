@@ -147,7 +147,7 @@ export async function getDailyInsights(
   if (!insight) return null;
 
   return {
-    ...(insight.insightData as DailyInsightsData),
+    ...(insight.insightData as unknown as DailyInsightsData),
     generatedAt: insight.createdAt,
     disclaimer: METABOLIC_INSIGHTS_DISCLAIMER,
   };

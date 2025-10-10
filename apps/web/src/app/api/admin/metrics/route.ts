@@ -1,26 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 export const runtime = 'nodejs';
 
 const prisma = new PrismaClient();
 
-// Type aliases for Prisma models
+// Type aliases for Prisma models - match actual schema
 type AnalyticsEvent = {
   id: string;
-  userId: string | null;
-  name: string;
-  meta: any;
+  eventType: string;
+  eventName: string;
+  metadata: any;
+  sessionId: string | null;
   createdAt: Date;
 };
 
 type TokenUsage = {
   id: string;
+  userId: string | null;
   feature: string;
   model: string;
   tokensIn: number;
   tokensOut: number;
-  costUsd: number | null;
+  costUsd: Prisma.Decimal | null;
   createdAt: Date;
 };
 
@@ -60,79 +62,80 @@ async function computeTiles(days: number): Promise<Tiles> {
   const since = new Date(now.getTime() - days * 24 * 3600 * 1000);
   const ev: AnalyticsEvent[] = await prisma.analyticsEvent.findMany({ where: { createdAt: { gte: since } } });
 
-  const byUser = new Map<string, AnalyticsEvent[]>();
+  // Group events by sessionId (privacy-preserving aggregation)
+  const bySession = new Map<string, AnalyticsEvent[]>();
   for (const e of ev) {
-    const uid = String(e.userId || '');
-    if (!byUser.has(uid)) byUser.set(uid, []);
-    byUser.get(uid)!.push(e);
+    const sid = String(e.sessionId || '');
+    if (!bySession.has(sid)) bySession.set(sid, []);
+    bySession.get(sid)!.push(e);
   }
 
-  // Activation: % users with first_upload_done and explain_viewed within 24h
+  // Activation: % sessions with first_upload_done and explain_viewed within 24h
   let activated = 0;
-  let newUsers = 0;
-  for (const [uid, list] of byUser.entries()) {
-    const ups = list.filter((x) => x.name === 'first_upload_done');
-    if (ups.length) newUsers++;
-    const expl = list.filter((x) => x.name === 'explain_viewed');
+  let newSessions = 0;
+  for (const [sid, list] of bySession.entries()) {
+    const ups = list.filter((x) => x.eventName === 'first_upload_done');
+    if (ups.length) newSessions++;
+    const expl = list.filter((x) => x.eventName === 'explain_viewed');
     if (ups.length && expl.length) {
       const ok = ups.some((u) => expl.some((x) => within24h(u.createdAt, x.createdAt)));
       if (ok) activated++;
     }
   }
-  const activation = pct(activated, Math.max(1, newUsers));
+  const activation = pct(activated, Math.max(1, newSessions));
 
-  // Clarity: % “Explain helpful = Yes”
-  const helpful = ev.filter((x) => x.name === 'explain_helpful');
+  // Clarity: % "Explain helpful = Yes"
+  const helpful = ev.filter((x) => x.eventName === 'explain_helpful');
   const helpfulYes = helpful.filter((x) => {
-    const m = (x.meta ?? {}) as any;
+    const m = (x.metadata ?? {}) as any;
     const v = String(m?.value ?? m?.thumbs ?? '').toLowerCase();
     return v === 'yes' || v === 'up';
   }).length;
   const clarity = pct(helpfulYes, helpful.length || 0);
 
-  // Preparation: % WAU creating ≥1 pack; recipient thumbs-up %
-  const wauUsers = new Set(ev.map((x) => String(x.userId || '')));
-  const shareCreatedUsers = new Set(ev.filter((x) => x.name === 'share_pack_created').map((x) => String(x.userId || '')));
-  const prepPct = pct(shareCreatedUsers.size, Math.max(1, wauUsers.size));
-  const recip = ev.filter((x) => x.name === 'share_pack_recipient_feedback');
-  const recipUp = recip.filter((x) => String(((x.meta ?? {}) as any)?.thumbs || '').toLowerCase() === 'up').length;
+  // Preparation: % WAU sessions creating ≥1 pack; recipient thumbs-up %
+  const wauSessions = new Set(ev.map((x) => String(x.sessionId || '')));
+  const shareCreatedSessions = new Set(ev.filter((x) => x.eventName === 'share_pack_created').map((x) => String(x.sessionId || '')));
+  const prepPct = pct(shareCreatedSessions.size, Math.max(1, wauSessions.size));
+  const recip = ev.filter((x) => x.eventName === 'share_pack_recipient_feedback');
+  const recipUp = recip.filter((x) => String(((x.metadata ?? {}) as any)?.thumbs || '').toLowerCase() === 'up').length;
   const recipientThumbsUpPct = pct(recipUp, recip.length || 0);
 
-  // Retention (simple): users with any event ≥30d ago who are active in this window
+  // Retention (simple): sessions with any event ≥30d ago who are active in this window
   const pastSince = new Date(now.getTime() - 60 * 24 * 3600 * 1000);
-  const pastEv = await prisma.analyticsEvent.findMany({ where: { createdAt: { gte: pastSince, lt: since } }, select: { userId: true } });
-  const cohort = new Set(pastEv.map((x) => String(x.userId || '')));
+  const pastEv = await prisma.analyticsEvent.findMany({ where: { createdAt: { gte: pastSince, lt: since } }, select: { sessionId: true } });
+  const cohort = new Set(pastEv.map((x) => String(x.sessionId || '')));
   let retained = 0;
-  for (const uid of cohort) {
-    if (wauUsers.has(uid)) retained++;
+  for (const sid of cohort) {
+    if (wauSessions.has(sid)) retained++;
   }
   const retention = pct(retained, cohort.size || 0);
 
   // Trust: profile_suggestion_accept_rate
-  const shown = ev.filter((x) => x.name === 'profile_suggestion_shown').length;
-  const accepted = ev.filter((x) => x.name === 'profile_suggestion_accepted').length;
+  const shown = ev.filter((x) => x.eventName === 'profile_suggestion_shown').length;
+  const accepted = ev.filter((x) => x.eventName === 'profile_suggestion_accepted').length;
   const trust = pct(accepted, shown || 0);
 
   // Safety: incidents and % answers without citations
-  const incidents = ev.filter((x) => x.name === 'unsafe_report');
-  const p0 = incidents.filter((x) => String(((x.meta ?? {}) as any)?.severity || '').toUpperCase() === 'P0').length;
-  const p1 = incidents.filter((x) => String(((x.meta ?? {}) as any)?.severity || '').toUpperCase() === 'P1').length;
-  const answers = ev.filter((x) => x.name === 'answer_generated');
-  const noCite = answers.filter((x) => !Boolean(((x.meta ?? {}) as any)?.citations));
+  const incidents = ev.filter((x) => x.eventName === 'unsafe_report');
+  const p0 = incidents.filter((x) => String(((x.metadata ?? {}) as any)?.severity || '').toUpperCase() === 'P0').length;
+  const p1 = incidents.filter((x) => String(((x.metadata ?? {}) as any)?.severity || '').toUpperCase() === 'P1').length;
+  const answers = ev.filter((x) => x.eventName === 'answer_generated');
+  const noCite = answers.filter((x) => !Boolean(((x.metadata ?? {}) as any)?.citations));
   const noCitationPct = pct(noCite.length, answers.length || 0);
 
-  // Latency: p95 of latency_ms meta.ms
-  const lats = ev.filter((x) => x.name === 'latency_ms').map((x) => Number(((x.meta ?? {}) as any)?.ms || 0)).filter((n) => n > 0);
+  // Latency: p95 of latency_ms metadata.latency_ms
+  const lats = ev.filter((x) => x.eventName === 'api_latency' || x.eventName === 'latency_ms').map((x) => Number(((x.metadata ?? {}) as any)?.latency_ms || ((x.metadata ?? {}) as any)?.ms || 0)).filter((n) => n > 0);
   const latencyP95Ms = p95(lats);
 
-  // Usage
+  // Usage (using sessions as proxy for users - privacy-preserving)
   const oneDayAgo = new Date(now.getTime() - 1 * 24 * 3600 * 1000);
-  const dau = new Set(ev.filter((x) => x.createdAt >= oneDayAgo).map((x) => String(x.userId || ''))).size;
-  const wau = wauUsers.size;
-  const mau = new Set((await prisma.analyticsEvent.findMany({ where: { createdAt: { gte: new Date(now.getTime() - 30 * 24 * 3600 * 1000) } }, select: { userId: true, createdAt: true } })).map((x) => String(x.userId || ''))).size;
-  const uploads = ev.filter((x) => x.name === 'first_upload_done');
-  const uploadUsers = new Set(uploads.map((x) => String(x.userId || ''))).size;
-  const uploadsPerUser = uploadUsers ? Math.round((uploads.length / uploadUsers) * 10) / 10 : 0;
+  const dau = new Set(ev.filter((x) => x.createdAt >= oneDayAgo).map((x) => String(x.sessionId || ''))).size;
+  const wau = wauSessions.size;
+  const mau = new Set((await prisma.analyticsEvent.findMany({ where: { createdAt: { gte: new Date(now.getTime() - 30 * 24 * 3600 * 1000) } }, select: { sessionId: true, createdAt: true } })).map((x) => String(x.sessionId || ''))).size;
+  const uploads = ev.filter((x) => x.eventName === 'first_upload_done');
+  const uploadSessions = new Set(uploads.map((x) => String(x.sessionId || ''))).size;
+  const uploadsPerUser = uploadSessions ? Math.round((uploads.length / uploadSessions) * 10) / 10 : 0;
 
   // Avg pages/doc unavailable from events in MVP
   const avgPagesPerDoc: number | null = null;

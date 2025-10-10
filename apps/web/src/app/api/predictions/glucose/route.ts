@@ -187,14 +187,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // Step 10: Log prediction for monitoring (non-PHI)
     await prisma.analyticsEvent.create({
       data: {
-        userId,
-        name: "ml_prediction_generated",
-        meta: {
+        eventType: "feature_usage",
+        eventName: "ml_prediction_generated",
+        metadata: {
           modelVersion: modelMetadata.version,
           mealType: mealFeatures.mealType,
           confidence60Min,
           confidence120Min,
         },
+        sessionId: null, // No session tracking for server-side API calls
       },
     });
 
