@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { recognizeFood } from '@/lib/ai/food-recognition'
+import { getBulkNutritionData, calculateTotalNutrition } from '@/lib/ai/nutrition-data'
 
 // Validation schema for food entry
 const FoodEntrySchema = z.object({
@@ -134,6 +136,36 @@ export async function POST(request: NextRequest) {
 
     const photoUrl = urlData?.signedUrl || ''
 
+    // AI Analysis: Food Recognition + Nutrition Data
+    let recognizedIngredients: any[] = []
+    let totalNutrition = { calories: 0, carbs: 0, protein: 0, fat: 0, fiber: 0 }
+
+    try {
+      // Convert photo to buffer
+      const photoBuffer = Buffer.from(await photo.arrayBuffer())
+
+      // Step 1: Recognize food items from photo (Google Cloud Vision)
+      const foodRecognition = await recognizeFood(photoBuffer)
+
+      // Step 2: Get nutrition data for recognized ingredients (Nutritionix)
+      if (foodRecognition.ingredients.length > 0) {
+        const nutritionData = await getBulkNutritionData(
+          foodRecognition.ingredients.map((ing) => ({
+            name: ing.name,
+            quantity: ing.quantity,
+            unit: ing.unit,
+          }))
+        )
+
+        // Step 3: Calculate total nutrition
+        totalNutrition = calculateTotalNutrition(nutritionData)
+        recognizedIngredients = nutritionData
+      }
+    } catch (aiError) {
+      console.error('AI analysis error:', aiError)
+      // Continue with empty ingredients if AI fails
+    }
+
     // Create food entry in database (transaction)
     const foodEntry = await prisma.foodEntry.create({
       data: {
@@ -141,17 +173,32 @@ export async function POST(request: NextRequest) {
         timestamp: new Date(validatedData.timestamp),
         mealType: validatedData.mealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
         notes: validatedData.notes,
-        totalCalories: 0, // Will be updated after AI analysis
-        totalCarbsG: 0,
-        totalProteinG: 0,
-        totalFatG: 0,
-        totalFiberG: 0,
+        totalCalories: totalNutrition.calories,
+        totalCarbsG: totalNutrition.carbs,
+        totalProteinG: totalNutrition.protein,
+        totalFatG: totalNutrition.fat,
+        totalFiberG: totalNutrition.fiber,
         photos: {
           create: {
             storagePath: uploadData.path,
             originalSizeBytes: photo.size,
-            analysisStatus: 'pending',
+            analysisStatus: recognizedIngredients.length > 0 ? 'completed' : 'failed',
+            analysisCompletedAt: recognizedIngredients.length > 0 ? new Date() : null,
           },
+        },
+        ingredients: {
+          create: recognizedIngredients.map((ing) => ({
+            name: ing.name,
+            quantity: ing.quantity,
+            unit: ing.unit,
+            confidenceScore: ing.confidence,
+            calories: ing.calories,
+            carbsG: ing.carbs,
+            proteinG: ing.protein,
+            fatG: ing.fat,
+            fiberG: ing.fiber,
+            source: 'ai_detected' as const,
+          })),
         },
       },
       include: {
@@ -160,23 +207,17 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // TODO: Trigger AI analysis job (Google Cloud Vision + Nutritionix)
-    // For now, return placeholder response
+    // TODO: Trigger ML prediction job for glucose spike
+    // For now, return without prediction
 
     return NextResponse.json({
       id: foodEntry.id,
       timestamp: foodEntry.timestamp.toISOString(),
       mealType: foodEntry.mealType,
       photoUrl,
-      ingredients: [], // Will be populated by AI analysis
-      nutrition: {
-        calories: 0,
-        carbs: 0,
-        protein: 0,
-        fat: 0,
-        fiber: 0,
-      },
-      predictedGlucosePeak: null, // Will be populated by ML model
+      ingredients: foodEntry.ingredients,
+      nutrition: totalNutrition,
+      predictedGlucosePeak: null, // Will be populated by ML model in Sprint 3
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
