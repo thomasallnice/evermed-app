@@ -1,13 +1,13 @@
 {
   "name": "evermed-ai",
   "version": 2,
-  "buildCommand": "cd app && npm install && npm run build",
-  "outputDirectory": "app/.next",
-  "installCommand": "cd app && npm install",
+  "buildCommand": "npm run build",
+  "outputDirectory": "apps/web/.next",
+  "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["fra1"],
   "functions": {
-    "app/src/app/api/**/*.ts": {
+    "apps/web/src/app/api/**/*.ts": {
       "maxDuration": 30
     }
   },
