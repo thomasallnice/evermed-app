@@ -4,6 +4,33 @@ This directory contains custom slash commands for Claude Code to streamline comm
 
 ## Available Commands
 
+### `/frontend`
+
+**Purpose:** Start Next.js development server on port 3200 as a background task.
+
+**What it does:**
+- Checks for existing server on port 3200 and kills it
+- Starts fresh development server on port 3200
+- Runs in background (non-blocking)
+- Provides bash_id for monitoring
+
+**Usage:**
+```
+/frontend
+```
+
+**Monitoring:**
+- Server runs on http://localhost:3200
+- Check output with BashOutput tool using provided bash_id
+- Look for "Ready in Xms" message to confirm startup
+
+**Notes:**
+- Uses port 3200 to avoid conflicts with other services
+- Ideal for running frontend while working on backend/database
+- Server continues running until manually stopped
+
+---
+
 ### `/project:deploy-staging [commit-message]`
 
 **Purpose:** Deploy to Vercel staging environment with full validation and database sync.
