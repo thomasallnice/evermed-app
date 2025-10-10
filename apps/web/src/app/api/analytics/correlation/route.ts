@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { requireUserId } from '@/lib/auth';
 
-const prisma = new PrismaClient();
+// Force dynamic rendering (no static optimization)
+export const dynamic = 'force-dynamic';
 
+/**
+ * Analytics Correlation API - Meal Impact Analysis
+ *
+ * GET /api/analytics/correlation?startDate=X&endDate=Y
+ *
+ * NOTE: This endpoint is temporarily stubbed until metabolic insights migrations are run on staging.
+ * The FoodEntry and GlucoseReading tables don't exist in the staging database yet.
+ *
+ * Once migrations are applied, this endpoint will:
+ * - Analyze correlation between meals and glucose responses
+ * - Calculate peak glucose and average rise after meals
+ * - Rate meals as good/moderate/poor based on glucose impact
+ * - Return best and worst meals for the date range
+ */
 export async function GET(req: NextRequest) {
   try {
     const userId = await requireUserId(req);
@@ -18,105 +32,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Get person ID
-    const person = await prisma.person.findFirst({
-      where: { ownerId: userId },
-      select: { id: true },
-    });
+    // TODO: Re-enable after running metabolic insights migrations
+    // See: db/migrations/20251010090000_add_metabolic_insights/migration.sql
 
-    if (!person) {
-      return NextResponse.json(
-        { error: 'Person record not found' },
-        { status: 404 }
-      );
-    }
-
-    // Parse dates
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-
-    // Fetch food entries with glucose readings
-    const foodEntries = await prisma.foodEntry.findMany({
-      where: {
-        personId: person.id,
-        timestamp: {
-          gte: start,
-          lte: end,
-        },
-      },
-      include: {
-        glucoseReadings: {
-          where: {
-            // Get glucose readings within 2 hours after meal
-            timestamp: {
-              gte: start,
-              lte: end,
-            },
-          },
-          orderBy: {
-            timestamp: 'asc',
-          },
-        },
-        ingredients: {
-          select: {
-            name: true,
-          },
-        },
-      },
-      orderBy: {
-        timestamp: 'desc',
-      },
-    });
-
-    // Calculate meal impact scores
-    const mealImpacts = foodEntries
-      .map((entry) => {
-        const relevantReadings = entry.glucoseReadings.filter((reading) => {
-          const mealTime = entry.timestamp.getTime();
-          const readingTime = reading.timestamp.getTime();
-          const diffMinutes = (readingTime - mealTime) / 1000 / 60;
-          return diffMinutes >= 0 && diffMinutes <= 120; // Within 2 hours after meal
-        });
-
-        if (relevantReadings.length === 0) {
-          return null;
-        }
-
-        const peakGlucose = Math.max(...relevantReadings.map((r) => r.value));
-        const avgGlucose = relevantReadings.reduce((sum, r) => sum + r.value, 0) / relevantReadings.length;
-        const avgRise = avgGlucose - (relevantReadings[0]?.value || avgGlucose);
-
-        let rating: 'good' | 'moderate' | 'poor';
-        if (peakGlucose < 140 && avgRise < 30) {
-          rating = 'good';
-        } else if (peakGlucose < 180 && avgRise < 50) {
-          rating = 'moderate';
-        } else {
-          rating = 'poor';
-        }
-
-        return {
-          id: entry.id,
-          name: entry.notes || entry.ingredients.map((i) => i.name).join(', ') || 'Meal',
-          timestamp: entry.timestamp.toISOString(),
-          peakGlucose: Math.round(peakGlucose),
-          avgRise: Math.round(avgRise),
-          rating,
-        };
-      })
-      .filter((impact) => impact !== null);
-
-    // Sort and separate best/worst meals
-    const goodMeals = mealImpacts.filter((m) => m.rating === 'good').slice(0, 5);
-    const poorMeals = mealImpacts.filter((m) => m.rating === 'poor').slice(0, 5);
-
+    // Return placeholder data for staging deployment
     return NextResponse.json(
       {
-        bestMeals: goodMeals,
-        worstMeals: poorMeals,
+        bestMeals: [],
+        worstMeals: [],
+        message: 'Metabolic insights not yet available. Database migrations pending.',
       },
       { status: 200 }
     );

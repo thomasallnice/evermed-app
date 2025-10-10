@@ -249,13 +249,14 @@ export async function logPredictionPerformance(
   // Store in AnalyticsEvent (non-PHI telemetry)
   await prisma.analyticsEvent.create({
     data: {
-      userId: personId,
-      name: "ml_prediction_performance",
-      meta: {
+      eventType: "performance",
+      eventName: "ml_prediction_performance",
+      metadata: {
         modelVersion,
         mae: Math.round(predictionMAE), // Rounded to avoid exact glucose values
         timestamp: new Date().toISOString(),
       },
+      sessionId: personId, // Use sessionId for user tracking (non-PHI)
     },
   });
 }
@@ -288,9 +289,9 @@ export async function analyzeABTestResults(
   // Fetch canary performance logs
   const canaryLogs = await prisma.analyticsEvent.findMany({
     where: {
-      name: "ml_prediction_performance",
+      eventName: "ml_prediction_performance",
       createdAt: { gte: windowStart },
-      meta: {
+      metadata: {
         path: ["modelVersion"],
         equals: canaryVersion,
       },
@@ -300,9 +301,9 @@ export async function analyzeABTestResults(
   // Fetch stable performance logs
   const stableLogs = await prisma.analyticsEvent.findMany({
     where: {
-      name: "ml_prediction_performance",
+      eventName: "ml_prediction_performance",
       createdAt: { gte: windowStart },
-      meta: {
+      metadata: {
         path: ["modelVersion"],
         equals: stableVersion,
       },
@@ -310,10 +311,10 @@ export async function analyzeABTestResults(
   });
 
   const canaryMAEs = canaryLogs
-    .map((log) => (log.meta as any)?.mae)
+    .map((log) => (log.metadata as any)?.mae)
     .filter((mae) => typeof mae === "number");
   const stableMAEs = stableLogs
-    .map((log) => (log.meta as any)?.mae)
+    .map((log) => (log.metadata as any)?.mae)
     .filter((mae) => typeof mae === "number");
 
   const canaryAvg =

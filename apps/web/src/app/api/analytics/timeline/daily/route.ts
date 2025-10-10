@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { requireUserId } from '@/lib/auth';
 
-const prisma = new PrismaClient();
+// Force dynamic rendering (no static optimization)
+export const dynamic = 'force-dynamic';
 
+/**
+ * Daily Timeline API - Glucose and Meal Timeline
+ *
+ * GET /api/analytics/timeline/daily?date=YYYY-MM-DD
+ *
+ * NOTE: This endpoint is temporarily stubbed until metabolic insights migrations are run on staging.
+ * The GlucoseReading and FoodEntry tables don't exist in the staging database yet.
+ *
+ * Once migrations are applied, this endpoint will:
+ * - Fetch all glucose readings for the specified day
+ * - Fetch all meal entries for the specified day
+ * - Return formatted timeline data for visualization
+ */
 export async function GET(req: NextRequest) {
   try {
     const userId = await requireUserId(req);
@@ -17,86 +30,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Get person ID
-    const person = await prisma.person.findFirst({
-      where: { ownerId: userId },
-      select: { id: true },
-    });
+    // TODO: Re-enable after running metabolic insights migrations
+    // See: db/migrations/20251010090000_add_metabolic_insights/migration.sql
 
-    if (!person) {
-      return NextResponse.json(
-        { error: 'Person record not found' },
-        { status: 404 }
-      );
-    }
-
-    // Parse date and create range for the selected day
-    const selectedDate = new Date(dateParam);
-    const startOfDay = new Date(selectedDate);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(selectedDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    // Fetch glucose readings for the day
-    const glucoseReadings = await prisma.glucoseReading.findMany({
-      where: {
-        personId: person.id,
-        timestamp: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-      },
-      select: {
-        timestamp: true,
-        value: true,
-      },
-      orderBy: {
-        timestamp: 'asc',
-      },
-    });
-
-    // Fetch meal entries for the day
-    const foodEntries = await prisma.foodEntry.findMany({
-      where: {
-        personId: person.id,
-        timestamp: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-      },
-      select: {
-        timestamp: true,
-        mealType: true,
-        notes: true,
-        ingredients: {
-          select: {
-            name: true,
-          },
-        },
-      },
-      orderBy: {
-        timestamp: 'asc',
-      },
-    });
-
-    // Format glucose data
-    const glucose = glucoseReadings.map((reading) => ({
-      timestamp: reading.timestamp.toISOString(),
-      value: reading.value,
-    }));
-
-    // Format meal data
-    const meals = foodEntries.map((entry) => ({
-      timestamp: entry.timestamp.toISOString(),
-      name: entry.notes || entry.ingredients.map((i) => i.name).join(', ') || 'Meal',
-      type: entry.mealType,
-    }));
-
+    // Return placeholder data for staging deployment
     return NextResponse.json(
       {
-        glucose,
-        meals,
+        glucose: [],
+        meals: [],
+        message: 'Metabolic insights not yet available. Database migrations pending.',
       },
       { status: 200 }
     );

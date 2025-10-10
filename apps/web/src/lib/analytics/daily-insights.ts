@@ -241,7 +241,8 @@ export async function detectGlucosePatterns(
   }
 
   // Extract daily data
-  const dailyData = insights.map((i) => i.insightData as DailyInsightsData);
+  // Use 'unknown' intermediate to safely cast from JsonValue to DailyInsightsData
+  const dailyData = insights.map((i) => i.insightData as unknown as DailyInsightsData);
 
   // Pattern 1: Consistent high glucose (avg > 180 for 50%+ of days)
   const highGlucoseDays = dailyData.filter((d) => d.avgGlucose > 180).length;

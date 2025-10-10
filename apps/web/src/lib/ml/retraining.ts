@@ -9,11 +9,11 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import { trainGlucoseModel, evaluateModel, shouldDeployNewModel } from "./training";
+import { trainGlucoseModel, evaluateModel, shouldDeployNewModel, type TrainingConfig } from "./training";
 import { deployModel, getActiveModelVersion } from "./versioning";
 import { loadModel } from "./model-storage";
 import { createTrainingDataset } from "./feature-engineering";
-import type { RetrainingTrigger, TrainingConfig } from "./types";
+import type { RetrainingTrigger } from "./types";
 
 const prisma = new PrismaClient();
 
