@@ -58,12 +58,13 @@ model Person {
   birthYear  Int?
   sexAtBirth String?
   locale     String?  @default("de-DE")
+  metadata   Json? // Extensible: { metabolic_onboarding_completed: true, ... }
   createdAt  DateTime @default(now())
 
   // Metabolic Insights preferences
-  cgmConnected      Boolean @default(false) @map("cgm_connected")
-  targetGlucoseMin  Float?  @map("target_glucose_min")
-  targetGlucoseMax  Float?  @map("target_glucose_max")
+  cgmConnected     Boolean @default(false) @map("cgm_connected")
+  targetGlucoseMin Float?  @map("target_glucose_min")
+  targetGlucoseMax Float?  @map("target_glucose_max")
 
   // Existing relations
   documents    Document[]
@@ -71,13 +72,13 @@ model Person {
   sharePacks   SharePack[]
 
   // Metabolic Insights relations
-  foodEntries       FoodEntry[]
-  glucoseReadings   GlucoseReading[]
+  foodEntries        FoodEntry[]
+  glucoseReadings    GlucoseReading[]
   glucosePredictions GlucosePrediction[]
-  personalModel     PersonalModel?
-  mealTemplates     MealTemplate[]
-  metabolicInsights MetabolicInsight[]
-  subscription      SubscriptionTier?
+  personalModels     PersonalModel[] // Changed from singular to plural for multiple versions
+  mealTemplates      MealTemplate[]
+  metabolicInsights  MetabolicInsight[]
+  subscription       SubscriptionTier?
 }
 
 model Document {
@@ -95,7 +96,7 @@ model Document {
   chunks         DocChunk[]
   observations   Observation[]   @relation("DocToObs")
   sharePackItems SharePackItem[] // back-relation
-  chatMessages   ChatMessage[]   // back-relation
+  chatMessages   ChatMessage[] // back-relation
 }
 
 model Observation {
@@ -156,12 +157,12 @@ model ShareEvent {
 }
 
 model DocChunk {
-  id           String   @id @default(uuid())
+  id           String                 @id @default(uuid())
   documentId   String
   chunkId      Int
   text         String
   sourceAnchor String?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime               @default(now())
   embedding    Unsupported("vector")?
 
   document Document @relation(fields: [documentId], references: [id])
@@ -193,14 +194,32 @@ model TokenUsage {
   createdAt DateTime @default(now())
 }
 
+// Non-PHI analytics events for product insights
 model AnalyticsEvent {
   id        String   @id @default(uuid())
-  userId    String?
-  name      String // 'first_upload_done', etc.
-  meta      Json?
+  eventType String // 'page_view', 'feature_usage', 'performance', 'error'
+  eventName String // 'metabolic_dashboard', 'camera_capture', 'api_latency'
+  metadata  Json? // Non-PHI data only: { endpoint, latency_ms, chart_type }
+  sessionId String? // Hashed session ID for funnel analysis (no user identifiers)
   createdAt DateTime @default(now())
 
-  @@index([name, createdAt])
+  @@index([eventType, eventName, createdAt])
+  @@index([sessionId, createdAt])
+  @@map("analytics_events")
+}
+
+// Feature flags for gradual rollout and A/B testing
+model FeatureFlag {
+  id             String   @id @default(uuid())
+  name           String   @unique // e.g., 'metabolic_insights_enabled'
+  enabled        Boolean  @default(false)
+  rolloutPercent Int      @default(0) // 0-100: percentage of users who see this feature
+  description    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([name, enabled])
+  @@map("feature_flags")
 }
 
 // ============================================
@@ -208,40 +227,40 @@ model AnalyticsEvent {
 // ============================================
 
 model FoodEntry {
-  id                    String    @id @default(uuid())
-  personId              String    @map("person_id")
-  timestamp             DateTime
-  mealType              MealType  @map("meal_type")
-  notes                 String?
-  predictedGlucosePeak  Float?    @map("predicted_glucose_peak")
-  actualGlucosePeak     Float?    @map("actual_glucose_peak")
-  totalCalories         Float     @map("total_calories")
-  totalCarbsG           Float     @map("total_carbs_g")
-  totalProteinG         Float     @map("total_protein_g")
-  totalFatG             Float     @map("total_fat_g")
-  totalFiberG           Float     @map("total_fiber_g")
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
+  id                   String   @id @default(uuid())
+  personId             String   @map("person_id")
+  timestamp            DateTime
+  mealType             MealType @map("meal_type")
+  notes                String?
+  predictedGlucosePeak Float?   @map("predicted_glucose_peak")
+  actualGlucosePeak    Float?   @map("actual_glucose_peak")
+  totalCalories        Float    @map("total_calories")
+  totalCarbsG          Float    @map("total_carbs_g")
+  totalProteinG        Float    @map("total_protein_g")
+  totalFatG            Float    @map("total_fat_g")
+  totalFiberG          Float    @map("total_fiber_g")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
 
-  person             Person               @relation(fields: [personId], references: [id], onDelete: Cascade)
-  photos             FoodPhoto[]
-  ingredients        FoodIngredient[]
-  glucoseReadings    GlucoseReading[]
-  predictions        GlucosePrediction[]
+  person          Person              @relation(fields: [personId], references: [id], onDelete: Cascade)
+  photos          FoodPhoto[]
+  ingredients     FoodIngredient[]
+  glucoseReadings GlucoseReading[]
+  predictions     GlucosePrediction[]
 
   @@index([personId, timestamp])
   @@map("food_entries")
 }
 
 model FoodPhoto {
-  id                   String          @id @default(uuid())
-  foodEntryId          String          @map("food_entry_id")
-  storagePath          String          @map("storage_path")
-  thumbnailPath        String?         @map("thumbnail_path")
-  originalSizeBytes    Int             @map("original_size_bytes")
-  analysisStatus       AnalysisStatus  @default(pending) @map("analysis_status")
-  analysisCompletedAt  DateTime?       @map("analysis_completed_at")
-  createdAt            DateTime        @default(now()) @map("created_at")
+  id                  String         @id @default(uuid())
+  foodEntryId         String         @map("food_entry_id")
+  storagePath         String         @map("storage_path")
+  thumbnailPath       String?        @map("thumbnail_path")
+  originalSizeBytes   Int            @map("original_size_bytes")
+  analysisStatus      AnalysisStatus @default(pending) @map("analysis_status")
+  analysisCompletedAt DateTime?      @map("analysis_completed_at")
+  createdAt           DateTime       @default(now()) @map("created_at")
 
   foodEntry FoodEntry @relation(fields: [foodEntryId], references: [id], onDelete: Cascade)
 
@@ -269,15 +288,15 @@ model FoodIngredient {
 }
 
 model GlucoseReading {
-  id           String        @id @default(uuid())
-  personId     String        @map("person_id")
-  timestamp    DateTime
-  value        Float // mg/dL
-  source       GlucoseSource
-  deviceId     String?       @map("device_id")
-  foodEntryId  String?       @map("food_entry_id")
-  confidence   Float?
-  createdAt    DateTime      @default(now()) @map("created_at")
+  id          String        @id @default(uuid())
+  personId    String        @map("person_id")
+  timestamp   DateTime
+  value       Float // mg/dL
+  source      GlucoseSource
+  deviceId    String?       @map("device_id")
+  foodEntryId String?       @map("food_entry_id")
+  confidence  Float?
+  createdAt   DateTime      @default(now()) @map("created_at")
 
   person    Person     @relation(fields: [personId], references: [id], onDelete: Cascade)
   foodEntry FoodEntry? @relation(fields: [foodEntryId], references: [id], onDelete: SetNull)
@@ -303,18 +322,37 @@ model GlucosePrediction {
 }
 
 model PersonalModel {
-  id                 String   @id @default(uuid())
-  personId           String   @unique @map("person_id")
-  modelVersion       String   @map("model_version")
-  trainingMealsCount Int      @map("training_meals_count")
-  lastTrainedAt      DateTime @map("last_trained_at")
-  accuracyRmse       Float?   @map("accuracy_rmse")
-  modelDataPath      String?  @map("model_data_path")
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
+  id        String  @id @default(uuid())
+  personId  String  @map("person_id")
+  modelType String  @map("model_type") // 'glucose-prediction', 'pattern-recognition'
+  version   String // Semantic versioning: '1.0.0', '1.1.0'
+  isActive  Boolean @default(false) @map("is_active")
+
+  // Training metadata
+  trainingMealsCount Int       @map("training_meals_count")
+  trainingDataStart  DateTime  @map("training_data_start")
+  trainingDataEnd    DateTime  @map("training_data_end")
+  trainedAt          DateTime  @map("trained_at")
+  lastUsedAt         DateTime? @map("last_used_at")
+
+  // Model artifacts
+  modelDataPath String? @map("model_data_path") // Supabase Storage path
+
+  // Performance metrics
+  accuracyMae  Float? @map("accuracy_mae") // Mean Absolute Error
+  accuracyRmse Float? @map("accuracy_rmse") // Root Mean Squared Error
+  accuracyR2   Float? @map("accuracy_r2") // R² (coefficient of determination)
+
+  // Extensible metadata for features, hyperparameters, etc.
+  metadata Json? // { features: [...], hyperparameters: {...}, notes: "..." }
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
 
+  @@unique([personId, modelType, version]) // Allow multiple versions per user per model type
+  @@index([personId, modelType, isActive]) // Fast lookup for active models
   @@map("personal_models")
 }
 
@@ -353,7 +391,7 @@ model SubscriptionTier {
   tier                 TierLevel
   mealsLimitPerWeek    Int       @map("meals_limit_per_week")
   mealsUsedThisWeek    Int       @default(0) @map("meals_used_this_week")
-  weekStartDate        DateTime  @db.Date @map("week_start_date")
+  weekStartDate        DateTime  @map("week_start_date") @db.Date
   stripeSubscriptionId String?   @map("stripe_subscription_id")
   expiresAt            DateTime? @map("expires_at")
   createdAt            DateTime  @default(now()) @map("created_at")
