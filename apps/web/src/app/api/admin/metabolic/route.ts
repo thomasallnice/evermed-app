@@ -241,7 +241,7 @@ export async function GET(request: NextRequest) {
       },
       engagement: {
         retention,
-        featureUsage: featureUsage.map((f) => ({
+        featureUsage: featureUsage.map((f: { eventName: string; _count: number }) => ({
           feature: f.eventName,
           count: f._count,
         })),
