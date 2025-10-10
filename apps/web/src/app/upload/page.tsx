@@ -20,8 +20,22 @@ export default function UploadPage() {
       return
     }
 
-    // Upload to Supabase Storage
-    const path = `${user.id}/${Date.now()}_${file.name}`
+    // Fetch Person record to get personId (required for RLS policies)
+    const { data: personData, error: personError } = await supabase
+      .from('Person')
+      .select('id')
+      .eq('ownerId', user.id)
+      .single()
+
+    if (personError || !personData) {
+      setStatus(`Error: Person record not found. Please complete onboarding.`)
+      return
+    }
+
+    const personId = personData.id
+
+    // Upload to Supabase Storage using personId (not userId)
+    const path = `${personId}/${Date.now()}_${file.name}`
     const { error: uploadError } = await supabase.storage
       .from('documents')
       .upload(path, file, { upsert: false })
