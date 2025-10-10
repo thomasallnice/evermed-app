@@ -3,7 +3,7 @@ import { ImageResponse } from 'next/og';
 export const runtime = 'edge';
 
 export async function GET() {
-  return new ImageResponse(
+  const imageResponse = new ImageResponse(
     (
       <div
         style={{
@@ -40,6 +40,11 @@ export async function GET() {
     {
       width: 192,
       height: 192,
+      headers: {
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      },
     }
   );
+
+  return imageResponse;
 }
