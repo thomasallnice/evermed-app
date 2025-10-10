@@ -17,7 +17,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 // Cache dashboard queries for 5 minutes
 export const revalidate = 300;
@@ -149,7 +151,7 @@ export async function GET(request: NextRequest) {
       `,
 
       // Performance metrics from analytics events
-      prisma.analyticsEvent.aggregate({
+      prisma.analyticsEvent.count({
         where: {
           eventType: 'performance',
           createdAt: {
@@ -157,11 +159,6 @@ export async function GET(request: NextRequest) {
             lte: end,
           },
         },
-        _avg: {
-          // Note: metadata.latency_ms is JSON, need to handle differently
-          // For now, return count and handle in application layer
-        },
-        _count: true,
       }),
 
       // Error count from analytics events
@@ -259,7 +256,7 @@ export async function GET(request: NextRequest) {
         apiLatencyP50: null,
         apiLatencyP95: null,
         apiLatencyP99: null,
-        totalEvents: performanceMetrics._count,
+        totalEvents: performanceMetrics,
       },
       errors: {
         totalErrors: errorMetrics,
