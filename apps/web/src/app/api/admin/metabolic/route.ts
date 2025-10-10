@@ -218,7 +218,7 @@ export async function GET(request: NextRequest) {
         : '0.0';
 
     // Format daily trend for charts
-    const dailyTrendFormatted = dailyMealsTrend.map((row) => ({
+    const dailyTrendFormatted = dailyMealsTrend.map((row: { date: Date; count: bigint }) => ({
       date: row.date.toISOString().split('T')[0],
       count: Number(row.count),
     }));

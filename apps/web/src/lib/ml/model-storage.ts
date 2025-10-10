@@ -7,7 +7,7 @@
  * Storage structure: models/{userId}/{modelType}/{version}/model.json
  */
 
-import { createClient } from "@/lib/supabase/client";
+import { getSupabase } from "@/lib/supabase/client";
 import { PrismaClient } from "@prisma/client";
 import type { ModelMetadata } from "./types";
 
@@ -52,7 +52,7 @@ export async function saveModel(
   modelData: any,
   metadata: ModelMetadata
 ): Promise<string> {
-  const supabase = createClient();
+  const supabase = getSupabase();
 
   // Storage path
   const storagePath = `models/${personId}/${modelType}/${version}/model.json`;
@@ -129,7 +129,7 @@ export async function loadModel(
   modelType: string,
   version?: string
 ): Promise<{ modelData: any; metadata: ModelMetadata }> {
-  const supabase = createClient();
+  const supabase = getSupabase();
 
   // If no version specified, get active version from database
   let modelRecord;
