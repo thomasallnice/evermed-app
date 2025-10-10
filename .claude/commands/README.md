@@ -37,6 +37,53 @@ This directory contains custom slash commands for Claude Code to streamline comm
 
 ---
 
+### `/project:deploy-production [release-version]`
+
+**Purpose:** Deploy to Vercel production environment with maximum safety and validation.
+
+**⚠️ WARNING:** This deploys to PRODUCTION. Use with extreme caution.
+
+**What it does:**
+- Validates staging deployment is healthy
+- Runs comprehensive code quality checks (all must pass)
+- Invokes multiple subagents for thorough validation
+- Requires THREE explicit user confirmations
+- Merges staging to `main` branch
+- Creates release tag for version tracking
+- Applies database migrations to production Supabase project
+- Pushes to GitHub to trigger Vercel production deployment
+- Validates production deployment immediately
+- Sets up monitoring and provides rollback instructions
+
+**Usage:**
+```
+/project:deploy-production
+/project:deploy-production v2025.01.5
+```
+
+**Requirements:**
+- Staging deployment must be tested and healthy
+- All code quality checks must pass (cannot skip)
+- Manual database backup recommended
+- Team available for monitoring
+- Low-traffic deployment window (recommended)
+
+**Safety Features:**
+1. ✅ Multiple validation layers (cannot bypass)
+2. ✅ Three explicit confirmations required
+3. ✅ Validates staging health first
+4. ✅ Multiple subagent validations
+5. ✅ Release tagging for tracking
+6. ✅ Emergency rollback procedure
+7. ✅ Post-deployment monitoring setup
+8. ✅ Database backup recommendations
+9. ✅ No direct feature branch → production
+10. ✅ Comprehensive health checks
+
+**CRITICAL:** Always test thoroughly on staging before production!
+
+---
+
 ## How to Use Custom Commands
 
 1. **Type `/` in Claude Code** to open the slash commands menu
