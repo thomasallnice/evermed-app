@@ -5,26 +5,10 @@ export const runtime = 'nodejs';
 
 const prisma = new PrismaClient();
 
-// Type aliases for Prisma models - match actual schema
-type AnalyticsEvent = {
-  id: string;
-  eventType: string;
-  eventName: string;
-  metadata: any;
-  sessionId: string | null;
-  createdAt: Date;
-};
-
-type TokenUsage = {
-  id: string;
-  userId: string | null;
-  feature: string;
-  model: string;
-  tokensIn: number;
-  tokensOut: number;
-  costUsd: Prisma.Decimal | null;
-  createdAt: Date;
-};
+// Use Prisma-generated types directly instead of hardcoded types
+// This ensures compatibility with the actual database schema
+type AnalyticsEvent = Prisma.AnalyticsEventGetPayload<{}>;
+type TokenUsage = Prisma.TokenUsageGetPayload<{}>;
 
 function isAdmin(req: NextRequest) {
   return req.headers.get('x-admin') === '1'; // TODO: replace with Supabase role check
