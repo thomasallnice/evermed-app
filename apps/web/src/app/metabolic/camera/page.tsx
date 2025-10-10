@@ -164,6 +164,22 @@ export default function CameraPage() {
           </a>
         </div>
 
+        {/* Feature Not Available Message */}
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-6">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">🚧</span>
+            <div>
+              <h3 className="font-semibold text-amber-900 mb-1">Feature Coming Soon</h3>
+              <p className="text-sm text-amber-800">
+                Metabolic insights are not yet available. Database migrations are pending. This feature will be enabled once migrations are applied to the production environment.
+              </p>
+              <p className="text-sm text-amber-700 mt-2">
+                In the meantime, you can explore other features like the <a href="/vault" className="underline font-medium hover:text-amber-900">Document Vault</a> or <a href="/chat" className="underline font-medium hover:text-amber-900">AI Chat</a>.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
