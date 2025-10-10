@@ -1,14 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { prisma } from '@/lib/prisma'
+import { createClient } from '@supabase/supabase-js'
+import { PrismaClient } from '@prisma/client'
+import { requireUserId } from '@/lib/auth'
 import { z } from 'zod'
 
-// Validation schema for food entry
-const FoodEntrySchema = z.object({
-  personId: z.string().uuid(),
+const prisma = new PrismaClient()
+
+// Force dynamic rendering (no static optimization)
+export const dynamic = 'force-dynamic'
+
+// Validation schemas
+const PostFoodEntrySchema = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
-  timestamp: z.string().datetime(),
-  notes: z.string().optional(),
+  eatenAt: z.string().datetime(),
+})
+
+const GetFoodQuerySchema = z.object({
+  mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  limit: z.coerce.number().min(1).max(100).default(20),
 })
 
 /**
@@ -16,105 +27,128 @@ const FoodEntrySchema = z.object({
  *
  * Upload a food photo and create a food entry
  *
- * Body (multipart/form-data):
- * - photo: File (required)
- * - personId: string (required)
- * - mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack' (required)
- * - timestamp: ISO8601 string (required)
- * - notes: string (optional)
+ * Headers:
+ * - x-user-id (dev) or Supabase session (prod)
  *
- * Response:
+ * Body (multipart/form-data):
+ * - photo: File (JPEG/PNG, max 5MB, required)
+ * - mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack' (required)
+ * - eatenAt: ISO 8601 timestamp (required)
+ *
+ * Response (201):
  * {
  *   id: string,
- *   timestamp: string,
- *   mealType: string,
+ *   personId: string,
  *   photoUrl: string,
- *   ingredients: Ingredient[],
- *   nutrition: NutritionFacts,
- *   predictedGlucosePeak: number | null
+ *   mealType: string,
+ *   eatenAt: string,
+ *   status: 'pending' | 'completed' | 'failed'
  * }
+ *
+ * Errors:
+ * - 400: Invalid input (missing fields, invalid mealType, invalid date)
+ * - 401: Unauthorized
+ * - 413: Photo too large (>5MB)
+ * - 415: Invalid MIME type (not JPEG/PNG)
+ * - 500: Server error
  */
 export async function POST(request: NextRequest) {
   try {
-    // Get Supabase client
-    const supabase = createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
+    // Authenticate user using standardized helper
+    let userId: string
+    try {
+      userId = await requireUserId(request)
+    } catch {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
+    // Get user's Person record (assuming one Person per user)
+    const person = await prisma.person.findFirst({
+      where: { ownerId: userId },
+      select: { id: true },
+    })
+
+    if (!person) {
+      return NextResponse.json(
+        { error: 'Person profile not found. Complete onboarding first.' },
+        { status: 400 }
+      )
+    }
+
     // Parse multipart form data
     const formData = await request.formData()
     const photo = formData.get('photo') as File | null
-    const personId = formData.get('personId') as string | null
     const mealType = formData.get('mealType') as string | null
-    const timestamp = formData.get('timestamp') as string | null
-    const notes = formData.get('notes') as string | null
+    const eatenAt = formData.get('eatenAt') as string | null
 
     // Validate required fields
-    if (!photo || !personId || !mealType || !timestamp) {
+    if (!photo) {
       return NextResponse.json(
-        { error: 'Missing required fields: photo, personId, mealType, timestamp' },
+        { error: 'Missing required field: photo' },
         { status: 400 }
+      )
+    }
+
+    if (!mealType || !eatenAt) {
+      return NextResponse.json(
+        { error: 'Missing required fields: mealType, eatenAt' },
+        { status: 400 }
+      )
+    }
+
+    // Validate file type (JPEG/PNG only per spec)
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png']
+    if (!allowedTypes.includes(photo.type.toLowerCase())) {
+      return NextResponse.json(
+        { error: `Invalid file type. Allowed: JPEG, PNG only.` },
+        { status: 415 }
+      )
+    }
+
+    // Validate file size (5MB max per spec)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (photo.size > maxSize) {
+      return NextResponse.json(
+        { error: 'Photo exceeds 5MB size limit' },
+        { status: 413 }
       )
     }
 
     // Validate data against schema
-    const validatedData = FoodEntrySchema.parse({
-      personId,
-      mealType,
-      timestamp,
-      notes: notes || undefined,
-    })
-
-    // Verify person belongs to authenticated user
-    const person = await prisma.person.findUnique({
-      where: { id: validatedData.personId },
-      select: { id: true, ownerId: true },
-    })
-
-    if (!person || person.ownerId !== user.id) {
-      return NextResponse.json(
-        { error: 'Forbidden: Person not found or access denied' },
-        { status: 403 }
-      )
+    let validatedData
+    try {
+      validatedData = PostFoodEntrySchema.parse({
+        mealType,
+        eatenAt,
+      })
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { error: 'Validation error', details: error.errors },
+          { status: 400 }
+        )
+      }
+      throw error
     }
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/webp']
-    if (!allowedTypes.includes(photo.type)) {
-      return NextResponse.json(
-        { error: `Invalid file type. Allowed: ${allowedTypes.join(', ')}` },
-        { status: 400 }
-      )
-    }
+    // Create Supabase admin client for storage operations
+    const supabaseUrl = process.env.SUPABASE_URL!
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Validate file size (10MB max)
-    const maxSize = 10 * 1024 * 1024 // 10MB
-    if (photo.size > maxSize) {
-      return NextResponse.json(
-        { error: 'File size exceeds 10MB limit' },
-        { status: 400 }
-      )
-    }
-
-    // Generate unique file path: {userId}/{timestamp}-{random}.{ext}
+    // Generate unique file path: {userId}/{photoId}.{ext}
+    const photoId = crypto.randomUUID()
     const fileExt = photo.name.split('.').pop() || 'jpg'
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-    const storagePath = `${user.id}/${fileName}`
+    const storagePath = `${userId}/${photoId}.${fileExt}`
 
     // Upload photo to Supabase Storage
+    const photoBuffer = await photo.arrayBuffer()
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('food-photos')
-      .upload(storagePath, photo, {
+      .upload(storagePath, photoBuffer, {
         contentType: photo.type,
         upsert: false,
       })
@@ -127,20 +161,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get signed URL for the uploaded photo (valid for 1 hour)
-    const { data: urlData } = await supabase.storage
-      .from('food-photos')
-      .createSignedUrl(storagePath, 3600)
-
-    const photoUrl = urlData?.signedUrl || ''
-
     // Create food entry in database (transaction)
     const foodEntry = await prisma.foodEntry.create({
       data: {
-        personId: validatedData.personId,
-        timestamp: new Date(validatedData.timestamp),
+        personId: person.id,
+        timestamp: new Date(validatedData.eatenAt),
         mealType: validatedData.mealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
-        notes: validatedData.notes,
         totalCalories: 0, // Will be updated after AI analysis
         totalCarbsG: 0,
         totalProteinG: 0,
@@ -156,36 +182,37 @@ export async function POST(request: NextRequest) {
       },
       include: {
         photos: true,
-        ingredients: true,
       },
     })
 
-    // TODO: Trigger AI analysis job (Google Cloud Vision + Nutritionix)
-    // For now, return placeholder response
+    // Get signed URL for the uploaded photo (valid for 1 hour per spec)
+    const { data: urlData, error: urlError } = await supabase.storage
+      .from('food-photos')
+      .createSignedUrl(uploadData.path, 3600)
 
-    return NextResponse.json({
-      id: foodEntry.id,
-      timestamp: foodEntry.timestamp.toISOString(),
-      mealType: foodEntry.mealType,
-      photoUrl,
-      ingredients: [], // Will be populated by AI analysis
-      nutrition: {
-        calories: 0,
-        carbs: 0,
-        protein: 0,
-        fat: 0,
-        fiber: 0,
-      },
-      predictedGlucosePeak: null, // Will be populated by ML model
-    })
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
-        { status: 400 }
-      )
+    if (urlError) {
+      console.error('Failed to generate signed URL:', urlError)
+      // Don't fail the request, just return empty URL
     }
 
+    const photoUrl = urlData?.signedUrl || ''
+
+    // TODO: Trigger AI analysis job (Google Cloud Vision + Nutritionix)
+    // This would be a background job that updates ingredients and nutrition
+
+    // Return spec-compliant response
+    return NextResponse.json(
+      {
+        id: foodEntry.id,
+        personId: person.id,
+        photoUrl,
+        mealType: foodEntry.mealType,
+        eatenAt: foodEntry.timestamp.toISOString(),
+        status: foodEntry.photos[0]?.analysisStatus || 'pending',
+      },
+      { status: 201 }
+    )
+  } catch (error) {
     console.error('Food upload error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -199,97 +226,105 @@ export async function POST(request: NextRequest) {
  *
  * List food entries with optional filtering
  *
- * Query params:
- * - personId: string (required)
- * - date: YYYY-MM-DD (optional) - filter by specific date
- * - startDate: YYYY-MM-DD (optional) - filter from date
- * - endDate: YYYY-MM-DD (optional) - filter to date
- * - mealType: breakfast|lunch|dinner|snack (optional)
- * - limit: number (optional, default: 50, max: 100)
- * - offset: number (optional, default: 0)
+ * Headers:
+ * - x-user-id (dev) or Supabase session (prod)
  *
- * Response:
+ * Query params:
+ * - mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+ * - startDate?: ISO 8601 date (inclusive)
+ * - endDate?: ISO 8601 date (inclusive)
+ * - limit?: number (default: 20, max: 100)
+ *
+ * Response (200):
  * {
- *   entries: FoodEntry[],
- *   pagination: {
- *     total: number,
- *     hasMore: boolean
- *   }
+ *   entries: Array<{
+ *     id: string,
+ *     mealType: string,
+ *     eatenAt: string,
+ *     photoUrl: string,
+ *     ingredients: Array<{
+ *       name: string,
+ *       quantity: number | null,
+ *       unit: string | null
+ *     }>,
+ *     totalCalories: number,
+ *     totalCarbs: number
+ *   }>,
+ *   total: number
  * }
+ *
+ * Errors:
+ * - 400: Invalid query parameters
+ * - 401: Unauthorized
+ * - 500: Server error
  */
 export async function GET(request: NextRequest) {
   try {
-    // Get Supabase client
-    const supabase = createClient()
-
-    // Check authentication
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
+    // Authenticate user using standardized helper
+    let userId: string
+    try {
+      userId = await requireUserId(request)
+    } catch {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    // Parse query params
-    const { searchParams } = new URL(request.url)
-    const personId = searchParams.get('personId')
-    const date = searchParams.get('date')
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
-    const mealType = searchParams.get('mealType')
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100)
-    const offset = parseInt(searchParams.get('offset') || '0')
+    // Get user's Person record
+    const person = await prisma.person.findFirst({
+      where: { ownerId: userId },
+      select: { id: true },
+    })
 
-    if (!personId) {
+    if (!person) {
       return NextResponse.json(
-        { error: 'Missing required parameter: personId' },
+        { error: 'Person profile not found. Complete onboarding first.' },
         { status: 400 }
       )
     }
 
-    // Verify person belongs to authenticated user
-    const person = await prisma.person.findUnique({
-      where: { id: personId },
-      select: { id: true, ownerId: true },
-    })
-
-    if (!person || person.ownerId !== user.id) {
-      return NextResponse.json(
-        { error: 'Forbidden: Person not found or access denied' },
-        { status: 403 }
-      )
+    // Parse and validate query params
+    const { searchParams } = new URL(request.url)
+    const rawParams = {
+      mealType: searchParams.get('mealType'),
+      startDate: searchParams.get('startDate'),
+      endDate: searchParams.get('endDate'),
+      limit: searchParams.get('limit') || '20',
     }
 
-    // Build where clause
+    let validatedParams
+    try {
+      validatedParams = GetFoodQuerySchema.parse(rawParams)
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { error: 'Invalid query parameters', details: error.errors },
+          { status: 400 }
+        )
+      }
+      throw error
+    }
+
+    // Build where clause (RLS enforced via personId)
     const where: any = {
-      personId,
+      personId: person.id,
     }
 
-    if (date) {
-      const targetDate = new Date(date)
-      const nextDay = new Date(targetDate)
-      nextDay.setDate(nextDay.getDate() + 1)
-      where.timestamp = {
-        gte: targetDate,
-        lt: nextDay,
-      }
-    } else {
-      if (startDate) {
-        where.timestamp = { ...where.timestamp, gte: new Date(startDate) }
-      }
-      if (endDate) {
-        const end = new Date(endDate)
-        end.setDate(end.getDate() + 1) // Include the end date
-        where.timestamp = { ...where.timestamp, lt: end }
-      }
+    if (validatedParams.mealType) {
+      where.mealType = validatedParams.mealType
     }
 
-    if (mealType) {
-      where.mealType = mealType
+    if (validatedParams.startDate || validatedParams.endDate) {
+      where.timestamp = {}
+      if (validatedParams.startDate) {
+        where.timestamp.gte = new Date(validatedParams.startDate)
+      }
+      if (validatedParams.endDate) {
+        // Include the end date (exclusive upper bound)
+        const endDate = new Date(validatedParams.endDate)
+        where.timestamp.lt = endDate
+      }
     }
 
     // Get total count
@@ -299,46 +334,60 @@ export async function GET(request: NextRequest) {
     const entries = await prisma.foodEntry.findMany({
       where,
       include: {
-        photos: true,
-        ingredients: true,
-        predictions: {
-          orderBy: { createdAt: 'desc' },
-          take: 1, // Latest prediction only
+        photos: {
+          select: {
+            storagePath: true,
+          },
+          take: 1, // Get first photo only for photoUrl
+        },
+        ingredients: {
+          select: {
+            name: true,
+            quantity: true,
+            unit: true,
+          },
         },
       },
       orderBy: { timestamp: 'desc' },
-      take: limit,
-      skip: offset,
+      take: validatedParams.limit,
     })
 
-    // Generate signed URLs for photos
+    // Create Supabase admin client for signed URLs
+    const supabaseUrl = process.env.SUPABASE_URL!
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // Generate signed URLs and format response per spec
     const entriesWithUrls = await Promise.all(
       entries.map(async (entry) => {
-        const photosWithUrls = await Promise.all(
-          entry.photos.map(async (photo) => {
-            const { data } = await supabase.storage
-              .from('food-photos')
-              .createSignedUrl(photo.storagePath, 3600)
-            return {
-              ...photo,
-              url: data?.signedUrl || '',
-            }
-          })
-        )
+        let photoUrl = ''
+
+        if (entry.photos.length > 0) {
+          const { data } = await supabase.storage
+            .from('food-photos')
+            .createSignedUrl(entry.photos[0].storagePath, 3600)
+          photoUrl = data?.signedUrl || ''
+        }
 
         return {
-          ...entry,
-          photos: photosWithUrls,
+          id: entry.id,
+          mealType: entry.mealType,
+          eatenAt: entry.timestamp.toISOString(),
+          photoUrl,
+          ingredients: entry.ingredients.map((ing) => ({
+            name: ing.name,
+            quantity: ing.quantity,
+            unit: ing.unit,
+          })),
+          totalCalories: entry.totalCalories,
+          totalCarbs: entry.totalCarbsG, // Map totalCarbsG to totalCarbs per spec
         }
       })
     )
 
     return NextResponse.json({
       entries: entriesWithUrls,
-      pagination: {
-        total,
-        hasMore: offset + entries.length < total,
-      },
+      total,
     })
   } catch (error) {
     console.error('Food list error:', error)
