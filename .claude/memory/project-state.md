@@ -8,44 +8,64 @@
 ✅ **PWA Features Complete** (offline support, installable)
 ⚠️ **Metabolic Insights** - Migrations ready, pending staging deployment
 
-## Git Branching Strategy
+## Git Branching Strategy & Environments
 
 ### Branch Workflow
 ```
 dev (development) → staging (preview) → main (production)
 ```
 
+### Environments Configuration
+
+Each environment has its own Supabase project and configuration:
+
+| Environment | Branch | Supabase Project ID | Config File | Vercel Branch |
+|------------|--------|---------------------|-------------|---------------|
+| **Development** | `dev` | `wukrnqifpgjwbqxpockm` | `.env.local` | development |
+| **Staging** | `staging` | `jwarorrwgpqrksrxmesx` | `.env.staging` | staging/preview |
+| **Production** | `main` | `nqlxlkhbriqztkzwbdif` | `.env.production` | main/production |
+
+### Environment Files
+- **`.env.local`** - Local development (branch: dev)
+- **`.env.staging`** - Staging/preview deployments
+- **`.env.production`** - Production deployments
+- **`.env`** - Currently used for local dev (same as development)
+
 ### Branch Purposes:
 - **`dev`**: Active development branch
   - All feature work happens here
   - Merge feature branches to `dev`
   - Daily development workflow
-  - Auto-deploys to development preview (if configured)
+  - Uses development Supabase project (wukrnqifpgjwbqxpockm)
 
 - **`staging`**: Staging/preview environment
   - Merge `dev` to `staging` when ready for testing
   - Used for QA and validation
   - Auto-deploys to Vercel staging
+  - Uses staging Supabase project (jwarorrwgpqrksrxmesx)
   - Test environment for integration testing
-  - Validate before production
 
 - **`main`**: Production branch
   - Merge `staging` to `main` for production releases
-  - Auto-deploys to production
+  - Auto-deploys to Vercel production
   - Protected branch (requires reviews)
-  - Represents live production state
+  - Uses production Supabase project (nqlxlkhbriqztkzwbdif)
 
 ### Deployment Flow:
 ```
 Feature Branch → dev → staging → main
      (PR)        (PR)   (merge)  (merge)
+     |           |      |        |
+     ↓           ↓      ↓        ↓
+  (local)   (dev env) (staging) (production)
 ```
 
 ### Important Notes:
 - **Never push directly to `main`** - Always go through staging
-- **Schema migrations** must be applied to staging BEFORE deploying code
+- **Schema migrations** must be applied to each environment's Supabase project BEFORE deploying code
 - Run `npm run validate:all` before merging to any branch
 - Tag production releases on `main` branch
+- Each environment has separate API keys and database credentials
 
 ## Current Phase
 - ✅ Core Features Complete
