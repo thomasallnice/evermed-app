@@ -20,18 +20,14 @@ export default function UploadPage() {
       return
     }
 
-    // Fetch Person record to get personId (required for RLS policies)
-    const { data: personData, error: personError } = await supabase
-      .from('Person')
-      .select('id')
-      .eq('ownerId', user.id)
-      .single()
-
-    if (personError || !personData) {
+    // Fetch Person record via API route (avoids RLS/permission issues)
+    const personResponse = await fetch('/api/person/me')
+    if (!personResponse.ok) {
       setStatus(`Error: Person record not found. Please complete onboarding.`)
       return
     }
 
+    const personData = await personResponse.json()
     const personId = personData.id
 
     // Upload to Supabase Storage using personId (not userId)
