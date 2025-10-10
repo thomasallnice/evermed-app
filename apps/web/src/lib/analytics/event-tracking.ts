@@ -14,7 +14,9 @@
  */
 
 import { createHash } from 'crypto';
-import { prisma } from '../prisma';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 /**
  * Event types for categorizing analytics events
