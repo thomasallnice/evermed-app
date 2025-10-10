@@ -450,6 +450,9 @@ Before implementing ANY technical change, ask yourself:
 - [ ] Am I building UI components or flows? → **STOP** → Use `nextjs-ui-builder`
 - [ ] Am I writing tests? → **STOP** → Use `vitest-test-writer`
 - [ ] Am I preparing a pull request? → **STOP** → Use `pr-validation-orchestrator`
+- [ ] Am I implementing ML models or prediction systems? → **STOP** → Use `ml-pipeline-architect`
+- [ ] Am I integrating external APIs (Google Vision, Nutritionix, CGM)? → **STOP** → Use `external-api-integrator`
+- [ ] Am I building analytics, dashboards, or correlation algorithms? → **STOP** → Use `analytics-architect`
 
 **If you answered YES to any of the above, you MUST invoke the subagent. NO EXCEPTIONS.**
 
@@ -661,6 +664,86 @@ Before implementing ANY technical change, ask yourself:
      - Confirm DATABASE_URL works (no Prisma errors)
      - Confirm storage bucket exists (no "Bucket not found" errors)
      - Returns summary report with pass/fail counts, console errors, performance metrics, and "ready for production" verdict
+
+10. **ml-pipeline-architect**
+   - **ALWAYS USE FOR**: Implementing machine learning pipelines, model training workflows, prediction systems, data preprocessing for ML features
+   - **WITHOUT EXCEPTION**: All glucose prediction models (LSTM, transformers), personalized ML models per user, model training pipelines, batch prediction systems, ML inference optimization, model versioning/A/B testing, model retraining workflows
+   - **WHY CRITICAL**: Ensures production-ready ML systems with proper medical safety guardrails, privacy-preserving per-user isolation, graceful degradation, and non-SaMD compliance
+   - **NEVER SKIP**: ML features require specialized expertise in model training, inference optimization, medical data safety, and RLS enforcement
+   - **KEY RESPONSIBILITIES**:
+     - Design data preprocessing and feature engineering pipelines
+     - Implement per-user model training with RLS enforcement
+     - Optimize inference performance (target: p95 < 2s for predictions)
+     - Handle model versioning, A/B testing, and retraining triggers
+     - Ensure medical safety: predictions are informational only, never diagnosis/dosing/triage
+     - Store model artifacts in Supabase Storage with proper RLS policies
+     - Provide provenance: track which observations influenced predictions
+     - Include medical disclaimers from `lib/copy.ts` refusal templates
+   - **INTEGRATION WITH OTHER AGENTS**:
+     - MUST invoke `database-architect` for MLModel schema and migrations
+     - MUST invoke `supabase-rls-security` for model storage security
+     - MUST invoke `medical-compliance-guardian` for prediction disclaimers
+     - MUST invoke `api-contract-validator` for prediction endpoint contracts
+     - MUST invoke `vitest-test-writer` for comprehensive ML test coverage
+
+11. **external-api-integrator**
+   - **ALWAYS USE FOR**: Integrating third-party APIs, managing API keys, implementing retry logic, handling rate limits, building service wrappers
+   - **WITHOUT EXCEPTION**: All Google Cloud Vision API integrations (food recognition), Nutritionix API (nutrition database), CGM provider APIs (Dexcom, FreeStyle Libre), API client wrappers with error handling, rate limiting and backoff strategies, API key rotation and secrets management, external API testing and mocking
+   - **WHY CRITICAL**: Ensures resilient, secure, performant external integrations with proper error handling, rate limiting, secrets management, and observability
+   - **NEVER SKIP**: External API failures can cascade through the system; proper retry logic, circuit breakers, and graceful degradation are essential
+   - **KEY RESPONSIBILITIES**:
+     - Create dedicated service modules in `apps/web/src/lib/services/`
+     - Implement TypeScript interfaces for all request/response shapes
+     - Use environment variables for API keys (never hardcode)
+     - Implement exponential backoff with jitter for retries (3-5 attempts)
+     - Configure client-side rate limiting (use Bottleneck or p-limit)
+     - Handle 429 (rate limit), 500-504 (server errors), network timeouts
+     - Create mock implementations for all APIs in `tests/mocks/`
+     - Enable easy testing with environment flags (`USE_MOCK_APIS=true`)
+     - Sanitize logs: never log API keys, tokens, or sensitive user data
+     - Validate environment variables at startup (fail fast if missing)
+   - **CHROME DEVTOOLS MCP INTEGRATION**:
+     - Use `list_network_requests` to validate external API calls during E2E tests
+     - Verify retry logic by simulating failures with `emulate_network` (throttle to Slow 3G)
+     - Check rate limit handling by monitoring network request patterns
+     - Validate error responses (4xx, 5xx) are handled gracefully
+     - Ensure no API keys or sensitive data leak in network logs
+   - **SPECIFIC API GUIDELINES**:
+     - **Google Cloud Vision**: Label detection for food, safe search filtering, resize images before sending
+     - **Nutritionix**: Natural language food parsing, cache common lookups, handle quota limits
+     - **CGM Providers**: OAuth 2.0 flows, refresh token management, incremental data sync, webhook support
+
+12. **analytics-architect**
+   - **ALWAYS USE FOR**: Designing analytics systems, building dashboards, implementing metrics tracking, creating reporting features
+   - **WITHOUT EXCEPTION**: All metabolic insights algorithms (glucose-meal correlation), timeline visualization queries, pattern detection (glucose spikes, trends), dashboard aggregations (daily summaries, weekly reports), analytics event tracking (non-PHI telemetry), admin dashboards for monitoring, data export features (CSV, PDF reports), optimizing complex analytical queries
+   - **WHY CRITICAL**: Ensures privacy-first analytics (no PHI exposure), performance-optimized queries (p95 < 2s for dashboard loads), medically accurate insights, and user-centric visualizations
+   - **NEVER SKIP**: Analytics queries can expose PHI if not properly designed; must validate privacy compliance and RLS enforcement
+   - **KEY RESPONSIBILITIES**:
+     - Design database-level aggregations (use Prisma `groupBy`, `aggregate`, `count`)
+     - Implement time-series analysis (glucose trends, moving averages, pattern detection)
+     - Create non-PHI telemetry schemas (AnalyticsEvent: feature usage, performance metrics)
+     - Optimize queries with proper indexes (`ownerId`, `date`, `code` on Observation table)
+     - Design dashboard visualizations (Recharts/Tremor: line charts, bar charts, stat cards)
+     - Implement caching strategies (Next.js `revalidate` or Redis with appropriate TTLs)
+     - Ensure RLS enforcement: all queries filter by `ownerId = auth.uid()`
+     - Define medically accurate thresholds (glucose spikes >180 mg/dL, meal correlation windows)
+     - Include medical disclaimers for all health-related insights
+   - **CHROME DEVTOOLS MCP INTEGRATION**:
+     - Use `performance_start_trace` + `performance_analyze_insight` to validate dashboard load times (target: p95 < 2s)
+     - Use `take_screenshot` to capture dashboard visualizations for documentation and visual regression testing
+     - Use `list_network_requests` to verify analytics API endpoint performance and response sizes
+     - Use `list_console_messages` to ensure zero errors in chart rendering (Recharts/Tremor components)
+     - Test responsive design with `emulate_device` to ensure charts work on mobile
+   - **PRIVACY VALIDATION**:
+     - AnalyticsEvent must NEVER contain: userId, patient names, raw medical values, identifiable data
+     - Use aggregated metrics only in admin dashboards (counts, averages, percentiles)
+     - Implement anonymization for debugging (hashed identifiers only)
+   - **INTEGRATION WITH OTHER AGENTS**:
+     - Consult `database-architect` for schema changes, index additions, migration design
+     - Invoke `medical-compliance-guardian` to validate insights comply with non-SaMD requirements
+     - Invoke `api-contract-validator` to ensure analytics API endpoints match spec
+     - Invoke `vitest-test-writer` for query correctness, privacy compliance, edge case testing
+     - Collaborate with `nextjs-ui-builder` for dashboard layout and chart selection
 
 ### How to Invoke Subagents
 
