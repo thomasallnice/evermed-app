@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export const runtime = 'nodejs';
 
@@ -23,7 +24,7 @@ type TokenUsage = {
   model: string;
   tokensIn: number;
   tokensOut: number;
-  costUsd: Prisma.Decimal | null;
+  costUsd: Decimal | null;
   createdAt: Date;
 };
 
