@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       const cur = (current as any)[k]
       if (Array.isArray(v)) {
         const prevArr = Array.isArray(cur) ? cur : []
-        const next = Array.from(new Set([...(prevArr as any[]), ...v].map((x) => String(x))))
+        const next = Array.from(new Set([...(prevArr as any[]), ...v].map((x: any) => String(x))))
         if (JSON.stringify(next) !== JSON.stringify(prevArr)) {
           previous[k] = prevArr
           saved[k] = v
