@@ -25,10 +25,12 @@
     "validate:migrations": "./scripts/validate-migrations.sh",
     "validate:schema": "tsx scripts/validate-schema-compatibility.ts",
     "validate:all": "npm run validate:migrations && npm run validate:schema",
-    "predeploy": "npm run validate:all"
+    "predeploy": "npm run validate:all",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@prisma/client": "^5.19.1",
+    "husky": "^9.1.7",
     "prisma": "^5.19.1",
     "tsx": "^4.17.0",
     "typescript": "^5.5.4",
