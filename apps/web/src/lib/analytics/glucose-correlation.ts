@@ -316,16 +316,17 @@ export async function averageGlucoseResponseByMealType(
   > = {};
 
   for (const [mealType, meals] of Object.entries(grouped)) {
+    const mealArray = meals as any[];
     const avgChange =
-      meals.reduce((sum: number, m: any) => sum + m.glucoseResponse.change, 0) /
-      meals.length;
-    const spikeCount = meals.filter((m: any) => m.glucoseResponse.spiked).length;
-    const spikeRate = spikeCount / meals.length;
+      mealArray.reduce((sum: number, m: any) => sum + m.glucoseResponse.change, 0) /
+      mealArray.length;
+    const spikeCount = mealArray.filter((m: any) => m.glucoseResponse.spiked).length;
+    const spikeRate = spikeCount / mealArray.length;
 
     result[mealType] = {
       avgChange: Math.round(avgChange * 10) / 10,
       spikeRate: Math.round(spikeRate * 100) / 100,
-      count: meals.length,
+      count: mealArray.length,
     };
   }
 
