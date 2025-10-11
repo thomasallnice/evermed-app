@@ -28,7 +28,7 @@ You are deploying EverMed to **PRODUCTION** - this affects live users.
 
 ### Environment Details
 - **Source Branch:** `staging` (MANDATORY)
-- **Target Branch:** `production` or `main`
+- **Target Branch:** `main`
 - **Supabase Project:** Production project
 - **Vercel Environment:** Production
 - **Impact:** LIVE USERS
@@ -144,7 +144,7 @@ echo "📦 Version Management"
 echo ""
 
 # Get last production tag
-LAST_TAG=$(git describe --tags --abbrev=0 production 2>/dev/null || echo "v0.0.0")
+LAST_TAG=$(git describe --tags --abbrev=0 main 2>/dev/null || echo "v0.0.0")
 echo "Last production version: $LAST_TAG"
 
 # Get commits since last production
@@ -564,7 +564,7 @@ echo "You are about to deploy to PRODUCTION:"
 echo ""
 echo "📦 Version: $NEXT_VERSION"
 echo "📂 Source: staging branch"
-echo "🎯 Target: production branch"
+echo "🎯 Target: main branch"
 echo "📊 Changes: $COMMITS_SINCE commits"
 echo "🗄️  Database: Migrations $([ $PENDING_MIGRATIONS -gt 0 ] && echo 'applied' || echo 'not needed')"
 echo ""
@@ -607,24 +607,19 @@ echo ""
 echo "✅ Deployment approved"
 echo ""
 
-Step 6: Merge Staging to Production
+Step 6: Merge Staging to Main
 Execute production merge:
-bashecho "🔀 Merging staging to production..."
+bashecho "🔀 Merging staging to main..."
 echo ""
 
 # Fetch all branches
 git fetch origin
 
-# Switch to production branch (or create if doesn't exist)
-if git show-ref --verify --quiet refs/heads/production; then
-  git checkout production
-else
-  echo "Creating production branch..."
-  git checkout -b production
-fi
+# Switch to main branch
+git checkout main
 
-# Pull latest production
-git pull origin production 2>/dev/null || echo "New production branch"
+# Pull latest main
+git pull origin main
 
 # Merge from staging
 git merge staging --no-ff -m "🚀 Release $NEXT_VERSION
@@ -654,8 +649,8 @@ if [ $? -ne 0 ]; then
   echo ""
   git status
   echo ""
-  echo "This should not happen - staging and production should be linear."
-  echo "This indicates a hotfix or manual change to production."
+  echo "This should not happen - staging and main should be linear."
+  echo "This indicates a hotfix or manual change to main."
   echo ""
   echo "Conflicting files:"
   git diff --name-only --diff-filter=U
@@ -707,8 +702,8 @@ echo ""
 echo "This will trigger Vercel production deployment"
 echo ""
 
-# Push production branch
-git push origin production
+# Push main branch
+git push origin main
 
 if [ $? -ne 0 ]; then
   echo "❌ CRITICAL: Push failed"
@@ -721,11 +716,11 @@ if [ $? -ne 0 ]; then
   echo "Should I:"
   echo "1. Retry push"
   echo "2. Show error details"
-  echo "3. Abort (production branch is local only, can retry safely)"
+  echo "3. Abort (main branch is local only, can retry safely)"
   exit 1
 fi
 
-echo "✅ Pushed production branch"
+echo "✅ Pushed main branch"
 echo ""
 
 # Push tag
@@ -1018,15 +1013,15 @@ function initiate_rollback() {
   
   echo ""
   echo "🔄 Rolling back production..."
-  
-  # Switch to production branch
-  git checkout production
-  
+
+  # Switch to main branch
+  git checkout main
+
   # Reset to previous tag
   git reset --hard "$LAST_TAG"
-  
+
   # Force push (this triggers immediate redeployment)
-  git push origin production --force
+  git push origin main --force
   
   if [ $? -eq 0 ]; then
     echo "✅ Rollback initiated"
@@ -1064,32 +1059,32 @@ echo ""
 echo "Ensuring all branches are synchronized..."
 echo ""
 
-# Staging should already match production (we merged staging → production)
-# But let's make sure staging points to same commit as production
+# Staging should already match main (we merged staging → main)
+# But let's make sure staging points to same commit as main
 
 git checkout staging
-git merge production --ff-only
+git merge main --ff-only
 
 if [ $? -eq 0 ]; then
   git push origin staging
-  echo "✅ Staging synchronized with production"
+  echo "✅ Staging synchronized with main"
 else
   echo "⚠️  Staging sync failed (this is unusual)"
-  echo "   Staging and production are out of sync"
+  echo "   Staging and main are out of sync"
 fi
 
-# Optionally merge production → dev to keep dev up to date
+# Optionally merge main → dev to keep dev up to date
 echo ""
-echo "Should I merge production → dev? (keeps dev current)"
+echo "Should I merge main → dev? (keeps dev current)"
 echo "1. Yes, merge now"
 echo "2. No, I'll merge later"
 echo ""
 
 if [ "$CHOICE" = "1" ]; then
   git checkout dev
-  git merge production --no-ff -m "chore: sync dev with production release $NEXT_VERSION"
+  git merge main --no-ff -m "chore: sync dev with production release $NEXT_VERSION"
   git push origin dev
-  echo "✅ Dev synchronized with production"
+  echo "✅ Dev synchronized with main"
 fi
 
 echo ""
@@ -1162,8 +1157,8 @@ EOF
   
   git add CHANGELOG.md
   git commit -m "docs: update CHANGELOG for $NEXT_VERSION"
-  git push origin production
-  
+  git push origin main
+
   echo "✅ CHANGELOG.md updated"
 else
   echo "⚠️  CHANGELOG.md not found (skipping)"
@@ -1231,7 +1226,7 @@ echo ""
 echo "Version:      $NEXT_VERSION"
 echo "Previous:     $LAST_TAG"
 echo "Commits:      $COMMITS_SINCE"
-echo "Branch:       staging → production"
+echo "Branch:       staging → main"
 echo ""
 echo "⏱️  Timeline:"
 echo "  Validation:  ${VALIDATION_DURATION}s"
@@ -1282,7 +1277,7 @@ echo "  4. Notify stakeholders of completion"
 echo ""
 echo "🛡️  Rollback Available:"
 echo "  If issues occur, can rollback to: $LAST_TAG"
-echo "  Command: git checkout production && git reset --hard $LAST_TAG && git push --force"
+echo "  Command: git checkout main && git reset --hard $LAST_TAG && git push --force"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
@@ -1321,14 +1316,14 @@ bash# If automatic rollback fails, manual steps:
 echo "
 MANUAL ROLLBACK PROCEDURE:
 
-1. Switch to production branch:
-   git checkout production
+1. Switch to main branch:
+   git checkout main
 
 2. Reset to previous version:
    git reset --hard $LAST_TAG
 
 3. Force push (triggers redeployment):
-   git push origin production --force
+   git push origin main --force
 
 4. Verify rollback:
    - Check Vercel dashboard
@@ -1448,7 +1443,7 @@ json{
 Git Branches:
 
 staging - Must exist and be up to date
-production or main - Target for deployment
+main - Target for deployment
 Clean state (no uncommitted changes)
 
 Vercel:
