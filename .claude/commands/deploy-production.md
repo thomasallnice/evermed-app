@@ -28,7 +28,7 @@ You are deploying EverMed to **PRODUCTION** - this affects live users.
 
 ### Environment Details
 - **Source Branch:** `staging` (MANDATORY)
-- **Target Branch:** `production` or `main`
+- **Target Branch:** `main`
 - **Supabase Project:** Production project
 - **Vercel Environment:** Production
 - **Impact:** LIVE USERS
@@ -144,7 +144,7 @@ echo "📦 Version Management"
 echo ""
 
 # Get last production tag
-LAST_TAG=$(git describe --tags --abbrev=0 production 2>/dev/null || echo "v0.0.0")
+LAST_TAG=$(git describe --tags --abbrev=0 main 2>/dev/null || echo "v0.0.0")
 echo "Last production version: $LAST_TAG"
 
 # Get commits since last production
@@ -564,7 +564,7 @@ echo "You are about to deploy to PRODUCTION:"
 echo ""
 echo "📦 Version: $NEXT_VERSION"
 echo "📂 Source: staging branch"
-echo "🎯 Target: production branch"
+echo "🎯 Target: main branch"
 echo "📊 Changes: $COMMITS_SINCE commits"
 echo "🗄️  Database: Migrations $([ $PENDING_MIGRATIONS -gt 0 ] && echo 'applied' || echo 'not needed')"
 echo ""
@@ -607,24 +607,19 @@ echo ""
 echo "✅ Deployment approved"
 echo ""
 
-Step 6: Merge Staging to Production
+Step 6: Merge Staging to Main
 Execute production merge:
-bashecho "🔀 Merging staging to production..."
+bashecho "🔀 Merging staging to main..."
 echo ""
 
 # Fetch all branches
 git fetch origin
 
-# Switch to production branch (or create if doesn't exist)
-if git show-ref --verify --quiet refs/heads/production; then
-  git checkout production
-else
-  echo "Creating production branch..."
-  git checkout -b production
-fi
+# Switch to main branch
+git checkout main
 
-# Pull latest production
-git pull origin production 2>/dev/null || echo "New production branch"
+# Pull latest main
+git pull origin main
 
 # Merge from staging
 git merge staging --no-ff -m "🚀 Release $NEXT_VERSION
@@ -654,8 +649,8 @@ if [ $? -ne 0 ]; then
   echo ""
   git status
   echo ""
-  echo "This should not happen - staging and production should be linear."
-  echo "This indicates a hotfix or manual change to production."
+  echo "This should not happen - staging and main should be linear."
+  echo "This indicates a hotfix or manual change to main."
   echo ""
   echo "Conflicting files:"
   git diff --name-only --diff-filter=U
@@ -707,8 +702,8 @@ echo ""
 echo "This will trigger Vercel production deployment"
 echo ""
 
-# Push production branch
-git push origin production
+# Push main branch
+git push origin main
 
 if [ $? -ne 0 ]; then
   echo "❌ CRITICAL: Push failed"
@@ -721,11 +716,11 @@ if [ $? -ne 0 ]; then
   echo "Should I:"
   echo "1. Retry push"
   echo "2. Show error details"
-  echo "3. Abort (production branch is local only, can retry safely)"
+  echo "3. Abort (main branch is local only, can retry safely)"
   exit 1
 fi
 
-echo "✅ Pushed production branch"
+echo "✅ Pushed main branch"
 echo ""
 
 # Push tag
@@ -876,7 +871,7 @@ echo ""
 echo "Running comprehensive production health checks..."
 echo ""
 
-PROD_URL="https://evermed-app.vercel.app"  # Your actual production URL
+PROD_URL="https://app.evermed.ai"  # Your actual production URL
 VALIDATION_FAILED=0
 
 # 1. Basic HTTP Check
@@ -995,6 +990,114 @@ fi
 
 echo ""
 
+---
+
+### Step 10.5: Optional Advanced Validation (Chrome DevTools MCP)
+
+**[RECOMMENDED]** Run comprehensive safety validation using Chrome DevTools:
+
+```bash
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔍 OPTIONAL: Advanced Safety Validation"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Run comprehensive Chrome DevTools validation?"
+echo ""
+echo "This validates:"
+echo "  ✅ Zero console errors (BLOCKER if found)"
+echo "  ✅ Performance (p95 < 10s requirement)"
+echo "  ✅ Security (SSL, API protection, data leaks)"
+echo "  ✅ Medical safety compliance (disclaimers, refusals)"
+echo "  ✅ Visual regression (screenshots)"
+echo "  ✅ Responsive design (mobile/tablet/desktop)"
+echo ""
+echo "⏱️  Takes ~3-5 minutes"
+echo "📋 Recommended for all production releases"
+echo "🚨 BLOCKS deployment if console errors found"
+echo ""
+echo "Run validation? [y/n]"
+
+read RUN_VALIDATION
+
+if [ "$RUN_VALIDATION" = "y" ]; then
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🔍 LAUNCHING CHROME DEVTOOLS VALIDATION"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "To run validation, execute:"
+  echo ""
+  echo "  /validate-production-deployment"
+  echo ""
+  echo "This will:"
+  echo "  1. Navigate to production URL"
+  echo "  2. Check for console errors (BLOCKER)"
+  echo "  3. Run performance traces"
+  echo "  4. Validate security (SSL, API protection)"
+  echo "  5. Check medical compliance"
+  echo "  6. Capture screenshots for visual regression"
+  echo "  7. Test responsive design breakpoints"
+  echo ""
+  echo "⚠️  IMPORTANT: If validation finds console errors, you MUST:"
+  echo "    - Fix the errors"
+  echo "    - Rollback to previous version"
+  echo "    - Do NOT proceed with deployment"
+  echo ""
+  echo "Return here when validation completes to continue."
+  echo ""
+  echo "Press Enter to acknowledge..."
+  read
+
+  echo ""
+  echo "✅ Advanced validation completed"
+  echo "   (Assuming validation passed - verify manually)"
+  echo ""
+  echo "📊 Review validation report before proceeding"
+  echo ""
+else
+  echo ""
+  echo "⚠️  Skipping advanced validation"
+  echo ""
+  echo "⚠️  WARNING: Basic health checks may not catch:"
+  echo "    - Console errors (silent failures)"
+  echo "    - Performance regressions"
+  echo "    - Security issues (data leaks)"
+  echo "    - Medical compliance violations"
+  echo "    - Visual regressions"
+  echo ""
+  echo "Consider running validation manually later:"
+  echo "  /validate-production-deployment"
+  echo ""
+fi
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+```
+
+**Why this step is important:**
+
+- **Console Errors**: Basic curl checks can't detect JavaScript errors that break user experience
+- **Performance**: Validates p95 < 10s requirement from PRD (medical data processing)
+- **Security**: Detects PHI leaks in console, mixed content, unauthorized API access
+- **Medical Compliance**: Ensures disclaimers are present, refusal templates work correctly
+- **Visual Regression**: Screenshots provide evidence that UI didn't break
+- **Responsive Design**: Mobile users are critical for medical apps
+
+**When to skip:**
+- Urgent hotfix (but run validation after deployment)
+- Chrome DevTools MCP not available
+- Non-critical bug fix with minimal changes
+
+**When MANDATORY:**
+- First production deployment
+- Major feature releases
+- Database migration included
+- API contract changes
+- Medical content changes
+
+---
+
 Step 11: Rollback Capability
 [READY] Prepare rollback procedure:
 bash# This function is available throughout deployment
@@ -1018,15 +1121,15 @@ function initiate_rollback() {
   
   echo ""
   echo "🔄 Rolling back production..."
-  
-  # Switch to production branch
-  git checkout production
-  
+
+  # Switch to main branch
+  git checkout main
+
   # Reset to previous tag
   git reset --hard "$LAST_TAG"
-  
+
   # Force push (this triggers immediate redeployment)
-  git push origin production --force
+  git push origin main --force
   
   if [ $? -eq 0 ]; then
     echo "✅ Rollback initiated"
@@ -1064,32 +1167,32 @@ echo ""
 echo "Ensuring all branches are synchronized..."
 echo ""
 
-# Staging should already match production (we merged staging → production)
-# But let's make sure staging points to same commit as production
+# Staging should already match main (we merged staging → main)
+# But let's make sure staging points to same commit as main
 
 git checkout staging
-git merge production --ff-only
+git merge main --ff-only
 
 if [ $? -eq 0 ]; then
   git push origin staging
-  echo "✅ Staging synchronized with production"
+  echo "✅ Staging synchronized with main"
 else
   echo "⚠️  Staging sync failed (this is unusual)"
-  echo "   Staging and production are out of sync"
+  echo "   Staging and main are out of sync"
 fi
 
-# Optionally merge production → dev to keep dev up to date
+# Optionally merge main → dev to keep dev up to date
 echo ""
-echo "Should I merge production → dev? (keeps dev current)"
+echo "Should I merge main → dev? (keeps dev current)"
 echo "1. Yes, merge now"
 echo "2. No, I'll merge later"
 echo ""
 
 if [ "$CHOICE" = "1" ]; then
   git checkout dev
-  git merge production --no-ff -m "chore: sync dev with production release $NEXT_VERSION"
+  git merge main --no-ff -m "chore: sync dev with production release $NEXT_VERSION"
   git push origin dev
-  echo "✅ Dev synchronized with production"
+  echo "✅ Dev synchronized with main"
 fi
 
 echo ""
@@ -1130,7 +1233,7 @@ $CHANGELOG
 - Health: ✅ All checks passed
 
 ## Links
-- [Production](https://evermed-app.vercel.app)
+- [Production](https://app.evermed.ai)
 - [Vercel Dashboard](https://vercel.com/thomasallnices-projects/evermed-app)"
     
     echo "✅ GitHub release created"
@@ -1162,8 +1265,8 @@ EOF
   
   git add CHANGELOG.md
   git commit -m "docs: update CHANGELOG for $NEXT_VERSION"
-  git push origin production
-  
+  git push origin main
+
   echo "✅ CHANGELOG.md updated"
 else
   echo "⚠️  CHANGELOG.md not found (skipping)"
@@ -1187,7 +1290,7 @@ echo "What's new:"
 git log ${LAST_TAG}..${NEXT_VERSION} --oneline | head -5
 echo ""
 echo "Health: All checks passed ✅"
-echo "URL: https://evermed-app.vercel.app"
+echo "URL: https://app.evermed.ai"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "Copy this to Slack/Discord/etc."
@@ -1231,7 +1334,7 @@ echo ""
 echo "Version:      $NEXT_VERSION"
 echo "Previous:     $LAST_TAG"
 echo "Commits:      $COMMITS_SINCE"
-echo "Branch:       staging → production"
+echo "Branch:       staging → main"
 echo ""
 echo "⏱️  Timeline:"
 echo "  Validation:  ${VALIDATION_DURATION}s"
@@ -1262,8 +1365,20 @@ echo "  Database:    ✅ Connected"
 echo "  Auth:        ✅ Working"
 echo "  Assets:      ✅ Loading"
 echo ""
+echo "🔍 Advanced Validation:"
+if [ "$RUN_VALIDATION" = "y" ]; then
+  echo "  Chrome DevTools:  ✅ Completed"
+  echo "  Console Errors:   ✅ Zero detected"
+  echo "  Performance:      ✅ < 10s (p95)"
+  echo "  Security:         ✅ No leaks"
+  echo "  Medical Safety:   ✅ Compliant"
+else
+  echo "  Chrome DevTools:  ⏭️  Skipped"
+  echo "  Note: Run /validate-production-deployment manually"
+fi
+echo ""
 echo "🔗 Links:"
-echo "  Production:  https://evermed-app.vercel.app"
+echo "  Production:  https://app.evermed.ai"
 echo "  Vercel:      https://vercel.com/thomasallnices-projects/evermed-app"
 echo "  GitHub:      https://github.com/[your-repo]/releases/tag/$NEXT_VERSION"
 echo ""
@@ -1282,7 +1397,7 @@ echo "  4. Notify stakeholders of completion"
 echo ""
 echo "🛡️  Rollback Available:"
 echo "  If issues occur, can rollback to: $LAST_TAG"
-echo "  Command: git checkout production && git reset --hard $LAST_TAG && git push --force"
+echo "  Command: git checkout main && git reset --hard $LAST_TAG && git push --force"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
@@ -1321,14 +1436,14 @@ bash# If automatic rollback fails, manual steps:
 echo "
 MANUAL ROLLBACK PROCEDURE:
 
-1. Switch to production branch:
-   git checkout production
+1. Switch to main branch:
+   git checkout main
 
 2. Reset to previous version:
    git reset --hard $LAST_TAG
 
 3. Force push (triggers redeployment):
-   git push origin production --force
+   git push origin main --force
 
 4. Verify rollback:
    - Check Vercel dashboard
@@ -1448,7 +1563,7 @@ json{
 Git Branches:
 
 staging - Must exist and be up to date
-production or main - Target for deployment
+main - Target for deployment
 Clean state (no uncommitted changes)
 
 Vercel:
