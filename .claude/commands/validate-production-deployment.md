@@ -27,8 +27,8 @@ This script uses Chrome DevTools MCP to perform comprehensive post-deployment va
 ## Test Account Credentials
 
 **Automated Login Available:**
-- Email: `testaccount@evermed.ai`
-- Password: `ValidationTest2025!Secure`
+- Email: `thomas.gnahm@gmail.com`
+- Password: `EverMed2025!`
 - Stored in: `.env.production` (`VALIDATION_TEST_EMAIL`, `VALIDATION_TEST_PASSWORD`)
 
 **This test account enables:**
@@ -125,8 +125,8 @@ const snapshot = mcp__chrome_devtools__take_snapshot();
 // Fill login form with test credentials
 mcp__chrome_devtools__fill_form({
   elements: [
-    { uid: 'email_input_uid', value: 'testaccount@evermed.ai' },
-    { uid: 'password_input_uid', value: 'ValidationTest2025!Secure' }
+    { uid: 'email_input_uid', value: 'thomas.gnahm@gmail.com' },
+    { uid: 'password_input_uid', value: 'EverMed2025!' }
   ]
 });
 
@@ -138,7 +138,7 @@ mcp__chrome_devtools__wait_for({ text: 'Document Vault', timeout: 10000 });
 
 // Verify logged in state
 const loggedInSnapshot = mcp__chrome_devtools__take_snapshot();
-// Should show: testaccount@evermed.ai email and Logout button
+// Should show: thomas.gnahm@gmail.com email and Logout button
 
 // Check console for auth errors
 const consoleMessages = mcp__chrome_devtools__list_console_messages();

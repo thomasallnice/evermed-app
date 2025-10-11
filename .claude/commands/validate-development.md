@@ -88,8 +88,8 @@ fi
 ## Test Account Credentials
 
 **Automated Login Available:**
-- Email: `testaccount@evermed.ai`
-- Password: `ValidationTest2025!Secure`
+- Email: `thomas.gnahm@gmail.com`
+- Password: `EverMed2025!`
 - Stored in: `.env.local` (`VALIDATION_TEST_EMAIL`, `VALIDATION_TEST_PASSWORD`)
 
 **This test account enables:**
@@ -174,8 +174,8 @@ const snapshot = mcp__chrome_devtools__take_snapshot();
 // Fill login form with test credentials
 mcp__chrome_devtools__fill_form({
   elements: [
-    { uid: 'email_input_uid', value: 'testaccount@evermed.ai' },
-    { uid: 'password_input_uid', value: 'ValidationTest2025!Secure' }
+    { uid: 'email_input_uid', value: 'thomas.gnahm@gmail.com' },
+    { uid: 'password_input_uid', value: 'EverMed2025!' }
   ]
 });
 
