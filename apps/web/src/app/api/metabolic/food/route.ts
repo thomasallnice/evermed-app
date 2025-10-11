@@ -352,7 +352,7 @@ export async function GET(request: NextRequest) {
         timestamp: entry.timestamp.toISOString(),
         photoUrl,
         analysisStatus: entry.photos[0]?.analysisStatus || 'pending',
-        ingredients: entry.ingredients.map((ing) => ({
+        ingredients: entry.ingredients.map((ing: any) => ({
           name: ing.name,
           quantity: ing.quantity,
           unit: ing.unit,

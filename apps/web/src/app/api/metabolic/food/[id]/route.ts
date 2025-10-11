@@ -134,7 +134,7 @@ export async function GET(
       timestamp: entry.timestamp.toISOString(),
       photoUrl,
       analysisStatus: entry.photos[0]?.analysisStatus || 'pending',
-      ingredients: entry.ingredients.map((ing) => ({
+      ingredients: entry.ingredients.map((ing: any) => ({
         id: ing.id,
         name: ing.name,
         quantity: ing.quantity,
