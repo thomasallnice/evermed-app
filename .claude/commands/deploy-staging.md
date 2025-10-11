@@ -1,17 +1,19 @@
 # Deploy to Staging
 
-Deploy the current code to Vercel staging environment with full validation and database synchronization.
+Deploy the current code to Vercel staging environment with comprehensive validation, ORM client generation, and database synchronization.
 
 **Usage:** `/project:deploy-staging` or `/project:deploy-staging [commit-message]`
 
 **What this command does:**
 1. Validates current branch and git state
-2. Runs code quality checks (lint, typecheck, tests)
-3. Invokes subagents for pre-deployment validation
-4. Merges current branch to staging
-5. Applies database migrations to staging Supabase project
-6. Pushes to GitHub to trigger Vercel deployment
-7. Validates deployment success
+2. **[NEW]** Verifies Prisma client generation and ORM setup
+3. **[NEW]** Runs comprehensive TypeScript validation (clean build + full type check)
+4. Runs code quality checks (lint, tests)
+5. **[NEW]** Uses time-boxed debugging with escape hatch decision logic
+6. Merges current branch to staging
+7. Applies database migrations to staging
+8. Pushes to GitHub to trigger Vercel deployment
+9. Validates deployment success
 
 ---
 
@@ -37,82 +39,211 @@ git status
 
 # Check for uncommitted changes
 git diff --stat
-```
+Questions to ask user if unclear:
 
-**Questions to ask user if unclear:**
-- If there are uncommitted changes: "You have uncommitted changes. Should I commit them first? What commit message should I use?"
-- If not on dev branch: "You're on branch [X]. Should I switch to dev or proceed from this branch?"
-- If behind remote: "Your branch is behind remote. Should I pull latest changes first?"
+If there are uncommitted changes: "You have uncommitted changes. Should I commit them first? What commit message should I use?"
+If not on dev branch: "You're on branch [X]. Should I switch to dev or proceed from this branch?"
+If behind remote: "Your branch is behind remote. Should I pull latest changes first?"
 
-### Step 2: Code Quality Checks
+Step 2: Prisma/ORM Client Verification ⚠️ CRITICAL
+[NEW] Verify Prisma setup before ANY other checks:
+bash# 1. Check if Prisma client exists
+if [ ! -f "node_modules/.prisma/client/index.d.ts" ]; then
+  echo "⚠️  Prisma client not generated!"
+  npx prisma generate
+fi
 
-Run validation before deployment:
+# 2. Verify package.json has generation hooks
+grep -q "postinstall.*prisma generate" package.json || echo "⚠️  Missing postinstall hook"
+grep -q "prebuild.*prisma.*generate" package.json || echo "⚠️  Missing prebuild hook"
 
-```bash
-# Step 1: Clean Next.js cache for accurate build test
-npm run clean:next
+# 3. Check Prisma client version matches
+npx prisma --version
+If Prisma hooks are missing:
 
-# Step 2: CRITICAL - Verify Prisma client is generated
-ls node_modules/.prisma/client/index.d.ts || npx prisma generate
+STOP deployment immediately
+Report to user: "🚨 CRITICAL: package.json is missing Prisma generation hooks. This will cause Vercel builds to fail."
+Ask: "Should I:
 
-# Step 3: Lint check
+Add the missing hooks to package.json
+Cancel deployment (you add them manually)
+
+
+
+Recommended: Option 1"
+Add missing hooks automatically:
+json{
+  "scripts": {
+    "postinstall": "prisma generate",
+    "prebuild": "npm run clean:next && npm run prisma:generate",
+    "prisma:generate": "prisma generate"
+  }
+}
+Step 3: Comprehensive TypeScript Validation ⚠️ CRITICAL
+[NEW] Run full type checking with clean build (prevents Vercel surprises):
+bash# CRITICAL: Clean all caches first
+echo "🧹 Cleaning build caches..."
+rm -rf .next
+rm -rf node_modules/.cache
+
+# Run standalone TypeScript check (sees ALL errors at once)
+echo "🔍 Running full TypeScript check (this catches all errors)..."
+npx tsc --noEmit 2>&1 | tee /tmp/typescript-errors.txt
+
+# Count errors
+ERROR_COUNT=$(grep "error TS" /tmp/typescript-errors.txt | wc -l)
+
+echo "📊 Found $ERROR_COUNT TypeScript errors"
+[NEW] Decision matrix based on error count:
+If ERROR_COUNT = 0:
+bashecho "✅ TypeScript validation passed!"
+# Proceed to next step
+If ERROR_COUNT > 0 and ERROR_COUNT <= 10:
+bashecho "⚠️  Found $ERROR_COUNT TypeScript errors (manageable)"
+cat /tmp/typescript-errors.txt | head -20
+
+# Ask user:
+"I found $ERROR_COUNT TypeScript errors. These should be fixed before deploying.
+
+Should I:
+1. Try to fix them automatically (recommended, 15-30 min)
+2. Show me all errors and I'll fix them manually
+3. Skip and deploy anyway (NOT RECOMMENDED - will fail on Vercel)"
+If ERROR_COUNT > 10 and ERROR_COUNT <= 20:
+bashecho "⚠️  Found $ERROR_COUNT TypeScript errors (significant)"
+cat /tmp/typescript-errors.txt | head -30
+
+# Ask user:
+"I found $ERROR_COUNT TypeScript errors. This is more than expected.
+
+Should I:
+1. Try to batch-fix them (may take 1 hour)
+2. Use 'ignoreBuildErrors' escape hatch (ONLY if you've verified code works locally)
+3. Cancel deployment and you'll fix them manually
+
+Note: We learned from recent incident that fixing errors one-by-one on Vercel wastes hours. 
+Better to fix locally or use escape hatch."
+If ERROR_COUNT > 20:
+bashecho "🚨 Found $ERROR_COUNT TypeScript errors (too many to fix individually)"
+cat /tmp/typescript-errors.txt | head -50
+
+# Recommend escape hatch immediately:
+"I found $ERROR_COUNT TypeScript errors. This suggests either:
+- Strict TypeScript was enabled without cleanup
+- Environment mismatch between local and Vercel
+
+RECOMMENDATION: Use 'ignoreBuildErrors: true' escape hatch.
+
+This is pragmatic when:
+✅ You've verified code works locally
+✅ Errors are stylistic (implicit 'any') not logic bugs
+✅ Fixing would take 3+ hours
+
+Should I:
+1. Add 'ignoreBuildErrors: true' to next.config.js (recommended)
+2. Try to fix errors anyway (will take several hours)
+3. Cancel deployment
+
+Reference: We spent 6+ hours on similar issue recently. Escape hatch is valid option."
+Step 4: Production Build Validation
+[NEW] Run Next.js build (not just tsc) to catch build-specific issues:
+bashecho "🏗️  Running production build..."
+npm run build 2>&1 | tee /tmp/build-output.txt
+
+BUILD_EXIT_CODE=$?
+
+if [ $BUILD_EXIT_CODE -eq 0 ]; then
+  echo "✅ Build passed!"
+else
+  echo "❌ Build failed with exit code $BUILD_EXIT_CODE"
+  
+  # Check if it's a Prisma issue
+  if grep -q "@prisma/client did not initialize" /tmp/build-output.txt; then
+    echo "🚨 CRITICAL: Prisma client not initialized!"
+    echo "Running: npx prisma generate"
+    npx prisma generate
+    echo "Retrying build..."
+    npm run build
+  else
+    # Show errors to user
+    cat /tmp/build-output.txt | tail -50
+    
+    # Ask user what to do
+    echo "Build failed. Should I:
+    1. Show full build log
+    2. Try to fix automatically
+    3. Cancel deployment"
+  fi
+fi
+Step 5: Lint and Test Checks
+bash# Lint check
+echo "🔍 Running lint check..."
 npm run lint
 
-# Step 4: Type check (full, no cache - shows ALL errors at once)
-npx tsc --noEmit
+# Run tests (if they exist)
+if grep -q "\"test\":" package.json; then
+  echo "🧪 Running tests..."
+  npm run test
+fi
+If any checks fail:
 
-# Step 5: Run tests
-npm run test
+Report failures to user with counts
+Show first 10-20 errors
+Ask for decision (fix, skip, cancel)
 
-# Step 6: Build check (fresh build, no incremental compilation)
-npm run build
-```
+Step 6: [NEW] Time-Boxed Debugging Decision Point
+[NEW] Before proceeding, check how much time has been spent:
+bashVALIDATION_START_TIME=$(date +%s)
 
-**CRITICAL: Fresh Build Validation**
+# ... run all validations ...
 
-The local build MUST pass with a clean cache before pushing to GitHub. This prevents discovering errors in Vercel builds.
+VALIDATION_END_TIME=$(date +%s)
+VALIDATION_DURATION=$((VALIDATION_END_TIME - VALIDATION_START_TIME))
 
-**Why this matters:**
-- Next.js incremental compilation can skip type checks for unchanged files
-- Vercel always does fresh builds with full type checking
-- Local builds with cached `.next/` folders may pass when Vercel builds fail
-- Running `npx tsc --noEmit` catches ALL type errors at once (TypeScript stops at first error per file)
-- Prisma client must be generated or build will fail with "@prisma/client not initialized"
+if [ $VALIDATION_DURATION -gt 1800 ]; then  # 30 minutes
+  echo "⏱️  Validation has taken ${VALIDATION_DURATION}s (30+ min)"
+  echo "This suggests deeper issues. Consider using escape hatches."
+fi
+Decision logic:
 
-**Incident reference**: 2025-10-11 - 6+ hours wasted discovering 20+ errors one-by-one on Vercel
-**See**: `.claude/memory/deployment-workflow.md` for full incident report
+< 30 min + errors found: Continue fixing
 
-**If any checks fail:**
-- Report failures to user
-- Show exact error count and first 10 errors
-- Ask: "There are [X] [lint/type/test/build] errors. Should I:
-  1. Try to fix them automatically
-  2. Skip and deploy anyway (NOT RECOMMENDED - will fail in Vercel)
-  3. Cancel deployment"
 
-**If TypeScript errors found:**
-- Count total: `npx tsc --noEmit 2>&1 | tee typescript-errors.log && grep 'error TS' typescript-errors.log | wc -l`
-- Decision matrix:
-  - < 10 errors: Fix all now (15-30 min)
-  - 10-20 errors: Batch fix (1 hour)
-  - > 20 errors: Consider `ignoreBuildErrors: true` (see docs/vercel-typescript-quirk.md)
-- BLOCK deployment until resolved or escape hatch applied
+30 min + still finding errors: Recommend escape hatch
 
-**If Prisma client missing:**
-- Run: `npx prisma generate --schema=db/schema.prisma`
-- Verify: `ls node_modules/.prisma/client/index.d.ts`
-- Check package.json has: `"postinstall": "prisma generate"`
 
-### Step 3: Invoke Subagents for Validation
 
-**MANDATORY: Use the pr-validation-orchestrator subagent** before deploying:
 
-```
-I'm going to invoke the pr-validation-orchestrator subagent to validate the code before staging deployment.
-```
+60 min: STRONGLY recommend escape hatch or cancel
 
+
+
+Step 7: Version Verification ⚠️ CRITICAL
+[NEW] Verify all critical versions are pinned:
+bashecho "🔍 Checking version pinning..."
+
+# Check TypeScript
+TS_VERSION=$(cat package.json | grep '"typescript"' | grep -o '[0-9.]*')
+if [[ $TS_VERSION == *"^"* ]] || [[ $TS_VERSION == *"~"* ]]; then
+  echo "⚠️  TypeScript version uses range (^$TS_VERSION) instead of exact version"
+  echo "This can cause environment mismatches between local and Vercel"
+  echo "Should I pin to exact version? (recommended: yes)"
+fi
+
+# Check other critical deps
+echo "📦 Current versions:"
+echo "- TypeScript: $(npx tsc --version)"
+echo "- Next.js: $(npm list next --depth=0 | grep next@)"
+echo "- Prisma: $(npx prisma --version | head -1)"
+If versions use ^ or ~:
+
+Recommend pinning to exact versions
+Offer to update package.json automatically
+
+Step 8: Invoke Subagents for Validation
+Use pr-validation-orchestrator subagent:
+I'm invoking the pr-validation-orchestrator subagent to validate code readiness for staging deployment.
 Use the Task tool with subagent_type="pr-validation-orchestrator" and prompt:
-```
 Validate code readiness for staging deployment:
 - Run through CODE_REVIEW.md checklist
 - Verify all tests pass
@@ -120,40 +251,36 @@ Validate code readiness for staging deployment:
 - Validate no critical issues exist
 - Generate validation report
 
-This is for staging deployment (branch: staging, environment: preview).
-```
+CONTEXT: This is for staging deployment after comprehensive TypeScript validation.
+All TypeScript errors have been [resolved/documented with escape hatch].
+Focus on logic errors, security issues, and functionality validation.
 
-**If validation finds issues:**
-- Report issues to user
-- Ask: "Validation found [X] issues. Should I:
-  1. Fix the issues before deploying
-  2. Deploy anyway (if issues are non-critical)
-  3. Cancel deployment"
-
-### Step 4: Database Migration Planning
-
-**Check for pending migrations:**
-
-```bash
-# Check Prisma migration status for staging
+Environment: staging (branch: staging, Supabase: jwarorrwgpqrksrxmesx)
+Step 9: Database Migration Planning
+Check for pending migrations:
+bash# Check Prisma migration status
+echo "🗄️  Checking database migrations..."
 npx prisma migrate status --schema=db/schema.prisma
-```
 
-**If migrations are pending:**
-- List the pending migrations to user
-- Ask: "There are [X] pending migrations:
-  [list migrations]
+# [NEW] Also check for schema drift
+npx prisma migrate diff \
+  --from-schema-datamodel db/schema.prisma \
+  --to-schema-datasource db/schema.prisma \
+  --script > /tmp/schema-drift.sql
 
-  Should I apply these to the staging database before deployment?"
+if [ -s /tmp/schema-drift.sql ]; then
+  echo "⚠️  Schema drift detected between local and remote database"
+  cat /tmp/schema-drift.sql
+fi
+If migrations are pending:
 
-**Important:** Always apply migrations BEFORE deploying code to avoid runtime errors.
+List all pending migrations
+Estimate impact (tables affected, data at risk)
+Ask user: "Should I apply these to staging database?"
+Always apply BEFORE deploying code
 
-### Step 5: Merge to Staging Branch
-
-**Execute merge workflow:**
-
-```bash
-# Fetch latest
+Step 10: Merge to Staging Branch
+bash# Fetch latest
 git fetch origin
 
 # Switch to staging
@@ -163,169 +290,205 @@ git checkout staging
 git pull origin staging
 
 # Merge from dev (or current branch)
-git merge dev --no-ff -m "chore(deploy): merge dev to staging for deployment
+MERGE_SOURCE=$(git branch --show-current)
+git merge $MERGE_SOURCE --no-ff -m "chore(deploy): merge $MERGE_SOURCE to staging for deployment
 
 $ARGUMENTS
 
+Validated with:
+- TypeScript: $(npx tsc --version) (pinned)
+- Clean build: ✅ Passed
+- Prisma client: ✅ Generated
+- Migrations: ✅ Ready
+
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
 Co-Authored-By: Claude <noreply@anthropic.com>"
-```
+If merge conflicts:
 
-**If merge conflicts occur:**
-- Report conflicts to user
-- Ask: "There are merge conflicts in:
-  [list conflicting files]
+Report conflicts
+Offer to show diff
+Ask for decision (abort, auto-resolve, manual)
 
-  Should I:
-  1. Abort and let you resolve conflicts manually
-  2. Try to auto-resolve conflicts
-  3. Show me the conflicts"
-
-### Step 6: Apply Database Migrations to Staging
-
-**Connect to staging Supabase project and apply migrations:**
-
-```bash
-# Link to staging project
+Step 11: Apply Database Migrations to Staging
+bash# Link to staging project
 supabase link --project-ref jwarorrwgpqrksrxmesx
 
-# Verify connection
-supabase projects list
-
-# Preview migrations
-supabase db diff
-
 # Apply migrations
+echo "🗄️  Applying migrations to staging database..."
 supabase db push
-```
 
-**If migration application fails:**
-- Show error to user
-- Ask: "Database migration failed with error:
-  [error message]
+# [NEW] Verify migration success
+if [ $? -eq 0 ]; then
+  echo "✅ Migrations applied successfully"
+  
+  # Regenerate Prisma client with new schema
+  echo "🔄 Regenerating Prisma client..."
+  npx prisma generate
+else
+  echo "❌ Migration failed!"
+  echo "Should I:
+  1. Rollback git merge and abort deployment
+  2. Show migration error details
+  3. Continue anyway (NOT RECOMMENDED - will cause runtime errors)"
+fi
+Step 12: Final Pre-Push Verification
+[NEW] One last check before pushing:
+bashecho "🔍 Final verification before push..."
 
-  Should I:
-  1. Rollback the git merge and abort deployment
-  2. Continue deployment (database will be out of sync - NOT RECOMMENDED)
-  3. Try manual migration approach"
+# 1. Verify we're on staging branch
+CURRENT_BRANCH=$(git branch --show-current)
+if [ "$CURRENT_BRANCH" != "staging" ]; then
+  echo "❌ Not on staging branch! Currently on: $CURRENT_BRANCH"
+  exit 1
+fi
 
-**Check for new storage buckets or policies:**
-- Look for SQL files in `db/migrations/` that create storage buckets
-- If found, inform user: "Found storage bucket migration: [filename]. This needs to be applied to staging."
-- Execute the SQL manually if needed
+# 2. Verify Prisma client exists
+if [ ! -f "node_modules/.prisma/client/index.d.ts" ]; then
+  echo "⚠️  Prisma client missing! Generating..."
+  npx prisma generate
+fi
 
-### Step 7: Push to GitHub (Triggers Vercel Deployment)
+# 3. Verify package.json has correct scripts
+if ! grep -q "prebuild.*prisma" package.json; then
+  echo "⚠️  WARNING: prebuild script doesn't include Prisma generation"
+  echo "Vercel build will fail without this!"
+fi
 
-**Push staging branch to trigger deployment:**
-
-```bash
-# Push staging to GitHub
+echo "✅ All pre-push checks passed"
+Step 13: Push to GitHub (Triggers Vercel Deployment)
+bash# Push staging to GitHub
+echo "🚀 Pushing to GitHub (this triggers Vercel deployment)..."
 git push origin staging
-```
-
-**Monitor deployment:**
-```bash
-# Check Vercel deployment status
-vercel ls --scope thomasallnices-projects
 
 # Get deployment URL
-vercel inspect [deployment-url]
-```
+echo "📊 Monitoring Vercel deployment..."
+echo "Dashboard: https://vercel.com/thomasallnices-projects/evermed-app"
+Inform user with comprehensive summary:
+✅ Pushed to staging branch!
 
-**Inform user:**
-"Pushed to staging branch. Vercel deployment triggered.
-Deployment URL: [url]
-You can monitor progress at: https://vercel.com/thomasallnices-projects/evermed-app"
+Deployment Summary:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 Validations:
+  - TypeScript: $ERROR_COUNT errors [$ERROR_STATUS]
+  - Build: ✅ Passed (clean build)
+  - Prisma: ✅ Client generated
+  - Tests: ✅ Passed
+  - Migrations: ✅ Applied to staging
 
-### Step 8: Post-Deployment Validation
+🔧 Configuration:
+  - TypeScript: $(npx tsc --version) (pinned)
+  - Prisma: $(npx prisma --version | head -1)
+  - Branch: staging
+  
+🚀 Deployment:
+  - Environment: Staging
+  - Vercel URL: https://vercel.com/thomasallnices-projects/evermed-app
+  - Supabase: jwarorrwgpqrksrxmesx
+  
+⏱️  Estimated build time: 3-5 minutes
 
-**MANDATORY: Use deployment-validator subagent** to verify deployment:
+I'll monitor the deployment and notify you of the result.
+Step 14: Monitor Vercel Build
+[NEW] Actively monitor and report build progress:
+bash# Poll Vercel API for build status
+DEPLOYMENT_ID=$(vercel ls --scope thomasallnices-projects | grep staging | head -1 | awk '{print $1}')
 
-```
-I'm going to invoke the deployment-validator subagent to validate the staging deployment.
-```
+echo "📊 Monitoring deployment: $DEPLOYMENT_ID"
 
-Use the Task tool with subagent_type="deployment-validator" (if available) or general-purpose agent to:
-1. Navigate to staging URL
-2. Check critical pages load without errors
-3. Verify database connectivity
-4. Test authentication flow
-5. Check console for errors
+# Check every 30 seconds
+while true; do
+  STATUS=$(vercel inspect $DEPLOYMENT_ID --scope thomasallnices-projects | grep "State:" | awk '{print $2}')
+  
+  case $STATUS in
+    "BUILDING")
+      echo "⏳ Still building... ($(date +%H:%M:%S))"
+      ;;
+    "READY")
+      echo "✅ Deployment successful!"
+      break
+      ;;
+    "ERROR")
+      echo "❌ Deployment failed!"
+      echo "Fetching build logs..."
+      vercel logs $DEPLOYMENT_ID --scope thomasallnices-projects
+      break
+      ;;
+  esac
+  
+  sleep 30
+done
+If build fails on Vercel:
+bashecho "❌ Vercel build failed. Analyzing logs..."
 
-**Report validation results to user:**
-- ✅ "Staging deployment successful! All checks passed."
-- ⚠️ "Staging deployed but [X] issues found: [list issues]"
-- ❌ "Staging deployment failed: [error]"
+# Check for common issues
+if vercel logs $DEPLOYMENT_ID | grep "@prisma/client did not initialize"; then
+  echo "🚨 ISSUE: Prisma client not generated on Vercel"
+  echo "This means prebuild hook didn't run or isn't configured correctly"
+  echo "
+  Should I:
+  1. Add 'prisma generate' to prebuild script
+  2. Add postinstall script as backup
+  3. Show me the full build log"
+  
+elif vercel logs $DEPLOYMENT_ID | grep "error TS"; then
+  # Count TypeScript errors in Vercel build
+  TS_ERRORS=$(vercel logs $DEPLOYMENT_ID | grep "error TS" | wc -l)
+  
+  echo "🚨 ISSUE: $TS_ERRORS TypeScript errors on Vercel"
+  echo "But local build passed... this is an environment mismatch"
+  echo "
+  Should I:
+  1. Add 'ignoreBuildErrors: true' to next.config.js (recommended)
+  2. Try to debug environment differences (may take hours)
+  3. Show me the specific errors"
+  
+else
+  echo "🚨 Unknown build failure. Here are the last 50 lines:"
+  vercel logs $DEPLOYMENT_ID | tail -50
+fi
+Step 15: Post-Deployment Validation
+Use deployment-validator subagent:
+Invoking deployment-validator subagent to verify staging deployment health.
+Use Task tool with subagent to:
 
-### Step 9: Cleanup and Return to Dev Branch
+Check staging URL loads
+Verify database connectivity
+Test authentication
+Check for console errors
+Validate critical features
 
-**Switch back to dev branch:**
+Report comprehensive validation results:
+Deployment Validation Results:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ URL accessible
+✅ Database connected
+✅ Authentication working
+⚠️  [Issue if any found]
 
-```bash
-# Return to dev branch
+Overall Status: [SUCCESS/WARNING/FAILED]
+Step 16: Cleanup and Return to Dev Branch
+bash# Return to dev branch
 git checkout dev
 
 # Optional: Pull latest dev
 git pull origin dev
-```
 
-**Inform user:**
-"Deployment complete! You're back on the dev branch.
+echo "
+✅ Deployment Complete!
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Summary:
-- Branch: staging
-- Supabase: jwarorrwgpqrksrxmesx
-- Vercel: [deployment-url]
-- Status: [success/warning/failed]
+  Branch: staging → deployed ✅
+  Database: migrations applied ✅
+  Vercel: build succeeded ✅
+  Validation: passed ✅
+  
+You're back on: dev branch
 
-Next steps:
-- Test the staging deployment thoroughly
-- If everything works, you can promote to production with /project:deploy-production"
+Next Steps:
+  1. Test staging thoroughly: [staging-url]
+  2. If all tests pass → /project:deploy-production
+  3. If issues found → fix on dev, redeploy to staging
 
----
-
-## Error Handling
-
-**If any step fails:**
-1. Report the exact error to user
-2. Suggest possible fixes
-3. Ask whether to:
-   - Retry the failed step
-   - Skip the step (if safe)
-   - Abort deployment
-
-**Rollback procedure if deployment fails critically:**
-```bash
-# Revert staging branch
-git checkout staging
-git reset --hard origin/staging
-git push origin staging --force
-
-# Inform user
-"Rolled back staging branch to previous state. Deployment aborted."
-```
-
----
-
-## Best Practices
-
-1. **Always validate before deploying** - Use pr-validation-orchestrator
-2. **Apply migrations first** - Database schema must match code
-3. **Never skip tests** - Failed tests indicate broken functionality
-4. **Monitor deployment** - Don't assume success, verify it
-5. **Document issues** - If deployment succeeds with warnings, note them
-
----
-
-## Notes
-
-- This command assumes you're deploying from `dev` branch to `staging`
-- If deploying from a feature branch, the command will ask for confirmation
-- Database migrations are applied via Supabase CLI (not Prisma migrate deploy)
-- Vercel deployment is triggered automatically via GitHub Actions
-- Use `$ARGUMENTS` to provide custom commit message
-
-**Example usage:**
-- `/project:deploy-staging` - Deploy with default commit message
-- `/project:deploy-staging "Add metabolic insights feature"` - Deploy with custom message
+Time spent on deployment: [X minutes]
+"
