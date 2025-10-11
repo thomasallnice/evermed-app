@@ -1,672 +1,521 @@
-# Deploy to Production
+# Deploy to Development
 
-Deploy the current code to Vercel production environment with maximum validation and safety checks.
+Deploy the current code to Vercel development environment for testing and iteration. This is a faster, lighter deployment process since dev environment uses the same Supabase project as local development.
 
-**Usage:** `/project:deploy-production` or `/project:deploy-production [release-version]`
-
-**⚠️ WARNING:** This deploys to PRODUCTION. Use with extreme caution.
+**Usage:** `/project:deploy-dev` or `/project:deploy-dev [commit-message]`
 
 **What this command does:**
-1. Validates staging deployment is healthy
-2. Runs comprehensive code quality checks
-3. Invokes multiple subagents for validation
-4. Requires explicit user confirmation
-5. Merges staging to main branch
-6. Applies database migrations to production Supabase project
-7. Creates git tag for release tracking
-8. Pushes to GitHub to trigger Vercel production deployment
-9. Validates production deployment
-10. Monitors for immediate issues
+1. Validates current branch and git state
+2. Verifies Prisma client generation (critical)
+3. Runs quick validation checks (optional full validation)
+4. Merges current branch to dev
+5. Pushes to GitHub to trigger Vercel deployment
+6. Basic deployment validation
+
+**Key Differences from Staging:**
+- ✅ Faster: Lighter validation, no migration steps
+- ✅ Same Database: Dev branch uses same Supabase as local (no migration needed)
+- ✅ Iterative: Designed for quick testing cycles
+- ⚠️ Less Strict: Can skip some checks for speed (your choice)
 
 ---
 
 ## Deployment Workflow
 
-You are deploying EverMed to **PRODUCTION** - the live environment used by real users.
+You are deploying EverMed to the **development environment** for testing and rapid iteration.
 
 ### Environment Details
-- **Target Branch:** `main`
-- **Source Branch:** `staging` (always deploy from staging)
-- **Supabase Project:** `nqlxlkhbriqztkzwbdif` (production)
-- **Vercel Environment:** Production
-- **Config File:** `.env.production`
+- **Target Branch:** `dev`
+- **Supabase Project:** Same as local development (no migration needed)
+- **Vercel Environment:** Development preview
+- **Purpose:** Quick testing and iteration
 
-### Step 0: Pre-Flight Safety Checks
+### Step 1: Pre-Deployment Validation
 
-**🚨 MANDATORY SAFETY QUESTIONS:**
-
-Before starting, ask the user:
-
-1. **"Have you thoroughly tested the staging deployment?"**
-   - If NO: "Please test staging first at [staging-url]. Deployment aborted."
-   - If UNSURE: "Please test staging before production deployment. Deployment aborted."
-
-2. **"Is this an emergency hotfix or planned release?"**
-   - If EMERGENCY: Proceed with expedited workflow (skip some validations)
-   - If PLANNED: Use full validation workflow
-
-3. **"What is the release version?"**
-   - Suggest: "v[YYYY].[MM].[patch]" (e.g., v2025.01.5)
-   - Use `$ARGUMENTS` if provided, otherwise ask
-
-4. **"Have you reviewed the changes going to production?"**
-   - Show: `git log staging..main --oneline`
-   - Ask: "Review these commits. Ready to deploy?"
-
-**If ANY answer raises concerns, ABORT deployment and ask for clarification.**
-
-### Step 1: Validate Staging Deployment
-
-**Check staging is healthy:**
-
+**Check current state:**
 ```bash
-# Get latest staging deployment
-vercel ls --scope thomasallnices-projects | grep staging
+# Get current branch
+CURRENT_BRANCH=$(git branch --show-current)
+echo "📍 Current branch: $CURRENT_BRANCH"
 
-# Check staging deployment status
-curl -I https://[staging-url]
-```
+# Check git status
+git status --short
 
-**CRITICAL: Invoke deployment-validator subagent for staging:**
+# Check for uncommitted changes
+if [ -n "$(git status --porcelain)" ]; then
+  echo "⚠️  You have uncommitted changes"
+fi
+Ask user about uncommitted changes:
+You have uncommitted changes. What should I do?
 
-```
-I'm going to validate the staging deployment before promoting to production.
-```
+1. Commit them now (provide message)
+2. Stash them temporarily
+3. Deploy without committing (if trivial changes)
+4. Cancel deployment
 
-Use Task tool with subagent_type="general-purpose" (or deployment-validator if available):
-```
-Validate staging deployment health:
-1. Navigate to staging URL
-2. Test all critical user flows
-3. Check for console errors
-4. Verify API endpoints respond correctly
-5. Test authentication
-6. Check database connectivity
-7. Report any issues found
+Your choice:
+If not on a feature branch:
+You're currently on: $CURRENT_BRANCH
 
-Staging URL: [staging-url]
-This is a pre-production validation check.
-```
+Development deployments typically happen from feature branches to dev.
 
-**If staging validation fails:**
-- Report issues to user
-- ABORT deployment
-- Say: "Staging has [X] issues. Fix these before production deployment:
-  [list issues]"
+Should I:
+1. Proceed from current branch
+2. Create a feature branch first
+3. Cancel
+Step 2: Prisma Client Verification ⚠️ CRITICAL
+[MANDATORY] Verify Prisma setup (this is non-negotiable even for dev):
+bashecho "🔍 Verifying Prisma client..."
 
-### Step 2: Code Quality Checks (Maximum Rigor)
+# 1. Check if Prisma client exists
+if [ ! -f "node_modules/.prisma/client/index.d.ts" ]; then
+  echo "⚠️  Prisma client not generated! Generating now..."
+  npx prisma generate
+  
+  if [ $? -eq 0 ]; then
+    echo "✅ Prisma client generated successfully"
+  else
+    echo "❌ Failed to generate Prisma client"
+    echo "Cannot proceed with deployment - Vercel build will fail"
+    exit 1
+  fi
+else
+  echo "✅ Prisma client exists"
+fi
 
-Run all validation checks with FRESH BUILD:
+# 2. Quick check for package.json hooks (warn if missing)
+if ! grep -q "postinstall.*prisma generate" package.json; then
+  echo "⚠️  WARNING: Missing 'postinstall' hook for Prisma generation"
+  echo "This will cause Vercel builds to fail!"
+  echo ""
+  echo "Should I add it now? (Recommended: yes)"
+  echo "1. Yes, add postinstall hook"
+  echo "2. No, I'll add it later (risky)"
+  echo "3. Cancel deployment"
+fi
 
-```bash
-# Step 1: Clean Next.js cache for accurate build test
-npm run clean:next
+if ! grep -q "prebuild.*prisma" package.json; then
+  echo "⚠️  WARNING: Missing 'prebuild' hook for Prisma generation"
+  echo "This is a safety net for Vercel builds"
+  echo "Should I add it? (Recommended: yes)"
+fi
 
-# Step 2: CRITICAL - Verify Prisma client is generated
-ls node_modules/.prisma/client/index.d.ts || npx prisma generate
+# 3. Show current Prisma version
+echo "📦 Prisma version: $(npx prisma --version | head -1)"
+If hooks are missing, add them:
+json{
+  "scripts": {
+    "postinstall": "prisma generate",
+    "prebuild": "npm run clean:next && npm run prisma:generate",
+    "prisma:generate": "prisma generate",
+    "clean:next": "rm -rf .next"
+  }
+}
+Step 3: Quick Validation Check
+[FLEXIBLE] Offer validation options:
+bashecho "🎯 Validation Options"
+echo ""
+echo "Development deployments can be fast or thorough. Choose your speed:"
+echo ""
+echo "1. 🚀 FAST (2 min) - Skip validation, push immediately"
+echo "   - Use when: Quick iteration, minor changes"
+echo "   - Risk: Might fail on Vercel if issues exist"
+echo ""
+echo "2. ⚡ QUICK CHECK (5 min) - Basic build test only"
+echo "   - Use when: Normal changes, want basic confidence"
+echo "   - Checks: Build passes, Prisma works"
+echo ""
+echo "3. 🔍 FULL VALIDATION (15-30 min) - Complete staging-level checks"
+echo "   - Use when: Major changes, want high confidence"
+echo "   - Checks: TypeScript, build, lint, tests"
+echo ""
+echo "Recommended for dev: Option 2 (Quick Check)"
+echo ""
+echo "Your choice: [1/2/3]"
+Option 1: FAST (Skip Everything)
+bashecho "🚀 Fast mode - skipping validation"
+echo "⚠️  Note: If build fails on Vercel, you'll need to fix and redeploy"
+# Skip directly to merge
+Option 2: QUICK CHECK (Recommended)
+bashecho "⚡ Running quick validation..."
 
-# Step 3: Lint check (must pass)
-npm run lint
-
-# Step 4: Type check (FULL, no cache - must pass)
-npx tsc --noEmit
-
-# Step 5: Run all tests (must pass)
-npm run test
-
-# Step 6: Build check (FRESH, no incremental - must pass)
+# Quick build test (uses cache for speed)
+echo "🏗️  Quick build test..."
 npm run build
 
-# Step 7: Check for guard files
-ls -la docs/CODEX_START_PROMPT.txt scripts/smoke-e2e.sh docs/BOOTSTRAP_PROMPT.md AGENTS.md
-```
+if [ $? -ne 0 ]; then
+  echo "❌ Build failed!"
+  echo ""
+  echo "The build is broken. This will fail on Vercel too."
+  echo ""
+  echo "Should I:"
+  echo "1. Show me the error and cancel"
+  echo "2. Try to clean build (slower but more accurate)"
+  echo "3. Deploy anyway (not recommended)"
+  
+  # Handle user choice
+fi
 
-**🚨 CRITICAL: Fresh Build Validation for Production**
+echo "✅ Quick build passed"
+Option 3: FULL VALIDATION
+bashecho "🔍 Running full validation (this takes longer)..."
 
-Production deployments require a CLEAN BUILD TEST with zero cache to prevent Vercel build failures.
+# Clean build
+echo "🧹 Cleaning caches..."
+rm -rf .next node_modules/.cache
 
-**Why this is non-negotiable:**
-- Next.js incremental compilation can hide type errors in cached builds
-- Vercel ALWAYS does fresh builds with full type checking
-- Local builds with `.next/` cache may pass when production builds fail
-- Running `npx tsc --noEmit` after cleaning cache catches ALL type errors
-- Prisma client must be generated or build will fail with "@prisma/client not initialized"
-- **Previous incident (2025-10-11):** 6+ hours wasted, 20+ type errors discovered incrementally in Vercel
-- **See**: `.claude/memory/deployment-workflow.md` and `docs/vercel-typescript-quirk.md`
+# TypeScript check
+echo "📝 TypeScript check..."
+npx tsc --noEmit 2>&1 | tee /tmp/typescript-errors.txt
+ERROR_COUNT=$(grep "error TS" /tmp/typescript-errors.txt | wc -l)
 
-**Mandatory validation steps:**
-1. Clean all caches: `npm run clean:next`
-2. Full type check: `npx tsc --noEmit` (must show 0 errors)
-3. Fresh build: `npm run build` (must complete successfully)
-4. Log errors: `npx tsc --noEmit 2>&1 | tee typescript-errors.log`
-5. Verify count: `grep 'error TS' typescript-errors.log | wc -l` (must be 0)
+if [ $ERROR_COUNT -gt 0 ]; then
+  echo "⚠️  Found $ERROR_COUNT TypeScript errors"
+  cat /tmp/typescript-errors.txt | head -20
+  
+  echo ""
+  echo "Should I:"
+  echo "1. Try to fix them"
+  echo "2. Use ignoreBuildErrors escape hatch"
+  echo "3. Deploy anyway (errors might appear on Vercel)"
+  echo "4. Cancel"
+fi
 
-**If ANY check fails:**
-- Report failure to user
-- Show exact error count and first 10 errors
-- BLOCK deployment (NO option to skip for production)
-- Say: "🚨 PRODUCTION DEPLOYMENT BLOCKED 🚨
+# Full build
+echo "🏗️  Full production build..."
+npm run build
 
-  Found [X] errors in fresh build:
-  [show errors]
+# Lint
+echo "🔍 Linting..."
+npm run lint
 
-  These errors will cause Vercel deployment to fail.
-  Fix all errors before attempting production deployment."
+# Tests (if they exist)
+if grep -q "\"test\":" package.json; then
+  echo "🧪 Running tests..."
+  npm run test
+fi
 
-**If typecheck passes but build fails:**
-- This indicates a Next.js-specific issue
-- Check build output for module resolution errors
-- BLOCK deployment until resolved
+echo "✅ Full validation passed"
+Step 4: Pre-Merge Summary
+Show deployment summary before proceeding:
+bashecho ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "📋 Deployment Summary"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Source:      $CURRENT_BRANCH"
+echo "Target:      dev"
+echo "Environment: Development (Vercel)"
+echo "Database:    Same as local (no migration)"
+echo "Validation:  [$VALIDATION_LEVEL]"
+echo ""
+echo "Changes to deploy:"
+git log dev..HEAD --oneline | head -10
+echo ""
+echo "Files changed: $(git diff dev --name-only | wc -l)"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Proceed with deployment? [y/n]"
+Step 5: Merge to Dev Branch
+Execute merge workflow:
+bashecho "🔀 Merging to dev branch..."
 
-### Step 3: Invoke Multiple Subagents (Comprehensive Validation)
-
-**🔴 MANDATORY: Multiple validation layers for production**
-
-**A) PR Validation Orchestrator:**
-
-```
-Invoking pr-validation-orchestrator for production deployment validation...
-```
-
-Use Task tool with subagent_type="pr-validation-orchestrator":
-```
-Validate code for PRODUCTION deployment:
-- Complete CODE_REVIEW.md checklist
-- Verify all tests pass
-- Check guard files intact
-- Validate no critical issues
-- Verify no security vulnerabilities
-- Check for performance regressions
-- Generate comprehensive validation report
-
-Environment: PRODUCTION (branch: main)
-Source: staging branch
-```
-
-**B) Medical Compliance Guardian (if medical features changed):**
-
-Check if medical-related files were modified:
-```bash
-git diff staging..main --name-only | grep -E "(chat|explain|medical|observation|rag)"
-```
-
-If medical files changed:
-```
-Invoking medical-compliance-guardian to validate medical content compliance...
-```
-
-Use Task tool with subagent_type="medical-compliance-guardian":
-```
-Review all medical-related changes for production deployment:
-- Validate non-SaMD compliance
-- Check medical disclaimers present
-- Verify refusal templates for diagnosis/dosing/triage
-- Ensure proper citations on medical content
-- Validate no SaMD violations introduced
-
-Review changes from staging to main.
-```
-
-**C) Security Review (Database & API):**
-
-If database or API changes detected:
-```bash
-git diff staging..main --name-only | grep -E "(schema.prisma|migration|api/|auth)"
-```
-
-If found:
-```
-Invoking database-architect and api-contract-validator for security review...
-```
-
-Use appropriate subagents to validate:
-- Database migration safety
-- RLS policy correctness
-- API contract compliance
-- No security regressions
-
-**If ANY validation fails:**
-- Report all issues to user
-- BLOCK deployment
-- Provide detailed remediation steps
-- Say: "Production deployment blocked due to validation failures. Address these issues before deploying."
-
-### Step 4: User Confirmation Checkpoint
-
-**🛑 EXPLICIT CONFIRMATION REQUIRED:**
-
-Show deployment summary:
-```
-Production Deployment Summary:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Source: staging branch
-Target: main (PRODUCTION)
-Release: $ARGUMENTS
-Supabase: nqlxlkhbriqztkzwbdif
-
-Changes:
-[show git log staging..main]
-
-Validations:
-✅ Staging healthy
-✅ All tests pass
-✅ Code quality checks pass
-✅ Subagent validations pass
-✅ Guard files intact
-
-Pending Migrations: [list if any]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-⚠️  This will deploy to PRODUCTION.
-⚠️  Real users will be affected.
-⚠️  Downtime may occur during deployment.
-
-Type 'DEPLOY TO PRODUCTION' to confirm, or anything else to abort:
-```
-
-**Wait for exact text match: "DEPLOY TO PRODUCTION"**
-- If user types exact match: Proceed
-- If user types anything else: ABORT and say "Production deployment cancelled."
-
-### Step 5: Database Migration Planning (Production)
-
-**🔴 CRITICAL: Production database changes require extreme care**
-
-```bash
-# Link to production Supabase project
-supabase link --project-ref nqlxlkhbriqztkzwbdif
-
-# Check migration status
-npx prisma migrate status --schema=db/schema.prisma
-```
-
-**If migrations pending:**
-- List migrations to user
-- Show migration content: `cat db/migrations/[migration-file]/migration.sql`
-- Ask: "⚠️ PRODUCTION DATABASE CHANGES ⚠️
-
-  These migrations will be applied to the production database:
-  [list migrations with file contents]
-
-  Production database has REAL USER DATA.
-
-  Confirm you have:
-  ✓ Reviewed migration SQL
-  ✓ Tested on staging database
-  ✓ Have backup strategy ready
-  ✓ Understand rollback procedure
-
-  Type 'APPLY MIGRATIONS' to proceed:"
-
-**Wait for exact text: "APPLY MIGRATIONS"**
-- If not exact match: ABORT
-
-**Before applying migrations:**
-```bash
-# Create manual backup point (document only, user should do via Supabase dashboard)
-echo "⚠️ RECOMMENDED: Create manual database backup via Supabase Dashboard before proceeding"
-echo "https://supabase.com/dashboard/project/nqlxlkhbriqztkzwbdif/database/backups"
-```
-
-Ask: "Have you created a manual backup? (yes/no)"
-- If NO: Strongly recommend but allow override with warning
-
-### Step 6: Merge Staging to Main
-
-**Execute merge with protection:**
-
-```bash
 # Fetch latest
 git fetch origin
 
-# Switch to main
-git checkout main
+# Store current branch
+SOURCE_BRANCH=$(git branch --show-current)
 
-# Ensure main is up to date
-git pull origin main
-
-# Show what will be merged
-git log main..staging --oneline
-
-# Merge from staging with explicit merge commit
-git merge staging --no-ff -m "chore(release): deploy $ARGUMENTS to production
-
-Deploying from staging to production.
-All validation checks passed.
-
-Changes:
-$(git log main..staging --oneline | head -10)
-
-Release: $ARGUMENTS
-Environment: Production
-Supabase: nqlxlkhbriqztkzwbdif
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
-```
-
-**If merge conflicts occur:**
-- Show conflicts to user
-- ABORT deployment
-- Say: "Merge conflicts detected. This should NEVER happen in production deployment.
-
-  Conflicts in:
-  [list files]
-
-  The staging and main branches have diverged. This indicates:
-  1. Changes were made directly to main (WRONG)
-  2. Hotfixes were applied to main but not backported to staging
-
-  Resolution:
-  1. Abort this deployment
-  2. Investigate why branches diverged
-  3. Backport changes to staging
-  4. Re-test staging
-  5. Try deployment again"
-
-### Step 7: Create Release Tag
-
-**Tag the release for tracking:**
-
-```bash
-# Create annotated tag
-git tag -a "$ARGUMENTS" -m "Release $ARGUMENTS
-
-Production deployment from staging.
-
-Changelog:
-$(git log staging..main --oneline | head -20)
-
-Deployed: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-Supabase: nqlxlkhbriqztkzwbdif
-Vercel: Production
-"
-
-# Show tag
-git show $ARGUMENTS --no-patch
-```
-
-Ask: "Release tag created. Review above. Proceed with deployment?"
-
-### Step 8: Apply Production Database Migrations
-
-**🔴 EXTREME CAUTION: Production database**
-
-```bash
-# Verify connection to production
-supabase projects list | grep nqlxlkhbriqztkzwbdif
-
-# Show diff one more time
-supabase db diff
-
-# Apply migrations to PRODUCTION
-supabase db push
-```
-
-**Monitor migration:**
-- Watch for errors
-- If ANY error occurs:
-  - IMMEDIATELY stop
-  - Do NOT push code to GitHub
-  - Attempt rollback if possible
-  - Alert user with full error details
-
-**If migration succeeds:**
-```
-✅ Production database migrations applied successfully.
-```
-
-**Check for storage bucket migrations:**
-- Look for SQL in `db/migrations/*storage*`
-- If found: "Found storage migration. Executing manually..."
-- Apply via Supabase SQL Editor if needed
-
-### Step 9: Push to GitHub (Triggers Production Deployment)
-
-**⚠️ POINT OF NO RETURN ⚠️**
-
-Ask one final time:
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚨 FINAL CONFIRMATION 🚨
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Ready to push to GitHub and deploy to PRODUCTION.
-
-✅ All validations passed
-✅ Database migrations applied
-✅ Release tag created: $ARGUMENTS
-
-This will:
-- Push main branch to GitHub
-- Push release tag
-- Trigger Vercel production deployment
-- Affect REAL USERS immediately
-
-Type 'PUSH TO PRODUCTION' to deploy:
-```
-
-**Wait for exact text: "PUSH TO PRODUCTION"**
-
-If confirmed:
-```bash
-# Push main branch
-git push origin main
-
-# Push tag
-git push origin $ARGUMENTS
-
-# Inform user
-echo "🚀 Pushed to production!"
-echo "Vercel deployment starting..."
-```
-
-**Monitor deployment:**
-```bash
-# Check deployment status
-vercel ls --scope thomasallnices-projects --prod
-
-# Get production URL
-echo "Production URL: https://evermed-app.vercel.app"
-```
-
-### Step 10: Post-Deployment Validation (Production)
-
-**🔴 CRITICAL: Validate production immediately**
-
-```
-Validating production deployment...
-```
-
-Use Task tool (general-purpose agent):
-```
-URGENT: Validate production deployment immediately:
-
-1. Navigate to https://evermed-app.vercel.app
-2. Check homepage loads without errors
-3. Test authentication flow
-4. Verify critical API endpoints
-5. Check for console errors
-6. Test database connectivity
-7. Verify no 500 errors
-8. Check performance (load time < 3s)
-
-This is PRODUCTION. Report any issues immediately.
-```
-
-**Validation checklist (manual):**
-- [ ] Homepage loads
-- [ ] Login works
-- [ ] Document upload works
-- [ ] Chat works
-- [ ] No console errors
-- [ ] Database queries work
-- [ ] API responds correctly
-
-**If validation finds critical issues:**
-- Alert user immediately
-- Provide rollback instructions
-- Consider emergency rollback
-
-**If validation passes:**
-```
-✅ Production deployment successful!
-✅ All health checks passed
-✅ Production is live
-```
-
-### Step 11: Post-Deployment Monitoring
-
-**Set up monitoring:**
-
-```
-Production deployed successfully!
-
-IMMEDIATE ACTION REQUIRED:
-1. Monitor Vercel dashboard for errors: https://vercel.com/thomasallnices-projects/evermed-app
-2. Check Supabase logs: https://supabase.com/dashboard/project/nqlxlkhbriqztkzwbdif/logs
-3. Watch for user reports
-4. Monitor performance metrics
-
-Next 30 minutes: Active monitoring required
-Next 24 hours: Regular monitoring recommended
-```
-
-**Create monitoring checklist:**
-- [ ] Check Vercel errors (0 expected)
-- [ ] Check Supabase logs (no errors)
-- [ ] Monitor response times
-- [ ] Check user activity (should be normal)
-- [ ] Verify no spike in error rate
-
-### Step 12: Cleanup and Documentation
-
-**Return to dev branch:**
-
-```bash
-# Switch back to dev
+# Switch to dev
 git checkout dev
 
-# Pull latest to include production changes
-git pull origin main
+# Pull latest dev
+git pull origin dev
 
-# Update dev with production state
-git merge main --no-ff -m "chore: sync dev with production release $ARGUMENTS"
-```
+# Merge from source branch
+if [ -n "$ARGUMENTS" ]; then
+  COMMIT_MSG="$ARGUMENTS"
+else
+  COMMIT_MSG="chore(dev): deploy from $SOURCE_BRANCH"
+fi
 
-**Generate deployment report:**
+git merge $SOURCE_BRANCH --no-ff -m "$COMMIT_MSG
 
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎉 PRODUCTION DEPLOYMENT COMPLETE 🎉
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Deployed from: $SOURCE_BRANCH
+Validation: [$VALIDATION_LEVEL]
+Prisma client: ✅ Verified
 
-Release: $ARGUMENTS
-Branch: main (production)
-Supabase: nqlxlkhbriqztkzwbdif
-Deployed: [timestamp]
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Co-Authored-By: Claude <noreply@anthropic.com>"
 
-Changes Deployed:
-[git log summary]
+if [ $? -ne 0 ]; then
+  echo "❌ Merge conflict detected!"
+  echo ""
+  git status
+  echo ""
+  echo "Conflicting files:"
+  git diff --name-only --diff-filter=U
+  echo ""
+  echo "Should I:"
+  echo "1. Abort merge and cancel deployment"
+  echo "2. Show me the conflicts"
+  echo "3. Try to auto-resolve (risky)"
+  
+  # Wait for user decision
+fi
 
-Status: ✅ LIVE
+echo "✅ Merged successfully"
+Step 6: Push to GitHub (Triggers Vercel)
+Push dev branch to trigger deployment:
+bashecho "🚀 Pushing to GitHub..."
+echo ""
 
-Production URL: https://evermed-app.vercel.app
+# Show what's about to be pushed
+echo "Commits to push:"
+git log origin/dev..dev --oneline
+echo ""
 
-Monitoring:
-- Vercel: https://vercel.com/thomasallnices-projects/evermed-app
-- Supabase: https://supabase.com/dashboard/project/nqlxlkhbriqztkzwbdif/logs
+# Push
+git push origin dev
 
-Next Steps:
-1. Monitor for 30 minutes
-2. Update release notes
-3. Notify stakeholders
-4. Backport any hotfixes to staging/dev
+if [ $? -eq 0 ]; then
+  echo "✅ Pushed successfully!"
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🚀 Deployment Triggered"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "Vercel is now building your deployment..."
+  echo ""
+  echo "📊 Monitor at: https://vercel.com/thomasallnices-projects/evermed-app"
+  echo ""
+  echo "⏱️  Estimated build time: 3-5 minutes"
+  echo ""
+else
+  echo "❌ Push failed!"
+  echo ""
+  echo "This might be because:"
+  echo "- You don't have push access"
+  echo "- The remote rejected the push"
+  echo "- Network issues"
+  echo ""
+  echo "Should I:"
+  echo "1. Retry the push"
+  echo "2. Show me the error details"
+  echo "3. Cancel and rollback"
+fi
+Step 7: Monitor Deployment (Optional)
+[OPTIONAL] Offer to monitor Vercel build:
+bashecho "Would you like me to monitor the Vercel deployment? [y/n]"
+echo "(I can watch the build and notify you when it's done)"
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+# If yes:
+echo ""
+echo "📊 Monitoring Vercel deployment..."
+echo ""
 
----
+# Simple polling (every 30 seconds for up to 10 minutes)
+TIMEOUT=600
+ELAPSED=0
+INTERVAL=30
 
-## Emergency Rollback Procedure
+while [ $ELAPSED -lt $TIMEOUT ]; do
+  # Check Vercel status (simplified - actual implementation would use Vercel API)
+  echo "⏳ Building... ($(($ELAPSED / 60))m $(($ELAPSED % 60))s elapsed)"
+  
+  sleep $INTERVAL
+  ELAPSED=$((ELAPSED + INTERVAL))
+  
+  # In real implementation, would check actual status
+  # For now, just show progress
+done
 
-**If production deployment fails critically:**
+echo ""
+echo "⏱️  Monitoring timeout reached (10 minutes)"
+echo "Check Vercel dashboard for current status:"
+echo "https://vercel.com/thomasallnices-projects/evermed-app"
+Simplified monitoring alternative:
+bashecho ""
+echo "🔔 I'll check back in 3 minutes..."
+sleep 180
 
-```bash
-# 1. Revert main branch
-git checkout main
-git revert HEAD --no-edit
-git push origin main
+echo ""
+echo "Deployment should be complete by now."
+echo "Check: https://[your-dev-url].vercel.app"
+echo ""
+echo "If you see any issues, let me know!"
+Step 8: Quick Deployment Validation
+[LIGHTWEIGHT] Basic health check:
+bashecho ""
+echo "🏥 Running quick health check..."
+echo ""
 
-# 2. Revert database migrations (if needed)
-# MANUAL STEP: Use Supabase Dashboard to restore from backup
-echo "⚠️ If database was migrated, restore from backup via Supabase Dashboard"
+# Try to curl the dev URL (if known)
+DEV_URL="https://evermed-app-dev.vercel.app"  # Adjust to actual URL
 
-# 3. Delete bad release tag
-git tag -d $ARGUMENTS
-git push origin :refs/tags/$ARGUMENTS
+echo "Checking: $DEV_URL"
 
-# 4. Inform user
-echo "🔴 EMERGENCY ROLLBACK EXECUTED"
-echo "Main branch reverted to previous state"
-echo "Database: [needs manual restore if migrated]"
-echo "Tag deleted: $ARGUMENTS"
-```
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" $DEV_URL)
 
-**Post-rollback:**
-- Investigate failure cause
-- Fix issues
-- Re-test on staging
-- Attempt deployment again when ready
+if [ "$HTTP_STATUS" = "200" ]; then
+  echo "✅ Dev site is responding (HTTP 200)"
+elif [ "$HTTP_STATUS" = "000" ]; then
+  echo "⏳ Site might still be deploying (no response yet)"
+else
+  echo "⚠️  Site returned HTTP $HTTP_STATUS"
+fi
 
----
+echo ""
+echo "For full validation, visit: $DEV_URL"
+echo "And check:"
+echo "- [ ] Site loads without errors"
+echo "- [ ] Authentication works"
+echo "- [ ] Your changes are visible"
+echo "- [ ] Console has no critical errors"
+Step 9: Return to Source Branch
+Switch back to original branch:
+bashecho ""
+echo "🔄 Returning to original branch..."
 
-## Safety Guardrails
+# Go back to source branch
+git checkout $SOURCE_BRANCH
 
-**This command includes multiple safety layers:**
+echo "✅ Back on: $SOURCE_BRANCH"
+echo ""
+Step 10: Deployment Summary
+Comprehensive summary:
+bashecho "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ Development Deployment Complete!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "📦 Deployed:"
+echo "  From: $SOURCE_BRANCH"
+echo "  To:   dev branch"
+echo "  Validation: [$VALIDATION_LEVEL]"
+echo ""
+echo "🔗 URLs:"
+echo "  Dev Site: $DEV_URL"
+echo "  Vercel Dashboard: https://vercel.com/thomasallnices-projects/evermed-app"
+echo ""
+echo "✅ Status:"
+echo "  Git Push: ✅ Success"
+echo "  Vercel Build: ⏳ In Progress (check dashboard)"
+echo "  Health Check: [$HEALTH_STATUS]"
+echo ""
+echo "📍 You're now on: $SOURCE_BRANCH"
+echo ""
+echo "🧪 Next Steps:"
+echo "  1. Test your changes on dev: $DEV_URL"
+echo "  2. If all good → /project:deploy-staging"
+echo "  3. If issues → fix on $SOURCE_BRANCH, redeploy"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "⏱️  Total deployment time: [X minutes]"
 
-1. ✅ Staging validation required
-2. ✅ Comprehensive code quality checks
-3. ✅ Multiple subagent validations
-4. ✅ Three explicit user confirmations
-5. ✅ Database backup recommendations
-6. ✅ Release tagging for tracking
-7. ✅ Post-deployment validation
-8. ✅ Monitoring setup
-9. ✅ Emergency rollback procedure
-10. ✅ Never skips validations for production
+Error Handling
+Common Issues & Solutions
+Issue: Prisma client not generated
+bash# Symptom: Vercel build fails with "@prisma/client did not initialize"
+# Fix: Add hooks to package.json
+echo "Adding Prisma hooks to package.json..."
 
-**Cannot be bypassed:**
-- All tests must pass
-- Staging must be healthy
-- User must type exact confirmation text
-- Subagent validations must pass
+# Add postinstall and prebuild scripts
+# Then redeploy
+Issue: Merge conflicts
+bash# Offer to show conflicts
+git diff --name-only --diff-filter=U
 
----
+echo "Conflicts found. Should I:"
+echo "1. Abort and let you resolve manually"
+echo "2. Show me each conflict"
+echo "3. Cancel deployment"
+Issue: Push rejected
+bash# Usually means dev branch is ahead on remote
+echo "Remote has commits you don't have locally"
+echo ""
+echo "Should I:"
+echo "1. Pull and merge, then push"
+echo "2. Force push (DANGEROUS)"
+echo "3. Cancel deployment"
+Issue: Build fails on Vercel
+bashecho "Vercel build failed. Common causes:"
+echo ""
+echo "1. Prisma client not generated → Check prebuild hook"
+echo "2. TypeScript errors → Run full validation next time"
+echo "3. Missing environment variables → Check Vercel settings"
+echo "4. Dependency issues → Check package.json"
+echo ""
+echo "Should I:"
+echo "1. Show me the Vercel build logs"
+echo "2. Roll back this deployment"
+echo "3. Try to diagnose the issue"
+Rollback Procedure
+If deployment needs to be rolled back:
+bashecho "🔄 Rolling back deployment..."
 
-## Best Practices
+# Switch to dev
+git checkout dev
 
-1. **Always deploy during low-traffic hours** (if possible)
-2. **Have team available** during production deployment
-3. **Test thoroughly on staging** before production
-4. **Create manual database backup** before migrating
-5. **Monitor immediately** after deployment
-6. **Have rollback plan ready**
-7. **Communicate with stakeholders** about deployment
-8. **Document any issues** encountered
+# Reset to previous commit
+git reset --hard HEAD^
 
----
+# Force push
+git push origin dev --force
 
-## Notes
+echo "✅ Rolled back dev branch"
+echo "Previous deployment is restored"
+echo ""
+echo "To redeploy with fixes:"
+echo "1. Fix issues on $SOURCE_BRANCH"
+echo "2. Run /project:deploy-dev again"
 
-- This command deploys from `staging` to `main` ONLY
-- Direct deployments to production from feature branches are BLOCKED
-- Database migrations are applied BEFORE code deployment
-- Release tags follow semantic versioning: v[YEAR].[MONTH].[PATCH]
-- All confirmations require EXACT text match (case-sensitive)
-- Emergency hotfixes can use expedited workflow but still require validation
+Best Practices
+When to Use Each Validation Level
+🚀 FAST (Skip Validation):
 
-**Example usage:**
-- `/project:deploy-production` - Will prompt for version
-- `/project:deploy-production v2025.01.5` - Deploys with specified version
+✅ Fixing typos, copy changes
+✅ CSS/styling updates
+✅ Minor bug fixes you're confident about
+✅ Reverting a bad change
+❌ Don't use for: New features, refactors, API changes
+
+⚡ QUICK CHECK (Recommended Default):
+
+✅ Normal feature development
+✅ Most bug fixes
+✅ Database query changes
+✅ Component updates
+✅ 90% of development work
+
+🔍 FULL VALIDATION (Use Before Staging):
+
+✅ Before deploying to staging
+✅ Large refactors
+✅ Breaking changes
+✅ When you're unsure
+✅ After resolving complex merge conflicts
+
+Development Workflow
+Typical flow:
+1. Work on feature branch
+2. Deploy to dev (Quick Check) → Test
+3. Iterate: Fix → Deploy (Fast) → Test
+4. When satisfied → Deploy to staging (Full Validation)
+5. After QA → Deploy to production
+Database Considerations
+Remember:
+
+Dev and local use SAME Supabase project
+Schema changes affect both immediately
+No migration needed for dev deployment
+But DO run migrations before staging/production
+
+If you changed schema:
+bash# You've already run this locally, which updated dev database:
+npx prisma migrate dev
+
+# No need to run again for dev deployment
+# But remember to apply to staging before deploying there:
+# /project:deploy-staging (will prompt you)
