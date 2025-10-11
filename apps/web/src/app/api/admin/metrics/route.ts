@@ -7,8 +7,9 @@ const prisma = new PrismaClient();
 
 // Use Prisma-generated types directly instead of hardcoded types
 // This ensures compatibility with the actual database schema
-type AnalyticsEvent = Prisma.AnalyticsEventGetPayload<{}>;
-type TokenUsage = Prisma.TokenUsageGetPayload<{}>;
+// Note: Prisma generates lowercase versions (analyticsEvent, not AnalyticsEvent)
+type AnalyticsEvent = Prisma.analyticsEventGetPayload<Record<string, never>>;
+type TokenUsage = Prisma.tokenUsageGetPayload<Record<string, never>>;
 
 // Compatibility helpers for old schema (userId/name/meta) vs new schema (sessionId/eventName/metadata)
 function getSessionId(e: AnalyticsEvent): string {
