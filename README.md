@@ -47,9 +47,50 @@ Smoke test (optional)
 ./scripts/smoke-e2e.sh
 ```
 
+## Local Build Validation (MANDATORY Before Deploying)
+
+**ALWAYS run these checks before pushing to staging/production:**
+
+```bash
+# 1. Clean all caches (critical!)
+npm run clean:next
+
+# 2. Verify Prisma client is generated
+ls node_modules/.prisma/client/index.d.ts || npx prisma generate
+
+# 3. Full TypeScript check (shows ALL errors at once)
+npx tsc --noEmit
+
+# 4. Production build test
+npm run build
+
+# Exit code must be 0 for all steps
+```
+
+**Why this matters:**
+- Next.js incremental compilation hides errors in cached builds
+- Vercel always does fresh builds - errors appear there if skipped locally
+- **Incident (2025-10-11)**: 6+ hours wasted discovering 20+ errors one-by-one on Vercel
+- See `.claude/memory/deployment-workflow.md` for full incident report
+
+**If TypeScript errors found:**
+```bash
+# Count total errors
+npx tsc --noEmit 2>&1 | tee typescript-errors.log
+grep "error TS" typescript-errors.log | wc -l
+
+# Decision matrix:
+# < 10 errors: Fix all now (15-30 min)
+# 10-20 errors: Batch fix in one session (1 hour)
+# > 20 errors: Consider ignoreBuildErrors escape hatch (see docs/vercel-typescript-quirk.md)
+```
+
+**Never push if builds fail locally - Vercel will also fail.**
+
 ## Deployment & Testing
 
 - Deploy Supabase migrations (`prisma migrate deploy`) and Vercel project (set env vars: Supabase keys, OCR envs, `OPENAI_API_KEY`).
+- **BEFORE deploying**: Run local build validation (see above)
 - After each deploy run `./scripts/smoke-e2e.sh` against the environment to validate upload → share.
 - Recommended suites: Playwright/Cypress E2E (auth → upload → share), load tests (large PDFs/concurrency), security review (RLS, passcodes, signed URLs, revocation), monitoring/alerting setup.
 

@@ -49,31 +49,38 @@ git diff --stat
 Run validation before deployment:
 
 ```bash
-# Clean Next.js cache for accurate build test
+# Step 1: Clean Next.js cache for accurate build test
 npm run clean:next
 
-# Lint check
+# Step 2: CRITICAL - Verify Prisma client is generated
+ls node_modules/.prisma/client/index.d.ts || npx prisma generate
+
+# Step 3: Lint check
 npm run lint
 
-# Type check (full, no cache)
+# Step 4: Type check (full, no cache - shows ALL errors at once)
 npx tsc --noEmit
 
-# Run tests
+# Step 5: Run tests
 npm run test
 
-# Build check (fresh build, no incremental compilation)
+# Step 6: Build check (fresh build, no incremental compilation)
 npm run build
 ```
 
 **CRITICAL: Fresh Build Validation**
 
-The local build MUST pass with a clean cache before pushing to GitHub. This prevents discovering TypeScript errors in Vercel builds.
+The local build MUST pass with a clean cache before pushing to GitHub. This prevents discovering errors in Vercel builds.
 
 **Why this matters:**
 - Next.js incremental compilation can skip type checks for unchanged files
 - Vercel always does fresh builds with full type checking
 - Local builds with cached `.next/` folders may pass when Vercel builds fail
-- Running `npx tsc --noEmit` catches ALL type errors at once
+- Running `npx tsc --noEmit` catches ALL type errors at once (TypeScript stops at first error per file)
+- Prisma client must be generated or build will fail with "@prisma/client not initialized"
+
+**Incident reference**: 2025-10-11 - 6+ hours wasted discovering 20+ errors one-by-one on Vercel
+**See**: `.claude/memory/deployment-workflow.md` for full incident report
 
 **If any checks fail:**
 - Report failures to user
@@ -83,10 +90,18 @@ The local build MUST pass with a clean cache before pushing to GitHub. This prev
   2. Skip and deploy anyway (NOT RECOMMENDED - will fail in Vercel)
   3. Cancel deployment"
 
-**If build passes but you're unsure:**
-- Run `npx tsc --noEmit 2>&1 | tee typescript-errors.log`
-- Count errors: `grep 'error TS' typescript-errors.log | wc -l`
-- If > 0 errors found, BLOCK deployment and report to user
+**If TypeScript errors found:**
+- Count total: `npx tsc --noEmit 2>&1 | tee typescript-errors.log && grep 'error TS' typescript-errors.log | wc -l`
+- Decision matrix:
+  - < 10 errors: Fix all now (15-30 min)
+  - 10-20 errors: Batch fix (1 hour)
+  - > 20 errors: Consider `ignoreBuildErrors: true` (see docs/vercel-typescript-quirk.md)
+- BLOCK deployment until resolved or escape hatch applied
+
+**If Prisma client missing:**
+- Run: `npx prisma generate --schema=db/schema.prisma`
+- Verify: `ls node_modules/.prisma/client/index.d.ts`
+- Check package.json has: `"postinstall": "prisma generate"`
 
 ### Step 3: Invoke Subagents for Validation
 

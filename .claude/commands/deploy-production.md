@@ -99,22 +99,25 @@ This is a pre-production validation check.
 Run all validation checks with FRESH BUILD:
 
 ```bash
-# Clean Next.js cache for accurate build test
+# Step 1: Clean Next.js cache for accurate build test
 npm run clean:next
 
-# Lint check (must pass)
+# Step 2: CRITICAL - Verify Prisma client is generated
+ls node_modules/.prisma/client/index.d.ts || npx prisma generate
+
+# Step 3: Lint check (must pass)
 npm run lint
 
-# Type check (FULL, no cache - must pass)
+# Step 4: Type check (FULL, no cache - must pass)
 npx tsc --noEmit
 
-# Run all tests (must pass)
+# Step 5: Run all tests (must pass)
 npm run test
 
-# Build check (FRESH, no incremental - must pass)
+# Step 6: Build check (FRESH, no incremental - must pass)
 npm run build
 
-# Check for guard files
+# Step 7: Check for guard files
 ls -la docs/CODEX_START_PROMPT.txt scripts/smoke-e2e.sh docs/BOOTSTRAP_PROMPT.md AGENTS.md
 ```
 
@@ -127,7 +130,9 @@ Production deployments require a CLEAN BUILD TEST with zero cache to prevent Ver
 - Vercel ALWAYS does fresh builds with full type checking
 - Local builds with `.next/` cache may pass when production builds fail
 - Running `npx tsc --noEmit` after cleaning cache catches ALL type errors
-- **Previous incident:** 20+ type errors discovered incrementally in Vercel after local build passed
+- Prisma client must be generated or build will fail with "@prisma/client not initialized"
+- **Previous incident (2025-10-11):** 6+ hours wasted, 20+ type errors discovered incrementally in Vercel
+- **See**: `.claude/memory/deployment-workflow.md` and `docs/vercel-typescript-quirk.md`
 
 **Mandatory validation steps:**
 1. Clean all caches: `npm run clean:next`
