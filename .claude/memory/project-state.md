@@ -19,11 +19,26 @@ dev (development) → staging (preview) → main (production)
 
 Each environment has its own Supabase project and configuration:
 
-| Environment | Branch | Supabase Project ID | Config File | Vercel Branch |
-|------------|--------|---------------------|-------------|---------------|
-| **Development** | `dev` | `wukrnqifpgjwbqxpockm` | `.env.local` | development |
-| **Staging** | `staging` | `jwarorrwgpqrksrxmesx` | `.env.staging` | staging/preview |
-| **Production** | `main` | `nqlxlkhbriqztkzwbdif` | `.env.production` | main/production |
+| Environment | Branch | Supabase Org ID | Supabase Project ID | Config File | Vercel Branch |
+|------------|--------|-----------------|---------------------|-------------|---------------|
+| **Development** | `dev` | `fynzeuadkrldmzsywmlp` | `wukrnqifpgjwbqxpockm` | `.env.local` | development |
+| **Staging** | `staging` | `xlrzxirtetsyolahwlzd` | `jwarorrwgpqrksrxmesx` | `.env.staging` | staging/preview |
+| **Production** | `main` | `xlrzxirtetsyolahwlzd` | `nqlxlkhbriqztkzwbdif` | `.env.production` | main/production |
+
+**Note:** Production and Staging share the same Supabase organization (`xlrzxirtetsyolahwlzd`), while Development uses a separate organization (`fynzeuadkrldmzsywmlp`).
+
+### Vercel Configuration
+- **Vercel Project:** `evermed-app` (https://vercel.com/thomasallnices-projects/evermed-app)
+- **Vercel Token:** Available in `.env.local` as `VERCEL_TOKEN`
+- **CLI Access:** Configured for programmatic deployment management
+
+### Validation Test Accounts
+- **Email:** `testaccount@evermed.ai`
+- **Password:** `ValidationTest2025!Secure`
+- **Created In:** All 3 environments (dev, staging, production)
+- **Person Records:** Completed onboarding in all environments
+- **Purpose:** Automated end-to-end validation with authentication
+- **Credentials Stored:** `.env.local`, `.env.staging`, `.env.production`
 
 ### Environment Files
 - **`.env.local`** - Local development (branch: dev)

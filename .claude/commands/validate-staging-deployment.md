@@ -30,6 +30,24 @@ This script uses Chrome DevTools MCP to perform comprehensive post-deployment va
 
 ---
 
+## Test Account Credentials
+
+**Automated Login Available:**
+- Email: `testaccount@evermed.ai`
+- Password: `ValidationTest2025!Secure`
+- Stored in: `.env.staging` (`VALIDATION_TEST_EMAIL`, `VALIDATION_TEST_PASSWORD`)
+
+**This test account enables:**
+- ✅ Automated login during validation
+- ✅ Testing protected routes (vault, upload, chat, profile)
+- ✅ End-to-end user flow validation
+- ✅ API endpoint testing with authentication
+
+**Important Note:**
+The staging test account allows testing the complete authenticated user experience, which is critical for catching issues before production.
+
+---
+
 ## Validation Checklist
 
 ### 1. Console Error Check (DOCUMENT ALL)
@@ -114,65 +132,77 @@ if (insights.lcp > 10000) {
 
 **Goal:** Ensure key features work end-to-end
 
-#### 3.1 Authentication Flow
+#### 3.1 Authentication Flow (Automated Login)
 
 ```typescript
-// Navigate to login
-mcp__chrome_devtools__navigate_page({ url: 'https://evermed-app-git-staging-thomasallnices-projects.vercel.app/auth/login' });
+// Navigate to login page
+mcp__chrome_devtools__navigate_page({ url: 'https://evermed-app-git-staging-thomasallnices-projects.vercel.app/login' });
 
-// Take screenshot for baseline
-mcp__chrome_devtools__take_screenshot({
-  filePath: 'tests/screenshots/staging/login-page.png'
-});
-
-// Check login form exists
+// Take snapshot to get form field UIDs
 const snapshot = mcp__chrome_devtools__take_snapshot();
 
-// Verify: email input, password input, submit button present
-const hasEmailInput = snapshot.text.includes('Email') || snapshot.text.includes('email');
-const hasPasswordInput = snapshot.text.includes('Password') || snapshot.text.includes('password');
-const hasSubmitButton = snapshot.text.includes('Sign in') || snapshot.text.includes('Login');
+// Fill login form with test credentials (get actual UIDs from snapshot)
+mcp__chrome_devtools__fill_form({
+  elements: [
+    { uid: 'email_input_uid', value: 'testaccount@evermed.ai' },
+    { uid: 'password_input_uid', value: 'ValidationTest2025!Secure' }
+  ]
+});
 
-if (!hasEmailInput || !hasPasswordInput || !hasSubmitButton) {
-  console.error('❌ Login form incomplete on staging');
-  console.error(`  Email input: ${hasEmailInput ? '✅' : '❌'}`);
-  console.error(`  Password input: ${hasPasswordInput ? '✅' : '❌'}`);
-  console.error(`  Submit button: ${hasSubmitButton ? '✅' : '❌'}`);
+// Click login button
+mcp__chrome_devtools__click({ uid: 'login_button_uid' });
+
+// Wait for redirect to vault
+mcp__chrome_devtools__wait_for({ text: 'Document Vault', timeout: 10000 });
+
+// Verify logged in state
+const loggedInSnapshot = mcp__chrome_devtools__take_snapshot();
+
+// Check console for auth errors
+const consoleMessages = mcp__chrome_devtools__list_console_messages();
+const authErrors = consoleMessages.filter(msg =>
+  msg.text.includes('unauthorized') || msg.level === 'error'
+);
+
+if (authErrors.length > 0) {
+  console.error('⚠️  Authentication errors detected:');
+  authErrors.forEach(err => console.error(`  - ${err.text}`));
+  console.log('📝 Create GitHub issue to fix authentication errors');
+} else {
+  console.log('✅ Login successful - authenticated session established');
 }
 ```
 
 #### 3.2 Vault Access (Authenticated)
 
 ```typescript
-// Note: Can't test actual login without credentials
-// But can verify public pages load and redirect correctly
-
+// Already logged in from step 3.1
+// Navigate to vault page
 mcp__chrome_devtools__navigate_page({ url: 'https://evermed-app-git-staging-thomasallnices-projects.vercel.app/vault' });
 
-// Verify: should redirect to /auth/login if not authenticated
-await new Promise(resolve => setTimeout(resolve, 2000));
+// Wait for vault to load
+mcp__chrome_devtools__wait_for({ text: 'Document Vault', timeout: 5000 });
 
-const currentUrl = await mcp__chrome_devtools__evaluate_script({
-  function: '() => window.location.href'
+// Take snapshot
+const vaultSnapshot = mcp__chrome_devtools__take_snapshot();
+
+// Check console for errors
+const consoleMessages = mcp__chrome_devtools__list_console_messages();
+const errors = consoleMessages.filter(msg => msg.level === 'error');
+
+if (errors.length > 0) {
+  console.error(`⚠️  Vault page has ${errors.length} console errors`);
+  errors.forEach(err => console.error(`  - ${err.text}`));
+  console.log('📝 Document these errors for dev team to fix');
+}
+
+// Take screenshot for visual regression
+mcp__chrome_devtools__take_screenshot({
+  filePath: 'tests/screenshots/staging/vault-authenticated.png',
+  fullPage: true
 });
 
-if (!currentUrl.includes('/auth/login')) {
-  console.error('⚠️  Vault did not redirect to login when unauthenticated');
-  console.error(`  Current URL: ${currentUrl}`);
-}
-
-// Check console for auth errors
-const consoleMessages = mcp__chrome_devtools__list_console_messages();
-const authErrors = consoleMessages.filter(msg =>
-  msg.text.includes('unauthorized') ||
-  msg.text.includes('401') ||
-  msg.level === 'error'
-);
-
-if (authErrors.length > 0) {
-  console.warn('⚠️  Auth-related console messages detected:');
-  authErrors.forEach(err => console.log(`  - ${err.text}`));
-}
+console.log('✅ Vault page accessible');
 ```
 
 #### 3.3 Share Pack Public Viewer

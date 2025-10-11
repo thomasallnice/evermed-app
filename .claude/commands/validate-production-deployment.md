@@ -24,6 +24,21 @@ This script uses Chrome DevTools MCP to perform comprehensive post-deployment va
 
 ---
 
+## Test Account Credentials
+
+**Automated Login Available:**
+- Email: `testaccount@evermed.ai`
+- Password: `ValidationTest2025!Secure`
+- Stored in: `.env.production` (`VALIDATION_TEST_EMAIL`, `VALIDATION_TEST_PASSWORD`)
+
+**This test account enables:**
+- ✅ Automated login during validation
+- ✅ Testing protected routes (vault, upload, chat, profile)
+- ✅ End-to-end user flow validation
+- ✅ API endpoint testing with authentication
+
+---
+
 ## Validation Checklist
 
 ### 1. Console Error Check (BLOCKER)
@@ -95,40 +110,191 @@ if (insights.lcp > 10000) {
 
 **Goal:** Ensure key features work end-to-end
 
-#### 3.1 Authentication Flow
+#### 3.1 Authentication Flow (Automated Login)
 
 ```typescript
-// Navigate to login
-mcp__chrome_devtools__navigate_page({ url: 'https://app.evermed.ai/auth/login' });
+// Navigate to login page
+mcp__chrome_devtools__navigate_page({ url: 'https://app.evermed.ai/login' });
 
-// Take screenshot for baseline
-mcp__chrome_devtools__take_screenshot({
-  filePath: 'tests/screenshots/production/login-page.png'
+// Take snapshot to get form field UIDs
+const snapshot = mcp__chrome_devtools__take_snapshot();
+
+// Find email and password input UIDs from snapshot
+// Example: email uid = "5_20", password uid = "5_21", button uid = "5_22"
+
+// Fill login form with test credentials
+mcp__chrome_devtools__fill_form({
+  elements: [
+    { uid: 'email_input_uid', value: 'testaccount@evermed.ai' },
+    { uid: 'password_input_uid', value: 'ValidationTest2025!Secure' }
+  ]
 });
 
-// Check login form exists
-mcp__chrome_devtools__take_snapshot();
-// Verify: email input, password input, submit button present
-```
+// Click login button
+mcp__chrome_devtools__click({ uid: 'login_button_uid' });
 
-#### 3.2 Vault Access (Authenticated)
+// Wait for redirect to vault after successful login
+mcp__chrome_devtools__wait_for({ text: 'Document Vault', timeout: 10000 });
 
-```typescript
-// Note: Can't test actual login without credentials
-// But can verify public pages load
-
-mcp__chrome_devtools__navigate_page({ url: 'https://app.evermed.ai' });
-
-// Verify: should redirect to /auth/login if not authenticated
-mcp__chrome_devtools__wait_for({ text: 'Login', timeout: 5000 });
+// Verify logged in state
+const loggedInSnapshot = mcp__chrome_devtools__take_snapshot();
+// Should show: testaccount@evermed.ai email and Logout button
 
 // Check console for auth errors
 const consoleMessages = mcp__chrome_devtools__list_console_messages();
 const authErrors = consoleMessages.filter(msg =>
-  msg.text.includes('unauthorized') ||
-  msg.text.includes('401')
+  msg.text.includes('unauthorized') || msg.level === 'error'
 );
-// Validate: No auth errors on public pages
+
+if (authErrors.length > 0) {
+  console.error('❌ Authentication errors detected');
+  console.error(authErrors);
+  exit(1);
+}
+
+console.log('✅ Login successful - authenticated session established');
+```
+
+**Why automated login matters:**
+- Tests actual authentication flow end-to-end
+- Enables validation of protected routes
+- Verifies session management works correctly
+- Allows testing features that require authentication
+
+#### 3.2 Vault Access (Authenticated)
+
+```typescript
+// Already logged in from step 3.1
+// Navigate to vault page
+mcp__chrome_devtools__navigate_page({ url: 'https://app.evermed.ai/vault' });
+
+// Wait for vault to load
+mcp__chrome_devtools__wait_for({ text: 'Document Vault', timeout: 5000 });
+
+// Take snapshot
+const vaultSnapshot = mcp__chrome_devtools__take_snapshot();
+
+// Verify vault features present:
+// - Search input
+// - Upload button
+// - Filter controls (Type, Sort, Dir)
+// - Document grid/list view toggles
+
+// Check console for errors
+const consoleMessages = mcp__chrome_devtools__list_console_messages();
+const errors = consoleMessages.filter(msg => msg.level === 'error');
+
+if (errors.length > 0) {
+  console.error('❌ Vault page has console errors');
+  console.error(errors);
+  exit(1);
+}
+
+// Take screenshot for visual regression
+mcp__chrome_devtools__take_screenshot({
+  filePath: 'tests/screenshots/production/vault-authenticated.png',
+  fullPage: true
+});
+
+console.log('✅ Vault page accessible and functional');
+```
+
+#### 3.3 Upload Flow (Authenticated)
+
+```typescript
+// Navigate to upload page
+mcp__chrome_devtools__navigate_page({ url: 'https://app.evermed.ai/upload' });
+
+// Wait for upload interface
+mcp__chrome_devtools__wait_for({ text: 'Upload', timeout: 5000 });
+
+// Take snapshot
+const uploadSnapshot = mcp__chrome_devtools__take_snapshot();
+
+// Verify upload features present:
+// - File upload dropzone or button
+// - Supported file types listed
+// - Medical disclaimer present
+
+// Check console
+const consoleMessages = mcp__chrome_devtools__list_console_messages();
+const errors = consoleMessages.filter(msg => msg.level === 'error');
+
+if (errors.length > 0) {
+  console.error('❌ Upload page has console errors');
+  console.error(errors);
+}
+
+console.log('✅ Upload page accessible');
+```
+
+#### 3.4 Chat Feature (Authenticated)
+
+```typescript
+// Navigate to chat page
+mcp__chrome_devtools__navigate_page({ url: 'https://app.evermed.ai/chat' });
+
+// Wait for chat interface
+mcp__chrome_devtools__wait_for({ text: 'Chat', timeout: 5000 });
+
+// Take snapshot
+const chatSnapshot = mcp__chrome_devtools__take_snapshot();
+
+// Verify chat features:
+// - Message input field
+// - Send button
+// - Medical disclaimer present
+// - Chat history area
+
+// Verify medical disclaimer (critical!)
+const disclaimerKeywords = [
+  'not a substitute',
+  'consult',
+  'healthcare provider'
+];
+
+const hasDisclaimer = disclaimerKeywords.some(keyword =>
+  chatSnapshot.text.toLowerCase().includes(keyword.toLowerCase())
+);
+
+if (!hasDisclaimer) {
+  console.error('❌ CRITICAL: Medical disclaimer missing on chat page');
+  exit(1);
+}
+
+// Check console
+const consoleMessages = mcp__chrome_devtools__list_console_messages();
+const errors = consoleMessages.filter(msg => msg.level === 'error');
+
+if (errors.length > 0) {
+  console.error('❌ Chat page has console errors');
+  console.error(errors);
+}
+
+console.log('✅ Chat page accessible with proper disclaimers');
+```
+
+#### 3.5 Logout Flow
+
+```typescript
+// Navigate back to vault
+mcp__chrome_devtools__navigate_page({ url: 'https://app.evermed.ai/vault' });
+
+// Find logout button in snapshot
+const snapshot = mcp__chrome_devtools__take_snapshot();
+// Logout button should be visible
+
+// Click logout
+mcp__chrome_devtools__click({ uid: 'logout_button_uid' });
+
+// Wait for redirect to login or homepage
+mcp__chrome_devtools__wait_for({ text: 'Login', timeout: 5000 });
+
+// Verify logged out state
+const loggedOutSnapshot = mcp__chrome_devtools__take_snapshot();
+// Should NOT show testaccount@evermed.ai anymore
+
+console.log('✅ Logout successful - session terminated');
 ```
 
 #### 3.3 Share Pack Public Viewer
