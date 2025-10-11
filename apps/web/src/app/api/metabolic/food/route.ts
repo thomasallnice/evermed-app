@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { PrismaClient } from '@prisma/client'
 import { requireUserId } from '@/lib/auth'
 import { z } from 'zod'
+import { analyzeFoodPhoto } from '@/lib/food-analysis'
 
 const prisma = new PrismaClient()
 
@@ -147,42 +148,107 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create FoodEntry and FoodPhoto in database
-    const foodEntry = await prisma.foodEntry.create({
-      data: {
-        personId: person.id,
-        timestamp: new Date(),
-        mealType: mealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
-        totalCalories: 0, // Will be updated after AI analysis
-        totalCarbsG: 0,
-        totalProteinG: 0,
-        totalFatG: 0,
-        totalFiberG: 0,
-        photos: {
-          create: {
-            storagePath,
-            originalSizeBytes: photo.size,
-            analysisStatus: 'pending',
-          },
-        },
-      },
-      include: {
-        photos: true,
-      },
-    })
-
     // Generate public URL for the photo
     const { data: urlData } = supabase.storage
       .from('food-photos')
       .getPublicUrl(storagePath)
 
+    const photoUrl = urlData.publicUrl
+
+    // Analyze photo using OpenAI Vision API
+    console.log('Starting food photo analysis for:', storagePath)
+    const analysisResult = await analyzeFoodPhoto(photoUrl)
+
+    let analysisStatus: 'pending' | 'completed' | 'failed' = 'completed'
+    let ingredients: any[] = []
+    let totalCalories = 0
+    let totalCarbsG = 0
+    let totalProteinG = 0
+    let totalFatG = 0
+    let totalFiberG = 0
+
+    if (analysisResult.success && analysisResult.ingredients.length > 0) {
+      // Analysis succeeded
+      console.log('Analysis succeeded with', analysisResult.ingredients.length, 'ingredients')
+      analysisStatus = 'completed'
+
+      // Prepare ingredients for database
+      ingredients = analysisResult.ingredients.map(ing => ({
+        name: ing.name,
+        quantity: ing.quantity ?? 0,
+        unit: ing.unit ?? 'serving',
+        calories: ing.calories,
+        carbsG: ing.carbsG,
+        proteinG: ing.proteinG,
+        fatG: ing.fatG,
+        fiberG: ing.fiberG,
+        confidenceScore: 0.85, // Default AI confidence
+        source: 'ai_detected',
+      }))
+
+      // Calculate totals
+      totalCalories = analysisResult.ingredients.reduce((sum, ing) => sum + ing.calories, 0)
+      totalCarbsG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.carbsG, 0)
+      totalProteinG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.proteinG, 0)
+      totalFatG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.fatG, 0)
+      totalFiberG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.fiberG, 0)
+    } else {
+      // Analysis failed
+      console.error('Analysis failed:', analysisResult.error)
+      analysisStatus = 'failed'
+    }
+
+    // Create FoodEntry with analysis results
+    const foodEntry = await prisma.foodEntry.create({
+      data: {
+        personId: person.id,
+        timestamp: new Date(),
+        mealType: mealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
+        totalCalories,
+        totalCarbsG,
+        totalProteinG,
+        totalFatG,
+        totalFiberG,
+        photos: {
+          create: {
+            storagePath,
+            originalSizeBytes: photo.size,
+            analysisStatus,
+            analysisCompletedAt: analysisStatus !== 'pending' ? new Date() : null,
+          },
+        },
+        ingredients: {
+          create: ingredients,
+        },
+      },
+      include: {
+        photos: true,
+        ingredients: true,
+      },
+    })
+
     return NextResponse.json(
       {
         foodEntryId: foodEntry.id,
-        photoUrl: urlData.publicUrl,
+        photoUrl,
         mealType: foodEntry.mealType,
         timestamp: foodEntry.timestamp.toISOString(),
         analysisStatus: foodEntry.photos[0]?.analysisStatus || 'pending',
+        ingredients: foodEntry.ingredients.map(ing => ({
+          name: ing.name,
+          quantity: ing.quantity,
+          unit: ing.unit,
+          calories: ing.calories,
+          carbsG: ing.carbsG,
+          proteinG: ing.proteinG,
+          fatG: ing.fatG,
+          fiberG: ing.fiberG,
+        })),
+        totalCalories: foodEntry.totalCalories,
+        totalCarbsG: foodEntry.totalCarbsG,
+        totalProteinG: foodEntry.totalProteinG,
+        totalFatG: foodEntry.totalFatG,
+        totalFiberG: foodEntry.totalFiberG,
       },
       { status: 201 }
     )
