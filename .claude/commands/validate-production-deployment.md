@@ -32,7 +32,7 @@ This script uses Chrome DevTools MCP to perform comprehensive post-deployment va
 
 ```typescript
 // Navigate to production URL
-mcp__chrome_devtools__navigate_page({ url: 'https://evermed-app.vercel.app' });
+mcp__chrome_devtools__navigate_page({ url: 'https://app.evermed.ai' });
 
 // Wait for page load
 mcp__chrome_devtools__wait_for({ text: 'EverMed' });
@@ -68,7 +68,7 @@ mcp__chrome_devtools__performance_start_trace({
 });
 
 // Navigate to key pages
-mcp__chrome_devtools__navigate_page({ url: 'https://evermed-app.vercel.app/vault' });
+mcp__chrome_devtools__navigate_page({ url: 'https://app.evermed.ai/vault' });
 
 // Stop trace and analyze
 mcp__chrome_devtools__performance_stop_trace();
@@ -99,7 +99,7 @@ if (insights.lcp > 10000) {
 
 ```typescript
 // Navigate to login
-mcp__chrome_devtools__navigate_page({ url: 'https://evermed-app.vercel.app/auth/login' });
+mcp__chrome_devtools__navigate_page({ url: 'https://app.evermed.ai/auth/login' });
 
 // Take screenshot for baseline
 mcp__chrome_devtools__take_screenshot({
@@ -117,7 +117,7 @@ mcp__chrome_devtools__take_snapshot();
 // Note: Can't test actual login without credentials
 // But can verify public pages load
 
-mcp__chrome_devtools__navigate_page({ url: 'https://evermed-app.vercel.app' });
+mcp__chrome_devtools__navigate_page({ url: 'https://app.evermed.ai' });
 
 // Verify: should redirect to /auth/login if not authenticated
 mcp__chrome_devtools__wait_for({ text: 'Login', timeout: 5000 });
@@ -136,7 +136,7 @@ const authErrors = consoleMessages.filter(msg =>
 ```typescript
 // Test public share pack endpoint (no auth required)
 mcp__chrome_devtools__navigate_page({
-  url: 'https://evermed-app.vercel.app/share/test-token'
+  url: 'https://app.evermed.ai/share/test-token'
 });
 
 // Should show passcode input (or 404 if token invalid)
@@ -164,7 +164,7 @@ if (errors.length > 0) {
 ```typescript
 // Navigate with SSL validation
 mcp__chrome_devtools__navigate_page({
-  url: 'https://evermed-app.vercel.app'
+  url: 'https://app.evermed.ai'
 });
 
 // Check network requests for SSL issues
@@ -193,7 +193,7 @@ const apiEndpoints = [
 ];
 
 for (const endpoint of apiEndpoints) {
-  const response = await fetch(`https://evermed-app.vercel.app${endpoint}`, {
+  const response = await fetch(`https://app.evermed.ai${endpoint}`, {
     method: 'GET'
   });
 
@@ -210,7 +210,7 @@ for (const endpoint of apiEndpoints) {
 ```typescript
 // Navigate to vault page
 mcp__chrome_devtools__navigate_page({
-  url: 'https://evermed-app.vercel.app/vault'
+  url: 'https://app.evermed.ai/vault'
 });
 
 // Check console for PHI leaks
@@ -248,7 +248,7 @@ if (leaks.length > 0) {
 ```typescript
 // Navigate to chat page
 mcp__chrome_devtools__navigate_page({
-  url: 'https://evermed-app.vercel.app/chat'
+  url: 'https://app.evermed.ai/chat'
 });
 
 // Take snapshot
@@ -299,7 +299,7 @@ for (const question of prohibitedQuestions) {
 ```typescript
 // Navigate to vault
 mcp__chrome_devtools__navigate_page({
-  url: 'https://evermed-app.vercel.app/vault'
+  url: 'https://app.evermed.ai/vault'
 });
 
 // Wait for page load
@@ -344,10 +344,10 @@ apiCalls.forEach(call => {
 
 ```typescript
 const pages = [
-  { name: 'landing', url: 'https://evermed-app.vercel.app' },
-  { name: 'login', url: 'https://evermed-app.vercel.app/auth/login' },
-  { name: 'vault', url: 'https://evermed-app.vercel.app/vault' },
-  { name: 'share', url: 'https://evermed-app.vercel.app/share/test' }
+  { name: 'landing', url: 'https://app.evermed.ai' },
+  { name: 'login', url: 'https://app.evermed.ai/auth/login' },
+  { name: 'vault', url: 'https://app.evermed.ai/vault' },
+  { name: 'share', url: 'https://app.evermed.ai/share/test' }
 ];
 
 for (const page of pages) {
@@ -391,7 +391,7 @@ for (const breakpoint of breakpoints) {
 
   // Navigate to vault
   mcp__chrome_devtools__navigate_page({
-    url: 'https://evermed-app.vercel.app/vault'
+    url: 'https://app.evermed.ai/vault'
   });
 
   // Take screenshot

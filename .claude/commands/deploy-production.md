@@ -876,7 +876,7 @@ echo ""
 echo "Running comprehensive production health checks..."
 echo ""
 
-PROD_URL="https://evermed-app.vercel.app"  # Your actual production URL
+PROD_URL="https://app.evermed.ai"  # Your actual production URL
 VALIDATION_FAILED=0
 
 # 1. Basic HTTP Check
@@ -1238,7 +1238,7 @@ $CHANGELOG
 - Health: ✅ All checks passed
 
 ## Links
-- [Production](https://evermed-app.vercel.app)
+- [Production](https://app.evermed.ai)
 - [Vercel Dashboard](https://vercel.com/thomasallnices-projects/evermed-app)"
     
     echo "✅ GitHub release created"
@@ -1295,7 +1295,7 @@ echo "What's new:"
 git log ${LAST_TAG}..${NEXT_VERSION} --oneline | head -5
 echo ""
 echo "Health: All checks passed ✅"
-echo "URL: https://evermed-app.vercel.app"
+echo "URL: https://app.evermed.ai"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "Copy this to Slack/Discord/etc."
@@ -1383,7 +1383,7 @@ else
 fi
 echo ""
 echo "🔗 Links:"
-echo "  Production:  https://evermed-app.vercel.app"
+echo "  Production:  https://app.evermed.ai"
 echo "  Vercel:      https://vercel.com/thomasallnices-projects/evermed-app"
 echo "  GitHub:      https://github.com/[your-repo]/releases/tag/$NEXT_VERSION"
 echo ""
