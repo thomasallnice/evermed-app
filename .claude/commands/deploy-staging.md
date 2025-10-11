@@ -447,6 +447,9 @@ else
   vercel logs $DEPLOYMENT_ID | tail -50
 fi
 Step 15: Post-Deployment Validation
+
+### Basic Health Checks
+
 Use deployment-validator subagent:
 Invoking deployment-validator subagent to verify staging deployment health.
 Use Task tool with subagent to:
@@ -466,6 +469,194 @@ Deployment Validation Results:
 ⚠️  [Issue if any found]
 
 Overall Status: [SUCCESS/WARNING/FAILED]
+
+---
+
+### Step 15.5: Optional Advanced Validation (Chrome DevTools MCP)
+
+**[RECOMMENDED]** Run comprehensive Chrome DevTools validation:
+
+```bash
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔍 RECOMMENDED: Advanced Staging Validation"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Run comprehensive Chrome DevTools validation?"
+echo ""
+echo "This validates:"
+echo "  ✅ Console errors (document for dev fixes)"
+echo "  ✅ Performance (p95 < 10s requirement)"
+echo "  ✅ Security (SSL, API protection, data leaks)"
+echo "  ✅ Medical safety compliance (disclaimers, refusals)"
+echo "  ✅ Visual regression (screenshots vs baseline)"
+echo "  ✅ Responsive design (mobile/tablet/desktop)"
+echo ""
+echo "⏱️  Takes ~3-5 minutes"
+echo "📋 Generates bug report for development team"
+echo "🎯 Recommended before promoting to production"
+echo ""
+echo "Run validation? [y/n]"
+
+read RUN_VALIDATION
+
+if [ "$RUN_VALIDATION" = "y" ]; then
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🔍 LAUNCHING CHROME DEVTOOLS VALIDATION"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "To run validation, execute:"
+  echo ""
+  echo "  /validate-staging-deployment"
+  echo ""
+  echo "This will:"
+  echo "  1. Navigate to staging URL"
+  echo "  2. Document ALL console errors (don't block, just report)"
+  echo "  3. Run performance traces"
+  echo "  4. Validate security (SSL, API protection)"
+  echo "  5. Check medical compliance"
+  echo "  6. Capture screenshots for visual regression"
+  echo "  7. Test responsive design breakpoints"
+  echo "  8. Generate bug report with GitHub issue templates"
+  echo ""
+  echo "📝 IMPORTANT: Validation will create action items for development:"
+  echo "    - Console errors → Create GitHub issues"
+  echo "    - Performance issues → Document for optimization"
+  echo "    - Security issues → Flag as BLOCKERS for production"
+  echo "    - Missing disclaimers → Flag as BLOCKERS for production"
+  echo ""
+  echo "Return here when validation completes to review action items."
+  echo ""
+  echo "Press Enter to acknowledge..."
+  read
+
+  echo ""
+  echo "✅ Advanced validation completed"
+  echo ""
+  echo "📊 Review validation report and action items"
+  echo ""
+  echo "⚠️  CRITICAL REMINDER:"
+  echo "    If validation found issues, create GitHub issues NOW."
+  echo "    Track all bugs in development environment."
+  echo "    Re-deploy to staging after fixes and re-validate."
+  echo ""
+else
+  echo ""
+  echo "⚠️  Skipping advanced validation"
+  echo ""
+  echo "⚠️  WARNING: You may miss:"
+  echo "    - Console errors that break user experience"
+  echo "    - Performance regressions"
+  echo "    - Security issues (data leaks, unprotected APIs)"
+  echo "    - Medical compliance violations"
+  echo "    - Visual regressions"
+  echo ""
+  echo "Consider running validation manually before promoting to production:"
+  echo "  /validate-staging-deployment"
+  echo ""
+fi
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+```
+
+**Why this step is critical for staging:**
+
+- **Early Bug Detection**: Catch issues in staging before they reach production
+- **Dev Team Feedback Loop**: Generate actionable bug reports for development
+- **QA Gate**: Ensure staging is ready for production promotion
+- **Performance Baseline**: Track performance metrics over time
+- **Security Audit**: Validate no PHI leaks or security vulnerabilities
+- **Medical Compliance**: Ensure all disclaimers and refusal templates are present
+
+**When to run:**
+- **ALWAYS** before promoting staging to production
+- After major feature deployments
+- After database migrations
+- After API contract changes
+- After UI/UX changes
+
+**When to skip:**
+- Urgent hotfix (but run validation after deployment)
+- Chrome DevTools MCP not available
+- Minor documentation-only changes
+
+---
+
+### Post-Validation Workflow
+
+**If validation found issues:**
+
+1. **Create GitHub Issues** (Don't rely on memory!)
+   ```bash
+   # For each issue found, create a GitHub issue:
+   gh issue create --title "Bug: [Description]" \
+     --body "**Found in:** Staging validation
+   **Environment:** https://evermed-app-git-staging-thomasallnices-projects.vercel.app
+   **Severity:** [BLOCKER/HIGH/MEDIUM/LOW]
+
+   **Description:**
+   [Detailed description from validation report]
+
+   **Steps to Reproduce:**
+   1. Navigate to [URL]
+   2. [Action]
+   3. [Expected vs Actual]
+
+   **Console Error:**
+   \`\`\`
+   [Error message if applicable]
+   \`\`\`
+
+   **Screenshot:**
+   ![Screenshot](tests/screenshots/staging/[filename].png)
+
+   **Action Required:**
+   - [ ] Fix in development environment
+   - [ ] Deploy to staging
+   - [ ] Re-validate with /validate-staging-deployment
+   - [ ] Promote to production only after fix verified"
+   ```
+
+2. **Switch to Development Branch**
+   ```bash
+   git checkout dev
+   ```
+
+3. **Fix Issues in Development**
+   - Address all BLOCKER issues before production
+   - Fix HIGH severity issues if time permits
+   - Track MEDIUM/LOW issues for future sprints
+
+4. **Re-deploy to Staging**
+   ```bash
+   /deploy-staging
+   ```
+
+5. **Re-validate**
+   ```bash
+   /validate-staging-deployment
+   ```
+
+6. **Repeat Until Clean**
+   - Continue until zero BLOCKER issues
+   - Zero console errors is ideal
+   - All security checks pass
+
+**If validation passed cleanly:**
+
+1. **Document Success**
+   ```bash
+   # Create validation success record
+   echo "✅ Staging validation passed - $(date)" >> deployment-log.txt
+   ```
+
+2. **Proceed to Production**
+   - Staging is ready for production promotion
+   - Run `/deploy-production` when ready
+
+---
 Step 16: Cleanup and Return to Dev Branch
 bash# Return to dev branch
 git checkout dev
