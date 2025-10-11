@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Format insights for the dashboard
-    const insights = storedInsights.map((insight) => {
+    const insights = storedInsights.map((insight: any) => {
       const data = insight.insightData as any;
       return {
         id: insight.id,
