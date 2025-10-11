@@ -45,7 +45,7 @@ async function calculateBaseline(
 
   if (readings.length === 0) return null;
 
-  const sum = readings.reduce((acc, r) => acc + r.value, 0);
+  const sum = readings.reduce((acc: number, r: any) => acc + r.value, 0);
   return sum / readings.length;
 }
 
@@ -237,7 +237,7 @@ export async function correlateMealsInRange(
 
   // Correlate each meal with glucose response
   const correlations = await Promise.all(
-    meals.map((meal) => correlateMealWithGlucose(personId, meal.id))
+    meals.map((meal: any) => correlateMealWithGlucose(personId, meal.id))
   );
 
   // Filter out nulls (meals with insufficient data)
@@ -299,7 +299,7 @@ export async function averageGlucoseResponseByMealType(
 
   // Group by meal type
   const grouped = correlations.reduce(
-    (acc, c) => {
+    (acc: any, c: any) => {
       if (!acc[c.mealType]) {
         acc[c.mealType] = [];
       }
@@ -317,9 +317,9 @@ export async function averageGlucoseResponseByMealType(
 
   for (const [mealType, meals] of Object.entries(grouped)) {
     const avgChange =
-      meals.reduce((sum, m) => sum + m.glucoseResponse.change, 0) /
+      meals.reduce((sum: number, m: any) => sum + m.glucoseResponse.change, 0) /
       meals.length;
-    const spikeCount = meals.filter((m) => m.glucoseResponse.spiked).length;
+    const spikeCount = meals.filter((m: any) => m.glucoseResponse.spiked).length;
     const spikeRate = spikeCount / meals.length;
 
     result[mealType] = {
