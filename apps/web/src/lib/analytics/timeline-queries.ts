@@ -100,7 +100,7 @@ export async function getDailyTimeline(
 
     const avgGlucose =
       glucoseValues.length > 0
-        ? glucoseValues.reduce((sum, v) => sum + v, 0) / glucoseValues.length
+        ? glucoseValues.reduce((sum: number, v: number) => sum + v, 0) / glucoseValues.length
         : 0;
     const minGlucose = glucoseValues.length > 0 ? Math.min(...glucoseValues) : 0;
     const maxGlucose = glucoseValues.length > 0 ? Math.max(...glucoseValues) : 0;
@@ -111,8 +111,8 @@ export async function getDailyTimeline(
       minGlucose: Math.round(minGlucose * 10) / 10,
       maxGlucose: Math.round(maxGlucose * 10) / 10,
       mealCount: hourMeals.length,
-      meals: hourMeals.map((m) => ({
-        name: m.ingredients.map((i) => i.name).join(", ") || "Unnamed meal",
+      meals: hourMeals.map((m: any) => ({
+        name: m.ingredients.map((i: any) => i.name).join(", ") || "Unnamed meal",
         mealType: m.mealType,
         calories: Math.round(m.totalCalories),
       })),
@@ -195,13 +195,13 @@ export async function getWeeklyTimeline(
     const glucoseValues = glucoseByDate.get(dateKey) ?? [];
     const avgGlucose =
       glucoseValues.length > 0
-        ? glucoseValues.reduce((sum, v) => sum + v, 0) / glucoseValues.length
+        ? glucoseValues.reduce((sum: number, v: number) => sum + v, 0) / glucoseValues.length
         : 0;
     const minGlucose = glucoseValues.length > 0 ? Math.min(...glucoseValues) : 0;
     const maxGlucose = glucoseValues.length > 0 ? Math.max(...glucoseValues) : 0;
 
     // Count spikes (>180 mg/dL)
-    const spikeCount = glucoseValues.filter((v) => v > 180).length;
+    const spikeCount = glucoseValues.filter((v: number) => v > 180).length;
 
     dailyData.push({
       date: dateKey,
