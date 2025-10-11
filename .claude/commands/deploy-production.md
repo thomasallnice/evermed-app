@@ -96,29 +96,62 @@ This is a pre-production validation check.
 
 ### Step 2: Code Quality Checks (Maximum Rigor)
 
-Run all validation checks:
+Run all validation checks with FRESH BUILD:
 
 ```bash
+# Clean Next.js cache for accurate build test
+npm run clean:next
+
 # Lint check (must pass)
 npm run lint
 
-# Type check (must pass)
-npm run typecheck
+# Type check (FULL, no cache - must pass)
+npx tsc --noEmit
 
 # Run all tests (must pass)
 npm run test
 
-# Build check (must pass)
+# Build check (FRESH, no incremental - must pass)
 npm run build
 
 # Check for guard files
 ls -la docs/CODEX_START_PROMPT.txt scripts/smoke-e2e.sh docs/BOOTSTRAP_PROMPT.md AGENTS.md
 ```
 
+**🚨 CRITICAL: Fresh Build Validation for Production**
+
+Production deployments require a CLEAN BUILD TEST with zero cache to prevent Vercel build failures.
+
+**Why this is non-negotiable:**
+- Next.js incremental compilation can hide type errors in cached builds
+- Vercel ALWAYS does fresh builds with full type checking
+- Local builds with `.next/` cache may pass when production builds fail
+- Running `npx tsc --noEmit` after cleaning cache catches ALL type errors
+- **Previous incident:** 20+ type errors discovered incrementally in Vercel after local build passed
+
+**Mandatory validation steps:**
+1. Clean all caches: `npm run clean:next`
+2. Full type check: `npx tsc --noEmit` (must show 0 errors)
+3. Fresh build: `npm run build` (must complete successfully)
+4. Log errors: `npx tsc --noEmit 2>&1 | tee typescript-errors.log`
+5. Verify count: `grep 'error TS' typescript-errors.log | wc -l` (must be 0)
+
 **If ANY check fails:**
 - Report failure to user
-- BLOCK deployment (no option to skip for production)
-- Say: "Production deployment requires all checks to pass. Fix [issue] before deploying."
+- Show exact error count and first 10 errors
+- BLOCK deployment (NO option to skip for production)
+- Say: "🚨 PRODUCTION DEPLOYMENT BLOCKED 🚨
+
+  Found [X] errors in fresh build:
+  [show errors]
+
+  These errors will cause Vercel deployment to fail.
+  Fix all errors before attempting production deployment."
+
+**If typecheck passes but build fails:**
+- This indicates a Next.js-specific issue
+- Check build output for module resolution errors
+- BLOCK deployment until resolved
 
 ### Step 3: Invoke Multiple Subagents (Comprehensive Validation)
 

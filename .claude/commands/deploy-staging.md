@@ -49,25 +49,44 @@ git diff --stat
 Run validation before deployment:
 
 ```bash
+# Clean Next.js cache for accurate build test
+npm run clean:next
+
 # Lint check
 npm run lint
 
-# Type check
-npm run typecheck
+# Type check (full, no cache)
+npx tsc --noEmit
 
 # Run tests
 npm run test
 
-# Build check
+# Build check (fresh build, no incremental compilation)
 npm run build
 ```
 
+**CRITICAL: Fresh Build Validation**
+
+The local build MUST pass with a clean cache before pushing to GitHub. This prevents discovering TypeScript errors in Vercel builds.
+
+**Why this matters:**
+- Next.js incremental compilation can skip type checks for unchanged files
+- Vercel always does fresh builds with full type checking
+- Local builds with cached `.next/` folders may pass when Vercel builds fail
+- Running `npx tsc --noEmit` catches ALL type errors at once
+
 **If any checks fail:**
 - Report failures to user
-- Ask: "There are [lint/type/test] errors. Should I:
+- Show exact error count and first 10 errors
+- Ask: "There are [X] [lint/type/test/build] errors. Should I:
   1. Try to fix them automatically
-  2. Skip and deploy anyway (not recommended)
+  2. Skip and deploy anyway (NOT RECOMMENDED - will fail in Vercel)
   3. Cancel deployment"
+
+**If build passes but you're unsure:**
+- Run `npx tsc --noEmit 2>&1 | tee typescript-errors.log`
+- Count errors: `grep 'error TS' typescript-errors.log | wc -l`
+- If > 0 errors found, BLOCK deployment and report to user
 
 ### Step 3: Invoke Subagents for Validation
 
