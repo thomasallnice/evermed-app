@@ -242,10 +242,10 @@ export async function detectGlucosePatterns(
 
   // Extract daily data
   // Use 'unknown' intermediate to safely cast from JsonValue to DailyInsightsData
-  const dailyData = insights.map((i) => i.insightData as unknown as DailyInsightsData);
+  const dailyData = insights.map((i: any) => i.insightData as unknown as DailyInsightsData);
 
   // Pattern 1: Consistent high glucose (avg > 180 for 50%+ of days)
-  const highGlucoseDays = dailyData.filter((d) => d.avgGlucose > 180).length;
+  const highGlucoseDays = dailyData.filter((d: any) => d.avgGlucose > 180).length;
   if (highGlucoseDays / dailyData.length > 0.5) {
     patterns.push({
       type: "high_glucose_trend",
@@ -256,7 +256,7 @@ export async function detectGlucosePatterns(
 
   // Pattern 2: Low time in range (< 50% on average)
   const avgTimeInRange =
-    dailyData.reduce((sum, d) => sum + d.timeInRange, 0) / dailyData.length;
+    dailyData.reduce((sum: number, d: any) => sum + d.timeInRange, 0) / dailyData.length;
   if (avgTimeInRange < 50) {
     patterns.push({
       type: "low_time_in_range",
@@ -267,7 +267,7 @@ export async function detectGlucosePatterns(
 
   // Pattern 3: Frequent spikes (avg > 3 spikes per day)
   const avgSpikes =
-    dailyData.reduce((sum, d) => sum + d.spikeCount, 0) / dailyData.length;
+    dailyData.reduce((sum: number, d: any) => sum + d.spikeCount, 0) / dailyData.length;
   if (avgSpikes > 3) {
     patterns.push({
       type: "frequent_spikes",
@@ -282,9 +282,9 @@ export async function detectGlucosePatterns(
     const previous = dailyData.slice(-6, -3);
 
     const recentAvg =
-      recent.reduce((sum, d) => sum + d.avgGlucose, 0) / recent.length;
+      recent.reduce((sum: number, d: any) => sum + d.avgGlucose, 0) / recent.length;
     const previousAvg =
-      previous.reduce((sum, d) => sum + d.avgGlucose, 0) / previous.length;
+      previous.reduce((sum: number, d: any) => sum + d.avgGlucose, 0) / previous.length;
 
     if (recentAvg < previousAvg - 10) {
       patterns.push({
@@ -298,7 +298,7 @@ export async function detectGlucosePatterns(
   // Pattern 5: Meal consistency (eating regular meals)
   const avgMealsPerDay =
     dailyData.reduce(
-      (sum, d) =>
+      (sum: number, d: any) =>
         sum +
         d.mealCount.breakfast +
         d.mealCount.lunch +

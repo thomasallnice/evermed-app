@@ -142,6 +142,8 @@ SUPABASE_*_KEY.md
 # Environment files
 .env*
 !.env.example
+!.env.staging.template
+!.env.production.template
 test_token.txt
 *.token
 

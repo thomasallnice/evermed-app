@@ -20,7 +20,7 @@ export default function LoginPage() {
       setLoading(false)
       return
     }
-    window.location.href = '/vault'
+    window.location.href = '/metabolic/dashboard'
   }
 
   const handleDemoLogin = async () => {
@@ -37,7 +37,7 @@ export default function LoginPage() {
       setLoading(false)
       return
     }
-    window.location.href = '/vault'
+    window.location.href = '/metabolic/dashboard'
   }
 
   return (

@@ -74,8 +74,8 @@ export async function POST(req: NextRequest) {
     const admin = getAdmin();
     const documents = await Promise.all(
       pack.items
-        .filter((item) => item.document)
-        .map(async (item) => {
+        .filter((item: any) => item.document)
+        .map(async (item: any) => {
           const doc = item.document!;
           let signedUrl: string | null = null;
           if (admin) {
@@ -92,8 +92,8 @@ export async function POST(req: NextRequest) {
     );
 
     const observations = pack.items
-      .filter((item) => item.observation)
-      .map((item) => {
+      .filter((item: any) => item.observation)
+      .map((item: any) => {
         const obs = item.observation!;
         return {
           id: obs.id,

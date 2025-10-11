@@ -36,7 +36,7 @@ export default function OnboardingPage() {
       setLoading(false)
       return
     }
-    router.replace('/vault')
+    router.replace('/metabolic/dashboard')
   }
 
   return (

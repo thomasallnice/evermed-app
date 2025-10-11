@@ -6,47 +6,9 @@ None currently! ✅
 
 ## Critical Issues
 
-### 1. Metabolic Insights Migrations Not Applied to Staging
-**Status**: Pending
-**Severity**: Critical (blocks feature deployment)
-
-**Description**:
-Metabolic insights migrations exist but haven't been applied to staging database. Code references tables (FoodEntry, GlucoseReading, MLModel) that don't exist yet.
-
-**Impact**:
-- 5 API endpoints temporarily stubbed
-- Metabolic insights features unavailable in staging
-- Cannot test full feature set before production
-
-**Solution**:
-```bash
-# Link to staging
-supabase link --project-ref <staging-ref>
-
-# Apply migrations
-npm run prisma:migrate:deploy
-
-# Verify
-npm run validate:migrations
-```
-
-**ETA**: Ready to apply when instructed
+None currently! ✅
 
 ## Medium Priority Issues
-
-### 2. AnalyticsEvent Schema Evolution
-**Status**: In Progress (compatibility layer added)
-**Severity**: Medium
-
-**Description**:
-AnalyticsEvent table migrated from old schema (userId, name, meta) to new schema (sessionId, eventName, metadata). Code needs to work with both.
-
-**Solution Implemented**:
-- Created compatibility helper functions
-- Use Prisma-generated types instead of hardcoded
-- All direct property accesses replaced with helpers
-
-**Status**: ✅ Fixed in code, pending staging validation
 
 ### 3. Manual Deployment Process
 **Status**: Documented
@@ -101,6 +63,35 @@ rules: {
 ```
 
 ## Resolved Recently
+
+### ✅ CRITICAL: Schema Synchronization Crisis (2025-10-11)
+**Was**:
+- Schema drift across all environments
+- Migrations not applied to staging/production
+- Infinite Vercel build failures
+- No validation scripts
+- No deployment workflow
+
+**Now**:
+- All environments synchronized (local, staging, production)
+- Corrective migration applied (`20251011000000_fix_personal_model_schema`)
+- Schema validation script created (`scripts/test-schema.mjs`)
+- Pre-push validation script created (`scripts/pre-push-checks.sh`)
+- Deployment runbooks created (`scripts/deploy-staging.sh`, `scripts/deploy-production.sh`)
+- SOPs documented (`.claude/sops/database-changes.md`, `.claude/sops/deployment.md`)
+- All builds passing
+
+### ✅ Metabolic Insights Migrations Applied (2025-10-11)
+**Was**: Migrations existed but not applied to staging/production
+**Now**: All metabolic migrations applied to all environments, tables exist and validated
+
+### ✅ AnalyticsEvent Schema Migration (2025-10-11)
+**Was**: Table missing in some environments, schema drift
+**Now**: Table exists in all environments with correct schema (eventType, eventName, metadata, sessionId)
+
+### ✅ PersonalModel Schema Drift (2025-10-11)
+**Was**: Created with 9 columns, Prisma schema expected 17 columns
+**Now**: All 17 columns exist (modelType, version, isActive, trainingDataStart, etc.)
 
 ### ✅ Schema Drift Prevention (2025-01-10)
 **Was**: No validation before deployment, frequent failures

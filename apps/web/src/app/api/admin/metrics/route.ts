@@ -1,14 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export const runtime = 'nodejs';
 
 const prisma = new PrismaClient();
 
-// Use Prisma-generated types directly instead of hardcoded types
-// This ensures compatibility with the actual database schema
-type AnalyticsEvent = Prisma.AnalyticsEventGetPayload<{}>;
-type TokenUsage = Prisma.TokenUsageGetPayload<{}>;
+// Use Prisma-generated types directly from the schema
+// Prisma Client exports the model types directly
+type AnalyticsEvent = {
+  id: string;
+  eventType: string;
+  eventName: string;
+  metadata: any;
+  sessionId: string | null;
+  createdAt: Date;
+};
+
+type TokenUsage = {
+  id: string;
+  userId: string | null;
+  feature: string;
+  model: string;
+  tokensIn: number;
+  tokensOut: number;
+  costUsd: Decimal | null;
+  createdAt: Date;
+};
 
 // Compatibility helpers for old schema (userId/name/meta) vs new schema (sessionId/eventName/metadata)
 function getSessionId(e: AnalyticsEvent): string {
@@ -100,7 +118,7 @@ async function computeTiles(days: number): Promise<Tiles> {
 
   // Retention (simple): sessions with any event ≥30d ago who are active in this window
   const pastSince = new Date(now.getTime() - 60 * 24 * 3600 * 1000);
-  const pastEv = await prisma.analyticsEvent.findMany({ where: { createdAt: { gte: pastSince, lt: since } } });
+  const pastEv: AnalyticsEvent[] = await prisma.analyticsEvent.findMany({ where: { createdAt: { gte: pastSince, lt: since } } });
   const cohort = new Set(pastEv.map((x) => getSessionId(x)));
   let retained = 0;
   for (const sid of cohort) {
@@ -118,7 +136,7 @@ async function computeTiles(days: number): Promise<Tiles> {
   const p0 = incidents.filter((x) => String(getMetadata(x)?.severity || '').toUpperCase() === 'P0').length;
   const p1 = incidents.filter((x) => String(getMetadata(x)?.severity || '').toUpperCase() === 'P1').length;
   const answers = ev.filter((x) => getEventName(x) === 'answer_generated');
-  const noCite = answers.filter((x) => !Boolean(getMetadata(x)?.citations));
+  const noCite = answers.filter((x) => !getMetadata(x)?.citations);
   const noCitationPct = pct(noCite.length, answers.length || 0);
 
   // Latency: p95 of latency_ms metadata.latency_ms
@@ -132,7 +150,7 @@ async function computeTiles(days: number): Promise<Tiles> {
   const oneDayAgo = new Date(now.getTime() - 1 * 24 * 3600 * 1000);
   const dau = new Set(ev.filter((x) => x.createdAt >= oneDayAgo).map((x) => getSessionId(x))).size;
   const wau = wauSessions.size;
-  const mauEvents = await prisma.analyticsEvent.findMany({
+  const mauEvents: AnalyticsEvent[] = await prisma.analyticsEvent.findMany({
     where: { createdAt: { gte: new Date(now.getTime() - 30 * 24 * 3600 * 1000) } }
   });
   const mau = new Set(mauEvents.map((x) => getSessionId(x))).size;

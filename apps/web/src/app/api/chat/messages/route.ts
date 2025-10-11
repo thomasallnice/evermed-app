@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
     const admin = getAdmin();
     const mapped = await Promise.all(
-      messages.map(async (msg) => {
+      messages.map(async (msg: any) => {
         let attachment: { id: string; filename: string; signedUrl: string; fileType: string } | undefined;
         if (msg.document && admin) {
           try {

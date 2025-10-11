@@ -9,7 +9,7 @@
   "scripts": {
     "clean:next": "node -e \"const fs=require('fs');['.next','apps/web/.next'].forEach(p=>{try{fs.rmSync(p,{recursive:true,force:true});}catch{}});\"",
     "predev": "npm run clean:next",
-    "prebuild": "npm run clean:next",
+    "prebuild": "npm run clean:next && npm run prisma:generate",
     "build": "npm run -w @evermed/web build",
     "dev": "npm run -w @evermed/web dev",
     "lint": "npm run -w @evermed/web lint:ci",
@@ -25,18 +25,21 @@
     "validate:migrations": "./scripts/validate-migrations.sh",
     "validate:schema": "tsx scripts/validate-schema-compatibility.ts",
     "validate:all": "npm run validate:migrations && npm run validate:schema",
-    "predeploy": "npm run validate:all"
+    "predeploy": "npm run validate:all",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@prisma/client": "^5.19.1",
+    "husky": "^9.1.7",
     "prisma": "^5.19.1",
     "tsx": "^4.17.0",
-    "typescript": "^5.5.4",
+    "typescript": "5.9.2",
     "vitest": "^2.0.5"
   },
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "bottleneck": "^2.19.5",
+    "lucide-react": "^0.545.0",
     "p-retry": "^7.1.0",
     "zod": "^3.25.76"
   }
