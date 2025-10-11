@@ -1,5 +1,50 @@
 # Recent Changes
 
+## 2025-10-11: TypeScript Errors Fixed - "Whack-a-Mole" Pattern Resolved
+
+**Problem:**
+- Local builds passed (`npm run build`, `npx tsc --noEmit` showed 0 errors)
+- Vercel builds failed with ~20 implicit any type errors
+- Errors discovered incrementally across 11 files in Vercel builds
+- Classic "whack-a-mole" pattern: fix one batch → push → discover more errors
+
+**Root Cause:**
+- **Next.js incremental compilation** caches `.next/` folder and skips unchanged files
+- Local builds with cached `.next/` can pass when fresh builds fail
+- **Vercel ALWAYS does fresh builds** with full type checking from scratch
+- This caused local validation to lie about code readiness
+
+**Errors Fixed (11 files, ~20 errors):**
+1. `apps/web/src/app/api/admin/metrics/route.ts` - Prisma GetPayload types, Decimal import
+2. `apps/web/src/app/api/analytics/insights/daily/route.ts` - Implicit any in map callback
+3. `apps/web/src/app/api/chat/messages/route.ts` - Implicit any in async map
+4. `apps/web/src/app/api/metabolic/food/[id]/route.ts` - Multiple implicit any
+5. `apps/web/src/app/api/metabolic/food/route.ts` - Implicit any in nested maps
+6. `apps/web/src/app/api/share-packs/route.ts` - Implicit any in filter + map chains
+7. `apps/web/src/app/api/uploads/route.ts` - Implicit any in chunks.map
+8. `apps/web/src/app/api/profile/update/route.ts` - Implicit any in array operations
+9. `apps/web/src/lib/analytics/daily-insights.ts` - Multiple reduce/filter/map callbacks
+10. `apps/web/src/lib/analytics/glucose-correlation.ts` - Object.entries type casting + callbacks
+11. `apps/web/src/lib/analytics/timeline-queries.ts` - Reduce/map/filter callbacks
+
+**Pattern:** All errors were "Parameter 'x' implicitly has an 'any' type" in iterator callbacks (map, filter, reduce, some)
+
+**Fix Applied:** Added explicit type annotations `(param: any)` or specific types like `(sum: number, item: any)`
+
+**Prevention Implemented:**
+Updated deployment scripts (`.claude/commands/deploy-staging.md` and `.claude/commands/deploy-production.md`):
+- MANDATORY: Run `npm run clean:next` before all deployments
+- MANDATORY: Run `npx tsc --noEmit` (full type check, no cache)
+- BLOCK deployment if any type errors found
+- Document "why this matters" with reference to this incident
+
+**Validation:**
+- ✅ All 20+ type errors fixed and verified in Vercel builds
+- ✅ Deployment scripts updated with fresh build validation
+- ✅ Root cause documented for future prevention
+
+**Impact:** Eliminates build failures in CI/CD, establishes robust local validation, prevents wasting time with incremental error discovery
+
 ## 2025-10-11: CRITICAL FIX - Schema Synchronization Crisis Resolved
 
 **Problem Diagnosed:**
