@@ -118,7 +118,7 @@ async function computeTiles(days: number): Promise<Tiles> {
 
   // Retention (simple): sessions with any event ≥30d ago who are active in this window
   const pastSince = new Date(now.getTime() - 60 * 24 * 3600 * 1000);
-  const pastEv = await prisma.analyticsEvent.findMany({ where: { createdAt: { gte: pastSince, lt: since } } });
+  const pastEv: AnalyticsEvent[] = await prisma.analyticsEvent.findMany({ where: { createdAt: { gte: pastSince, lt: since } } });
   const cohort = new Set(pastEv.map((x) => getSessionId(x)));
   let retained = 0;
   for (const sid of cohort) {
@@ -150,7 +150,7 @@ async function computeTiles(days: number): Promise<Tiles> {
   const oneDayAgo = new Date(now.getTime() - 1 * 24 * 3600 * 1000);
   const dau = new Set(ev.filter((x) => x.createdAt >= oneDayAgo).map((x) => getSessionId(x))).size;
   const wau = wauSessions.size;
-  const mauEvents = await prisma.analyticsEvent.findMany({
+  const mauEvents: AnalyticsEvent[] = await prisma.analyticsEvent.findMany({
     where: { createdAt: { gte: new Date(now.getTime() - 30 * 24 * 3600 * 1000) } }
   });
   const mau = new Set(mauEvents.map((x) => getSessionId(x))).size;
