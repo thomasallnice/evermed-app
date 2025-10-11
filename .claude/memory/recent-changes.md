@@ -1,5 +1,74 @@
 # Recent Changes
 
+## 2025-10-11: Production Database Connection Issue RESOLVED (IPv4/IPv6 Incompatibility)
+
+**Problem:**
+Production deployment on Vercel could not connect to Supabase database. Error: "Can't reach database server at db.nqlxlkhbriqztkzwbdif.supabase.co"
+
+**Root Cause:**
+- **Supabase migrated to IPv6** in January 2024 (db.*.supabase.co now resolves to IPv6 addresses)
+- **Vercel serverless functions only support IPv4** (no IPv6 connectivity)
+- Direct connection URL (port 5432) was IPv6-only and incompatible with Vercel
+
+**Investigation:**
+- ✅ Local development worked perfectly (localhost supports both IPv4 and IPv6)
+- ✅ Direct psql connections worked from local machine (both ports 5432 and 6543)
+- ✅ Supabase API responded correctly
+- ✅ DATABASE_URL configured correctly in Vercel
+- ✅ Database not paused
+- ❌ Vercel serverless functions could not reach database on ANY port with direct connection
+
+**Solution:**
+Used Supabase **Transaction Pooler** (IPv4-compatible, free for all plans):
+
+**Before (IPv6-only, broken):**
+```
+postgresql://postgres:PASSWORD@db.nqlxlkhbriqztkzwbdif.supabase.co:5432/postgres
+```
+
+**After (IPv4-compatible, working):**
+```
+postgresql://postgres.nqlxlkhbriqztkzwbdif:PASSWORD@aws-1-eu-central-1.pooler.supabase.com:6543/postgres
+```
+
+**Key Changes:**
+1. **Username format**: `postgres.{project-ref}` (project ref appended to username)
+2. **Hostname**: `aws-1-{region}.pooler.supabase.com` (region-specific pooler)
+3. **Port**: `6543` (Transaction Pooler for serverless, brief connections)
+
+**Why Transaction Pooler:**
+- IPv4-compatible (works with Vercel)
+- Ideal for serverless environments (brief, isolated connections)
+- Shared pooler provided free for all Supabase plans
+- No need for $4/month IPv4 add-on
+
+**Verification:**
+- ✅ Production vault page loads successfully
+- ✅ No database connection errors
+- ✅ Queries execute correctly
+- ✅ User authentication working
+
+**Files Updated:**
+- `.env.production` - Updated DATABASE_URL with Transaction Pooler format
+- Vercel production environment variables - Updated via CLI
+
+**Impact:**
+- ✅ Production database connectivity restored
+- ✅ No additional cost (IPv4 add-on not required)
+- ✅ Proper serverless-optimized connection pooling
+- ✅ Application fully functional in production
+
+**Documentation:**
+- Supabase dashboard shows three connection types:
+  - Direct connection (port 5432) - NOT IPv4 compatible
+  - Transaction pooler (port 6543) - IPv4 compatible ✅ (used for serverless)
+  - Session pooler (port 5432) - IPv4 compatible (alternative for long-lived connections)
+
+**Next Steps:**
+1. ✅ DONE: Update production DATABASE_URL
+2. ⚠️ TODO: Update staging DATABASE_URL (same org, needs Transaction Pooler)
+3. ⚠️ TODO: Check development DATABASE_URL (different org: db.wukrnqifpgjwbqxpockm.supabase.co)
+
 ## 2025-10-11: Validation Test Accounts Created Across All Environments
 
 **What Was Done:**
