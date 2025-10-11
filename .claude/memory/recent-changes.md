@@ -1,5 +1,79 @@
 # Recent Changes
 
+## 2025-10-12: Gemini 2.5 Flash Deployment Plan Completed
+
+**What Was Done:**
+Created comprehensive staging deployment plan for Gemini 2.5 Flash food analysis integration. This is a **low-risk, backwards-compatible feature flag deployment** with no database migrations required.
+
+**Changes Made:**
+1. **Committed pricing update** (commit: `8c37412`)
+   - Updated pricing constants from Google AI pricing to Vertex AI pricing
+   - Input: $0.30 per 1M tokens (was $0.075)
+   - Output: $2.50 per 1M tokens (was $0.30)
+   - Cost per photo: $0.000972 (accurate for production estimates)
+
+2. **Created deployment documentation:**
+   - `docs/deployments/GEMINI_STAGING_DEPLOYMENT_PLAN.md` - 450+ line comprehensive guide
+   - `docs/deployments/GEMINI_STAGING_EXECUTION_CHECKLIST.md` - Step-by-step execution checklist
+   - `docs/deployments/GEMINI_DEPLOYMENT_SUMMARY.md` - Quick summary for stakeholders
+
+3. **Deployment readiness validation:**
+   - ✅ All code committed to git
+   - ✅ Feature flag implemented: `USE_GEMINI_FOOD_ANALYSIS=true/false`
+   - ✅ OpenAI fallback remains functional
+   - ✅ No database migrations required
+   - ✅ No RLS policy changes required
+   - ✅ Google Cloud service account key exists locally
+
+**Environment Variables Required:**
+```bash
+# New variables for staging/production
+GOOGLE_CLOUD_PROJECT=evermed-ai-1753452627
+GOOGLE_APPLICATION_CREDENTIALS_JSON=<base64-encoded service account key>
+USE_GEMINI_FOOD_ANALYSIS=true
+```
+
+**Deployment Steps (High-Level):**
+1. Base64 encode Google Cloud service account key
+2. Configure Vercel staging environment variables (3 new vars)
+3. Run `./scripts/deploy-staging.sh` (validates schema, no migrations expected)
+4. Deploy to Vercel staging (push `dev` branch or manual deploy)
+5. Test food photo upload with Gemini provider
+6. Monitor for 24-48 hours (errors, performance, cost)
+7. Deploy to production after validation passes
+
+**Rollback Plan:**
+- **Fast rollback:** Set `USE_GEMINI_FOOD_ANALYSIS=false` in Vercel (< 2 minutes)
+- **Git rollback:** Revert commit and redeploy (< 5 minutes)
+- **Fallback:** OpenAI integration remains functional as fallback
+
+**Key Metrics to Monitor:**
+- Response time: 10-12s target (current: 8-12s in benchmarks)
+- Cost per photo: $0.000972 (vs $0.000732 for GPT-4.1-mini)
+- Error rate: < 1%
+- Accuracy: ≥80% user approval
+
+**Known Issues:**
+- ⚠️ 9 pre-existing test failures in analytics suite (unrelated to Gemini)
+- ⚠️ Context caching not yet implemented (Phase 2 optimization)
+- ⚠️ Cold start may take 15-20s (show loading spinner)
+
+**Next Steps:**
+1. Configure Vercel staging environment variables
+2. Run deployment script: `./scripts/deploy-staging.sh`
+3. Deploy to Vercel staging
+4. Test food photo analysis with test account
+5. Monitor for 24-48 hours
+6. Fix pre-existing test failures
+7. Deploy to production after validation
+
+**Impact:**
+- ✅ Deployment plan complete and ready to execute
+- ✅ Comprehensive documentation for all stakeholders
+- ✅ Clear rollback strategy (< 2 minutes)
+- ✅ Risk level: Low (feature flag, backwards compatible)
+- ✅ Estimated deployment time: 15-20 minutes
+
 ## 2025-10-11: Gemini Migration Setup & Documentation
 
 **What Was Done:**
