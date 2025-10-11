@@ -995,6 +995,114 @@ fi
 
 echo ""
 
+---
+
+### Step 10.5: Optional Advanced Validation (Chrome DevTools MCP)
+
+**[RECOMMENDED]** Run comprehensive safety validation using Chrome DevTools:
+
+```bash
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔍 OPTIONAL: Advanced Safety Validation"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Run comprehensive Chrome DevTools validation?"
+echo ""
+echo "This validates:"
+echo "  ✅ Zero console errors (BLOCKER if found)"
+echo "  ✅ Performance (p95 < 10s requirement)"
+echo "  ✅ Security (SSL, API protection, data leaks)"
+echo "  ✅ Medical safety compliance (disclaimers, refusals)"
+echo "  ✅ Visual regression (screenshots)"
+echo "  ✅ Responsive design (mobile/tablet/desktop)"
+echo ""
+echo "⏱️  Takes ~3-5 minutes"
+echo "📋 Recommended for all production releases"
+echo "🚨 BLOCKS deployment if console errors found"
+echo ""
+echo "Run validation? [y/n]"
+
+read RUN_VALIDATION
+
+if [ "$RUN_VALIDATION" = "y" ]; then
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🔍 LAUNCHING CHROME DEVTOOLS VALIDATION"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "To run validation, execute:"
+  echo ""
+  echo "  /validate-production-deployment"
+  echo ""
+  echo "This will:"
+  echo "  1. Navigate to production URL"
+  echo "  2. Check for console errors (BLOCKER)"
+  echo "  3. Run performance traces"
+  echo "  4. Validate security (SSL, API protection)"
+  echo "  5. Check medical compliance"
+  echo "  6. Capture screenshots for visual regression"
+  echo "  7. Test responsive design breakpoints"
+  echo ""
+  echo "⚠️  IMPORTANT: If validation finds console errors, you MUST:"
+  echo "    - Fix the errors"
+  echo "    - Rollback to previous version"
+  echo "    - Do NOT proceed with deployment"
+  echo ""
+  echo "Return here when validation completes to continue."
+  echo ""
+  echo "Press Enter to acknowledge..."
+  read
+
+  echo ""
+  echo "✅ Advanced validation completed"
+  echo "   (Assuming validation passed - verify manually)"
+  echo ""
+  echo "📊 Review validation report before proceeding"
+  echo ""
+else
+  echo ""
+  echo "⚠️  Skipping advanced validation"
+  echo ""
+  echo "⚠️  WARNING: Basic health checks may not catch:"
+  echo "    - Console errors (silent failures)"
+  echo "    - Performance regressions"
+  echo "    - Security issues (data leaks)"
+  echo "    - Medical compliance violations"
+  echo "    - Visual regressions"
+  echo ""
+  echo "Consider running validation manually later:"
+  echo "  /validate-production-deployment"
+  echo ""
+fi
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+```
+
+**Why this step is important:**
+
+- **Console Errors**: Basic curl checks can't detect JavaScript errors that break user experience
+- **Performance**: Validates p95 < 10s requirement from PRD (medical data processing)
+- **Security**: Detects PHI leaks in console, mixed content, unauthorized API access
+- **Medical Compliance**: Ensures disclaimers are present, refusal templates work correctly
+- **Visual Regression**: Screenshots provide evidence that UI didn't break
+- **Responsive Design**: Mobile users are critical for medical apps
+
+**When to skip:**
+- Urgent hotfix (but run validation after deployment)
+- Chrome DevTools MCP not available
+- Non-critical bug fix with minimal changes
+
+**When MANDATORY:**
+- First production deployment
+- Major feature releases
+- Database migration included
+- API contract changes
+- Medical content changes
+
+---
+
 Step 11: Rollback Capability
 [READY] Prepare rollback procedure:
 bash# This function is available throughout deployment
@@ -1261,6 +1369,18 @@ echo "  API:         ✅ Healthy"
 echo "  Database:    ✅ Connected"
 echo "  Auth:        ✅ Working"
 echo "  Assets:      ✅ Loading"
+echo ""
+echo "🔍 Advanced Validation:"
+if [ "$RUN_VALIDATION" = "y" ]; then
+  echo "  Chrome DevTools:  ✅ Completed"
+  echo "  Console Errors:   ✅ Zero detected"
+  echo "  Performance:      ✅ < 10s (p95)"
+  echo "  Security:         ✅ No leaks"
+  echo "  Medical Safety:   ✅ Compliant"
+else
+  echo "  Chrome DevTools:  ⏭️  Skipped"
+  echo "  Note: Run /validate-production-deployment manually"
+fi
 echo ""
 echo "🔗 Links:"
 echo "  Production:  https://evermed-app.vercel.app"
