@@ -298,7 +298,7 @@ export async function detectGlucosePatterns(
   // Pattern 5: Meal consistency (eating regular meals)
   const avgMealsPerDay =
     dailyData.reduce(
-      (sum, d) =>
+      (sum: number, d: any) =>
         sum +
         d.mealCount.breakfast +
         d.mealCount.lunch +
