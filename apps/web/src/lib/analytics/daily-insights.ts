@@ -256,7 +256,7 @@ export async function detectGlucosePatterns(
 
   // Pattern 2: Low time in range (< 50% on average)
   const avgTimeInRange =
-    dailyData.reduce((sum, d) => sum + d.timeInRange, 0) / dailyData.length;
+    dailyData.reduce((sum: number, d) => sum + d.timeInRange, 0) / dailyData.length;
   if (avgTimeInRange < 50) {
     patterns.push({
       type: "low_time_in_range",
@@ -267,7 +267,7 @@ export async function detectGlucosePatterns(
 
   // Pattern 3: Frequent spikes (avg > 3 spikes per day)
   const avgSpikes =
-    dailyData.reduce((sum, d) => sum + d.spikeCount, 0) / dailyData.length;
+    dailyData.reduce((sum: number, d) => sum + d.spikeCount, 0) / dailyData.length;
   if (avgSpikes > 3) {
     patterns.push({
       type: "frequent_spikes",
@@ -282,9 +282,9 @@ export async function detectGlucosePatterns(
     const previous = dailyData.slice(-6, -3);
 
     const recentAvg =
-      recent.reduce((sum, d) => sum + d.avgGlucose, 0) / recent.length;
+      recent.reduce((sum: number, d) => sum + d.avgGlucose, 0) / recent.length;
     const previousAvg =
-      previous.reduce((sum, d) => sum + d.avgGlucose, 0) / previous.length;
+      previous.reduce((sum: number, d) => sum + d.avgGlucose, 0) / previous.length;
 
     if (recentAvg < previousAvg - 10) {
       patterns.push({
