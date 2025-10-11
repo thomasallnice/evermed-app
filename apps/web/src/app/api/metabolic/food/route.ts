@@ -341,7 +341,7 @@ export async function GET(request: NextRequest) {
     )
 
     // Format response
-    const formattedEntries = entries.map((entry) => {
+    const formattedEntries = entries.map((entry: any) => {
       const photoUrl = entry.photos[0]
         ? supabase.storage.from('food-photos').getPublicUrl(entry.photos[0].storagePath).data.publicUrl
         : null

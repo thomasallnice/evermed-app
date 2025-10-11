@@ -238,7 +238,7 @@ export async function DELETE(
 
     // Delete photo from storage (if exists)
     if (entry.photos.length > 0) {
-      const storagePaths = entry.photos.map((p) => p.storagePath)
+      const storagePaths = entry.photos.map((p: any) => p.storagePath)
       const { error: storageError } = await supabase.storage
         .from('food-photos')
         .remove(storagePaths)

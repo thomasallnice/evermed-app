@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
             }
             if (chunks.length) {
               await prisma.docChunk.createMany({
-                data: chunks.map((text, idx) => ({
+                data: chunks.map((text: string, idx: number) => ({
                   documentId: doc.id,
                   chunkId: idx,
                   text,

@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
 
     const observations = pack.items
       .filter((item) => item.observation)
-      .map((item) => {
+      .map((item: any) => {
         const obs = item.observation!;
         return {
           id: obs.id,
