@@ -5,11 +5,27 @@ export const runtime = 'nodejs';
 
 const prisma = new PrismaClient();
 
-// Use Prisma-generated types directly instead of hardcoded types
-// This ensures compatibility with the actual database schema
-// Note: Prisma generates lowercase versions (analyticsEvent, not AnalyticsEvent)
-type AnalyticsEvent = Prisma.analyticsEventGetPayload<Record<string, never>>;
-type TokenUsage = Prisma.tokenUsageGetPayload<Record<string, never>>;
+// Use Prisma-generated types directly from the schema
+// Prisma Client exports the model types directly
+type AnalyticsEvent = {
+  id: string;
+  eventType: string;
+  eventName: string;
+  metadata: any;
+  sessionId: string | null;
+  createdAt: Date;
+};
+
+type TokenUsage = {
+  id: string;
+  userId: string | null;
+  feature: string;
+  model: string;
+  tokensIn: number;
+  tokensOut: number;
+  costUsd: Prisma.Decimal | null;
+  createdAt: Date;
+};
 
 // Compatibility helpers for old schema (userId/name/meta) vs new schema (sessionId/eventName/metadata)
 function getSessionId(e: AnalyticsEvent): string {
