@@ -1,5 +1,46 @@
 # Recent Changes
 
+## 2025-10-11: Staging DATABASE_URL Fix - Vercel Variable Reference Issue
+
+**Problem:**
+Staging.evermed.ai returned Prisma error: "You must provide a nonempty URL. The environment variable `DATABASE_URL` resolved to an empty string."
+
+**Root Cause:**
+- When uploading environment variables to Vercel Preview, DATABASE_URL was set to literally `"${SUPABASE_DB_URL}\n"` instead of the actual connection string
+- Vercel does NOT expand shell variable references like `${VARIABLE_NAME}`
+- `.env.staging` had `DATABASE_URL=${SUPABASE_DB_URL}` which works locally but doesn't work in Vercel
+- The initial upload via `source .env.staging && echo "$SUPABASE_DB_URL" | vercel env add` ended up setting just a newline character
+
+**Investigation:**
+- ✅ Used Chrome DevTools MCP to validate error on staging.evermed.ai/vault after login
+- ✅ Error confirmed: "Invalid `prisma.document.findMany()` invocation: error: Error validating datasource `db`: You must provide a nonempty URL"
+- ✅ Pulled Vercel preview environment variables: `DATABASE_URL="\n"` (literally just a newline)
+- ✅ SUPABASE_DB_URL had the correct value with trailing `\n`
+
+**Solution:**
+Set DATABASE_URL to the actual full connection string without shell variable references:
+
+```bash
+echo "postgresql://postgres.jwarorrwgpqrksrxmesx:PX%3F%26onwW4n36d%3FCr3nHsnM7r@aws-0-eu-central-1.pooler.supabase.com:6543/postgres" | vercel env add DATABASE_URL preview --force
+```
+
+**Verification:**
+- ✅ DATABASE_URL properly set in Vercel Preview environment
+- ✅ Triggered staging redeploy (commit `ef007a9`)
+- ✅ New deployment completed successfully (https://evermed-7yfqv6vyy-thomasallnices-projects.vercel.app)
+- ✅ Staging deployment ready after ~2 minute build
+
+**Key Lesson:**
+- **NEVER use shell variable references (`${VAR}`) in Vercel environment variables**
+- Vercel stores variables as-is; they are NOT processed through a shell
+- Always set the full literal value when uploading to Vercel
+- Local `.env` files can use variable references, but Vercel cannot
+
+**Impact:**
+- ✅ Staging database connectivity restored
+- ✅ Prisma can now connect to Supabase staging database
+- ✅ All staging API endpoints functional
+
 ## 2025-10-11: All Environments Successfully Deployed to Vercel
 
 **What Was Done:**
