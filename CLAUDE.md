@@ -355,6 +355,63 @@ See `.env.example` and README. Key vars:
 - OCR blank text → check `PDF_EXTRACT_URL` / `PDF_EXTRACT_BEARER`
 - Prisma relation errors → ensure both sides defined, rerun `prisma generate`
 
+### Schema Change Workflow (MANDATORY)
+
+**⚠️ CRITICAL**: The #1 cause of production incidents is schema drift. Follow this workflow EXACTLY.
+
+**Before EVERY Push:**
+```bash
+./scripts/pre-push-checks.sh
+```
+
+This script runs automatically via Husky pre-push hook and validates:
+- ✅ TypeScript type check passes
+- ✅ ESLint passes
+- ✅ Build succeeds
+- ✅ No uncommitted migrations
+
+**The Correct Workflow for Schema Changes:**
+
+1. **Modify Prisma schema** (`db/schema.prisma`)
+2. **Create migration**: `npm run prisma:migrate:dev --name descriptive_name`
+3. **Verify migration SQL** matches your intent
+4. **Generate Prisma Client**: `npm run prisma:generate`
+5. **Write code** using new types
+6. **Run full build**: `npm run build` (catches type errors locally)
+7. **Test locally**: Verify functionality works
+8. **Commit migration + code together** (never separately!)
+9. **Push to GitHub** (pre-push hook validates automatically)
+10. **Deploy migration to staging FIRST**: `./scripts/deploy-staging.sh`
+11. **Deploy code to Vercel staging** (build will succeed because DB has new schema)
+12. **Verify staging works** (smoke test critical flows)
+13. **Deploy migration to production**: `./scripts/deploy-production.sh`
+14. **Deploy code to Vercel production** (merge to main)
+
+**❌ NEVER DO THIS:**
+
+- Modify Prisma schema after creating migration (creates permanent drift)
+- Push code without applying migrations to staging/prod (causes infinite build failures)
+- Skip local build testing (`npm run build` is required before push)
+- Use Vercel as your "type checker" (slow feedback, wastes build minutes)
+- Commit migration and code separately (breaks atomic change principle)
+
+**Why This Workflow Exists:**
+
+The schema synchronization crisis of October 2025 was caused by:
+1. Schema changed locally → Prisma types generated from LOCAL db
+2. Code written against new types → Works locally ✅
+3. Push to GitHub → Vercel builds
+4. Vercel runs `prisma generate` → Types generated from STAGING/PROD db (OLD schema) ❌
+5. Build fails → Types don't match code
+6. Fix symptom → Push again → NEW error
+7. **REPEAT INFINITELY** 🔄
+
+**Documentation:**
+- Complete workflow: `docs/DEVELOPER_WORKFLOW.md`
+- Database SOP: `.claude/sops/database-changes.md`
+- Deployment SOP: `.claude/sops/deployment.md`
+- GitHub config: `docs/GITHUB_CONFIGURATION.md`
+
 ## Deployment
 
 ### Vercel Configuration
