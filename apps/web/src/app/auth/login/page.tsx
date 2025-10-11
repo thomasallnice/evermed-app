@@ -64,6 +64,11 @@ export default function LoginPage() {
             required
           />
         </label>
+        <div className="text-right">
+          <Link href="/auth/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 underline">
+            Forgot password?
+          </Link>
+        </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button type="submit" disabled={loading} className="w-full bg-neutral-900 text-white rounded py-2">
           {loading ? 'Logging in…' : 'Login'}
