@@ -9,7 +9,7 @@
   "scripts": {
     "clean:next": "node -e \"const fs=require('fs');['.next','apps/web/.next'].forEach(p=>{try{fs.rmSync(p,{recursive:true,force:true});}catch{}});\"",
     "predev": "npm run clean:next",
-    "prebuild": "npm run clean:next",
+    "prebuild": "npm run clean:next && npm run prisma:generate",
     "build": "npm run -w @evermed/web build",
     "dev": "npm run -w @evermed/web dev",
     "lint": "npm run -w @evermed/web lint:ci",
