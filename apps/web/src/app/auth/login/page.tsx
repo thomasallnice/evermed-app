@@ -26,11 +26,11 @@ export default function LoginPage() {
   const handleDemoLogin = async () => {
     setLoading(true)
     setError(null)
-    setEmail('1@1.com')
-    setPassword('11111111')
+    setEmail('testaccount@evermed.ai')
+    setPassword('ValidationTest2025!Secure')
     const { error: err } = await supabase.auth.signInWithPassword({
-      email: '1@1.com',
-      password: '11111111'
+      email: 'testaccount@evermed.ai',
+      password: 'ValidationTest2025!Secure'
     })
     if (err) {
       setError(err.message)
