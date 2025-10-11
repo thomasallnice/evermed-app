@@ -80,6 +80,7 @@ service-account-key.json
 evermed-ai-key.json
 credentials.json
 secrets/
+keys/
 VERCEL_ENV_VARS.txt
 
 # Database
@@ -115,6 +116,10 @@ deployment/model_spec.json
 medgemma-examples/
 custom_medgemma_deployment/
 cost_optimization_plan.md
+
+# Graphics folder (test images for Gemini vs GPT-5 benchmarking)
+graphics/*
+!graphics/README.md
 
 # Test files that shouldn't be in production
 test_*.html

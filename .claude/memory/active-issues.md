@@ -64,6 +64,29 @@ rules: {
 
 ## Resolved Recently
 
+### ✅ CRITICAL: Food Photos Bucket - OpenAI Vision API Access (2025-10-11)
+**Was**:
+- Food photo uploads succeeded but OpenAI Vision API failed to analyze them
+- Error: "BadRequestError: 400 Error while downloading" with code 'invalid_image_url'
+- food-photos bucket was PRIVATE (default Supabase setting)
+- Public URLs generated but returned 403 Forbidden
+
+**Now**:
+- Bucket set to PUBLIC (required for OpenAI Vision API)
+- Public URLs accessible via HTTP fetch
+- OpenAI Vision API successfully downloads and analyzes photos
+- Food analysis feature fully functional end-to-end
+- Comprehensive verification scripts created
+- Security validated: NON-PHI data, RLS on write operations
+
+**Scripts Created**:
+- `scripts/check-bucket-config.ts` - Inspect bucket settings
+- `scripts/apply-bucket-fix-prisma.ts` - Apply public bucket fix
+- `scripts/verify-food-photos-bucket.ts` - Comprehensive validation
+- `scripts/test-existing-photo.ts` - OpenAI Vision API test
+
+**Documentation**: `docs/fixes/food-photos-bucket-fix.md`
+
 ### ✅ CRITICAL: Schema Synchronization Crisis (2025-10-11)
 **Was**:
 - Schema drift across all environments

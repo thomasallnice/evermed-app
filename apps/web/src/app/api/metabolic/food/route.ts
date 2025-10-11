@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client'
 import { requireUserId } from '@/lib/auth'
 import { z } from 'zod'
 import { analyzeFoodPhoto } from '@/lib/food-analysis'
+import { analyzeFoodPhotoGemini } from '@/lib/food-analysis-gemini'
 
 const prisma = new PrismaClient()
 
@@ -155,9 +156,13 @@ export async function POST(request: NextRequest) {
 
     const photoUrl = urlData.publicUrl
 
-    // Analyze photo using OpenAI Vision API
-    console.log('Starting food photo analysis for:', storagePath)
-    const analysisResult = await analyzeFoodPhoto(photoUrl)
+    // Analyze photo using Gemini or OpenAI (feature flag)
+    const useGemini = process.env.USE_GEMINI_FOOD_ANALYSIS === 'true'
+    console.log(`Starting food photo analysis for: ${storagePath} (Provider: ${useGemini ? 'Gemini' : 'OpenAI'})`)
+
+    const analysisResult = useGemini
+      ? await analyzeFoodPhotoGemini(photoUrl)
+      : await analyzeFoodPhoto(photoUrl)
 
     let analysisStatus: 'pending' | 'completed' | 'failed' = 'completed'
     let ingredients: any[] = []
