@@ -277,8 +277,8 @@ Analyze this food photo and provide nutritional information for each ingredient.
       const responseTimeMs = Date.now() - startTime
       const estimatedInputTokens = Math.ceil((prompt.length / 4) + (imageBase64.length / 1000))
       const estimatedOutputTokens = Math.ceil(responseText.length / 4)
-      // Gemini 2.5 Flash pricing: $0.075 per 1M input tokens, $0.30 per 1M output tokens
-      const estimatedCostUSD = (estimatedInputTokens * 0.075 / 1_000_000) + (estimatedOutputTokens * 0.30 / 1_000_000)
+      // Gemini 2.5 Flash Vertex AI pricing (2025): $0.30 per 1M input tokens, $2.50 per 1M output tokens
+      const estimatedCostUSD = (estimatedInputTokens * 0.30 / 1_000_000) + (estimatedOutputTokens * 2.50 / 1_000_000)
 
       console.log(`[Gemini] Success: ${validatedIngredients.length} ingredients detected in ${responseTimeMs}ms (retry: ${retryCount}, cost: $${estimatedCostUSD.toFixed(6)})`)
 
