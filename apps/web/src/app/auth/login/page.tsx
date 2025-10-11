@@ -90,7 +90,7 @@ export default function LoginPage() {
         disabled={loading}
         className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded py-2 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        🚀 Demo Login (1@1.com)
+        Demo Login
       </button>
 
       <p className="text-sm text-neutral-600">
