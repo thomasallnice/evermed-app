@@ -37,6 +37,7 @@
     "vitest": "^2.0.5"
   },
   "dependencies": {
+    "@google-cloud/vertexai": "^1.10.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "bottleneck": "^2.19.5",
     "lucide-react": "^0.545.0",

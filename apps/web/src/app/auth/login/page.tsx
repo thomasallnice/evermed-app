@@ -26,11 +26,11 @@ export default function LoginPage() {
   const handleDemoLogin = async () => {
     setLoading(true)
     setError(null)
-    setEmail('1@1.com')
-    setPassword('11111111')
+    setEmail('testaccount@evermed.ai')
+    setPassword('ValidationTest2025!Secure')
     const { error: err } = await supabase.auth.signInWithPassword({
-      email: '1@1.com',
-      password: '11111111'
+      email: 'testaccount@evermed.ai',
+      password: 'ValidationTest2025!Secure'
     })
     if (err) {
       setError(err.message)
@@ -90,7 +90,7 @@ export default function LoginPage() {
         disabled={loading}
         className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded py-2 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        🚀 Demo Login (1@1.com)
+        Demo Login
       </button>
 
       <p className="text-sm text-neutral-600">

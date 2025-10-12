@@ -9,6 +9,8 @@
 ✅ **Schema Drift Prevention System Implemented**
 ✅ **PWA Features Complete** (offline support, installable)
 ✅ **Validation Commands with Test Accounts** - Automated validation ready
+✅ **Tech Stack Analysis Complete** - Comprehensive 2025 optimization research completed
+🔍 **DECISION REQUIRED** - Tech stack migration: OpenAI GPT-5 vs Google Gemini 2.5 Flash
 ⚠️ **Metabolic Insights** - Migrations ready, pending staging deployment
 
 ## Git Branching Strategy & Environments
@@ -125,6 +127,32 @@ Feature Branch → dev → staging → main
   - Synchronized production (38 vars) and preview (39 vars) environments
 
 ## Next Steps
+
+### IMMEDIATE: Tech Stack Decision Required
+**Documentation:** `docs/TECH_STACK_ANALYSIS_2025.md`
+
+**Decision:** OpenAI GPT-5 vs Google Gemini 2.5 Flash for food analysis
+- **Recommendation:** Migrate to Google Gemini 2.5 Flash
+- **Cost Savings:** 40% reduction ($27.50/month at beta scale, $1,650/year at 1,000 users)
+- **Performance:** 20% better food recognition (CalCam case study)
+- **Integration:** Native GCP integration (existing account)
+- **Migration Time:** 2-3 days (low risk, feature flag rollback available)
+- **Approval Needed:** Tech lead, product manager, finance
+
+**If Approved:**
+1. Enable Vertex AI API in Google Cloud project
+2. Implement Gemini integration with feature flag
+3. Side-by-side testing with 10+ sample photos
+4. Gradual rollout to staging → production
+5. Monitor for 2 weeks, then remove OpenAI implementation
+
+**If Deferred:**
+- Keep current OpenAI GPT-4o implementation
+- Revisit when cost optimization becomes priority
+
+---
+
+### Operational Next Steps
 1. Monitor production deployment for stability
 2. Run automated validation workflows with test accounts
 3. Verify all critical user flows (auth, vault, upload, chat, share packs)

@@ -1,0 +1,797 @@
+[
+  {
+    "image": "170209172755-hummus.jpg",
+    "gemini": {
+      "success": true,
+      "provider": "Gemini 2.5 Flash",
+      "model": "gemini-2.5-flash",
+      "imageName": "170209172755-hummus.jpg",
+      "responseTimeMs": 7590,
+      "ingredients": [
+        {
+          "name": "Hummus",
+          "quantity": 180,
+          "unit": "g",
+          "calories": 299,
+          "carbsG": 25.2,
+          "proteinG": 14.4,
+          "fatG": 18,
+          "fiberG": 10.8
+        },
+        {
+          "name": "Cooked Chickpeas",
+          "quantity": 30,
+          "unit": "g",
+          "calories": 49,
+          "carbsG": 8.1,
+          "proteinG": 2.7,
+          "fatG": 0.8,
+          "fiberG": 2.3
+        },
+        {
+          "name": "Olive Oil",
+          "quantity": 18,
+          "unit": "ml",
+          "calories": 144,
+          "carbsG": 0,
+          "proteinG": 0,
+          "fatG": 16.8,
+          "fiberG": 0
+        }
+      ],
+      "totalCalories": 492,
+      "rawResponse": "{\"ingredients\": [{\"name\": \"Hummus\", \"quantity\": 180, \"unit\": \"g\", \"calories\": 299, \"carbsG\": 25.2, \"proteinG\": 14.4, \"fatG\": 18, \"fiberG\": 10.8}, {\"name\": \"Cooked Chickpeas\", \"quantity\": 30, \"unit\": \"g\", \"calories\": 49, \"carbsG\": 8.1, \"proteinG\": 2.7, \"fatG\": 0.8, \"fiberG\": 2.3}, {\"name\": \"Olive Oil\", \"quantity\": 18, \"unit\": \"ml\", \"calories\": 144, \"carbsG\": 0, \"proteinG\": 0, \"fatG\": 16.8, \"fiberG\": 0}]}",
+      "costUSD": 0.00005715,
+      "inputTokens": 354,
+      "outputTokens": 102
+    },
+    "openai": {
+      "success": true,
+      "provider": "OpenAI GPT-4.1-mini",
+      "model": "gpt-4.1-mini",
+      "imageName": "170209172755-hummus.jpg",
+      "responseTimeMs": 4600,
+      "ingredients": [
+        {
+          "name": "hummus",
+          "quantity": 150,
+          "unit": "g",
+          "calories": 240,
+          "carbsG": 18,
+          "proteinG": 6,
+          "fatG": 15,
+          "fiberG": 6
+        },
+        {
+          "name": "chickpeas",
+          "quantity": 30,
+          "unit": "g",
+          "calories": 50,
+          "carbsG": 9,
+          "proteinG": 3,
+          "fatG": 1,
+          "fiberG": 3
+        },
+        {
+          "name": "olive oil",
+          "quantity": 10,
+          "unit": "ml",
+          "calories": 80,
+          "carbsG": 0,
+          "proteinG": 0,
+          "fatG": 9,
+          "fiberG": 0
+        },
+        {
+          "name": "paprika",
+          "quantity": 1,
+          "unit": "g",
+          "calories": 3,
+          "carbsG": 0.6,
+          "proteinG": 0.1,
+          "fatG": 0.1,
+          "fiberG": 0.4
+        }
+      ],
+      "totalCalories": 373,
+      "rawResponse": "{\n  \"ingredients\": [\n    {\n      \"name\": \"hummus\",\n      \"quantity\": 150,\n      \"unit\": \"g\",\n      \"calories\": 240,\n      \"carbsG\": 18,\n      \"proteinG\": 6,\n      \"fatG\": 15,\n      \"fiberG\": 6\n    },\n    {\n      \"name\": \"chickpeas\",\n      \"quantity\": 30,\n      \"unit\": \"g\",\n      \"calories\": 50,\n      \"carbsG\": 9,\n      \"proteinG\": 3,\n      \"fatG\": 1,\n      \"fiberG\": 3\n    },\n    {\n      \"name\": \"olive oil\",\n      \"quantity\": 10,\n      \"unit\": \"ml\",\n      \"calories\": 80,\n      \"carbsG\": 0,\n      ",
+      "costUSD": 0.00091725,
+      "inputTokens": 1373,
+      "outputTokens": 287
+    }
+  },
+  {
+    "image": "190515173104-03-breakfast-around-the-world-avacado-toast.jpg",
+    "gemini": {
+      "success": true,
+      "provider": "Gemini 2.5 Flash",
+      "model": "gemini-2.5-flash",
+      "imageName": "190515173104-03-breakfast-around-the-world-avacado-toast.jpg",
+      "responseTimeMs": 7428,
+      "ingredients": [
+        {
+          "name": "Fried Egg",
+          "quantity": 1,
+          "unit": "piece",
+          "calories": 90,
+          "carbsG": 0.6,
+          "proteinG": 6.3,
+          "fatG": 6.8,
+          "fiberG": 0
+        },
+        {
+          "name": "Whole Wheat Bread",
+          "quantity": 1,
+          "unit": "piece",
+          "calories": 80,
+          "carbsG": 15,
+          "proteinG": 4,
+          "fatG": 1,
+          "fiberG": 3
+        },
+        {
+          "name": "Avocado",
+          "quantity": 50,
+          "unit": "g",
+          "calories": 80,
+          "carbsG": 4.2,
+          "proteinG": 1,
+          "fatG": 7.4,
+          "fiberG": 3.4
+        }
+      ],
+      "totalCalories": 250,
+      "rawResponse": "{\n  \"ingredients\": [\n    {\n      \"name\": \"Fried Egg\",\n      \"quantity\": 1,\n      \"unit\": \"piece\",\n      \"calories\": 90,\n      \"carbsG\": 0.6,\n      \"proteinG\": 6.3,\n      \"fatG\": 6.8,\n      \"fiberG\": 0\n    },\n    {\n      \"name\": \"Whole Wheat Bread\",\n      \"quantity\": 1,\n      \"unit\": \"piece\",\n      \"calories\": 80,\n      \"carbsG\": 15,\n      \"proteinG\": 4,\n      \"fatG\": 1,\n      \"fiberG\": 3\n    },\n    {\n      \"name\": \"Avocado\",\n      \"quantity\": 50,\n      \"unit\": \"g\",\n      \"calories\": 80,\n      \"c",
+      "costUSD": 0.000223875,
+      "inputTokens": 2401,
+      "outputTokens": 146
+    },
+    "openai": {
+      "success": true,
+      "provider": "OpenAI GPT-4.1-mini",
+      "model": "gpt-4.1-mini",
+      "imageName": "190515173104-03-breakfast-around-the-world-avacado-toast.jpg",
+      "responseTimeMs": 9278,
+      "ingredients": [
+        {
+          "name": "whole wheat bread",
+          "quantity": 35,
+          "unit": "g",
+          "calories": 90,
+          "carbsG": 17,
+          "proteinG": 4,
+          "fatG": 1,
+          "fiberG": 3
+        },
+        {
+          "name": "fried egg",
+          "quantity": 1,
+          "unit": "piece",
+          "calories": 90,
+          "carbsG": 1,
+          "proteinG": 6,
+          "fatG": 7,
+          "fiberG": 0
+        },
+        {
+          "name": "avocado spread",
+          "quantity": 30,
+          "unit": "g",
+          "calories": 50,
+          "carbsG": 3,
+          "proteinG": 1,
+          "fatG": 5,
+          "fiberG": 2
+        },
+        {
+          "name": "red pepper flakes",
+          "quantity": null,
+          "unit": null,
+          "calories": 2,
+          "carbsG": 0.4,
+          "proteinG": 0.1,
+          "fatG": 0.1,
+          "fiberG": 0.3
+        }
+      ],
+      "totalCalories": 232,
+      "rawResponse": "{\n  \"ingredients\": [\n    {\n      \"name\": \"whole wheat bread\",\n      \"quantity\": 35,\n      \"unit\": \"g\",\n      \"calories\": 90,\n      \"carbsG\": 17,\n      \"proteinG\": 4,\n      \"fatG\": 1,\n      \"fiberG\": 3\n    },\n    {\n      \"name\": \"fried egg\",\n      \"quantity\": 1,\n      \"unit\": \"piece\",\n      \"calories\": 90,\n      \"carbsG\": 1,\n      \"proteinG\": 6,\n      \"fatG\": 7,\n      \"fiberG\": 0\n    },\n    {\n      \"name\": \"avocado spread\",\n      \"quantity\": 30,\n      \"unit\": \"g\",\n      \"calories\": 50,\n      \"car",
+      "costUSD": 0.001248,
+      "inputTokens": 2704,
+      "outputTokens": 286
+    }
+  },
+  {
+    "image": "27162_FGFsuperbowl_0359_16x9-2000-5dd253dc23044ee78aacd9673f5befbc.jpg",
+    "gemini": {
+      "success": true,
+      "provider": "Gemini 2.5 Flash",
+      "model": "gemini-2.5-flash",
+      "imageName": "27162_FGFsuperbowl_0359_16x9-2000-5dd253dc23044ee78aacd9673f5befbc.jpg",
+      "responseTimeMs": 17426,
+      "ingredients": [
+        {
+          "name": "Grilled Chicken Breast",
+          "quantity": 120,
+          "unit": "g",
+          "calories": 198,
+          "carbsG": 0,
+          "proteinG": 37.2,
+          "fatG": 4.32,
+          "fiberG": 0
+        },
+        {
+          "name": "Roasted Red Onion",
+          "quantity": 70,
+          "unit": "g",
+          "calories": 28,
+          "carbsG": 6.54,
+          "proteinG": 0.77,
+          "fatG": 0.07,
+          "fiberG": 1.19
+        },
+        {
+          "name": "Chickpeas",
+          "quantity": 100,
+          "unit": "g",
+          "calories": 164,
+          "carbsG": 27.4,
+          "proteinG": 8.9,
+          "fatG": 2.6,
+          "fiberG": 7.6
+        },
+        {
+          "name": "Cherry Tomatoes",
+          "quantity": 100,
+          "unit": "g",
+          "calories": 18,
+          "carbsG": 3.9,
+          "proteinG": 0.9,
+          "fatG": 0.2,
+          "fiberG": 1.2
+        },
+        {
+          "name": "Cucumber",
+          "quantity": 70,
+          "unit": "g",
+          "calories": 10.5,
+          "carbsG": 2.52,
+          "proteinG": 0.49,
+          "fatG": 0.07,
+          "fiberG": 1.05
+        },
+        {
+          "name": "Kalamata Olives",
+          "quantity": 30,
+          "unit": "g",
+          "calories": 78,
+          "carbsG": 4.5,
+          "proteinG": 0.6,
+          "fatG": 8.4,
+          "fiberG": 1.8
+        },
+        {
+          "name": "Cauliflower Rice",
+          "quantity": 150,
+          "unit": "g",
+          "calories": 37.5,
+          "carbsG": 7.35,
+          "proteinG": 2.85,
+          "fatG": 0.45,
+          "fiberG": 3
+        },
+        {
+          "name": "Creamy Herb Dressing",
+          "quantity": 40,
+          "unit": "g",
+          "calories": 133,
+          "carbsG": 6.6,
+          "proteinG": 1.3,
+          "fatG": 10.6,
+          "fiberG": 0.6
+        }
+      ],
+      "totalCalories": 667,
+      "rawResponse": "{\"ingredients\": [\n    {\n      \"name\": \"Grilled Chicken Breast\",\n      \"quantity\": 120,\n      \"unit\": \"g\",\n      \"calories\": 198,\n      \"carbsG\": 0,\n      \"proteinG\": 37.2,\n      \"fatG\": 4.32,\n      \"fiberG\": 0\n    },\n    {\n      \"name\": \"Roasted Red Onion\",\n      \"quantity\": 70,\n      \"unit\": \"g\",\n      \"calories\": 28,\n      \"carbsG\": 6.54,\n      \"proteinG\": 0.77,\n      \"fatG\": 0.07,\n      \"fiberG\": 1.19\n    },\n    {\n      \"name\": \"Chickpeas\",\n      \"quantity\": 100,\n      \"unit\": \"g\",\n      \"cal",
+      "costUSD": 0.000149475,
+      "inputTokens": 413,
+      "outputTokens": 395
+    },
+    "openai": {
+      "success": true,
+      "provider": "OpenAI GPT-4.1-mini",
+      "model": "gpt-4.1-mini",
+      "imageName": "27162_FGFsuperbowl_0359_16x9-2000-5dd253dc23044ee78aacd9673f5befbc.jpg",
+      "responseTimeMs": 11218,
+      "ingredients": [
+        {
+          "name": "grilled chicken breast",
+          "quantity": 120,
+          "unit": "g",
+          "calories": 198,
+          "carbsG": 0,
+          "proteinG": 37,
+          "fatG": 4.5,
+          "fiberG": 0
+        },
+        {
+          "name": "roasted red onion",
+          "quantity": 50,
+          "unit": "g",
+          "calories": 20,
+          "carbsG": 5,
+          "proteinG": 0.5,
+          "fatG": 0,
+          "fiberG": 1
+        },
+        {
+          "name": "chickpeas",
+          "quantity": 80,
+          "unit": "g",
+          "calories": 130,
+          "carbsG": 22,
+          "proteinG": 7,
+          "fatG": 2.5,
+          "fiberG": 6
+        },
+        {
+          "name": "cherry tomatoes",
+          "quantity": 80,
+          "unit": "g",
+          "calories": 16,
+          "carbsG": 3.5,
+          "proteinG": 0.8,
+          "fatG": 0.2,
+          "fiberG": 1.2
+        },
+        {
+          "name": "cucumber",
+          "quantity": 60,
+          "unit": "g",
+          "calories": 9,
+          "carbsG": 2,
+          "proteinG": 0.3,
+          "fatG": 0.1,
+          "fiberG": 0.5
+        },
+        {
+          "name": "kalamata olives",
+          "quantity": 30,
+          "unit": "g",
+          "calories": 90,
+          "carbsG": 3,
+          "proteinG": 0.6,
+          "fatG": 9,
+          "fiberG": 1.5
+        },
+        {
+          "name": "cauliflower rice",
+          "quantity": 120,
+          "unit": "g",
+          "calories": 30,
+          "carbsG": 5,
+          "proteinG": 2,
+          "fatG": 0.3,
+          "fiberG": 2
+        },
+        {
+          "name": "dressing (yogurt-based herb sauce)",
+          "quantity": 30,
+          "unit": "g",
+          "calories": 50,
+          "carbsG": 2,
+          "proteinG": 1,
+          "fatG": 4.5,
+          "fiberG": 0.2
+        },
+        {
+          "name": "fresh herbs (parsley, dill)",
+          "quantity": 5,
+          "unit": "g",
+          "calories": 2,
+          "carbsG": 0.4,
+          "proteinG": 0.1,
+          "fatG": 0,
+          "fiberG": 0.3
+        }
+      ],
+      "totalCalories": 545,
+      "rawResponse": "{\n  \"ingredients\": [\n    {\n      \"name\": \"grilled chicken breast\",\n      \"quantity\": 120,\n      \"unit\": \"g\",\n      \"calories\": 198,\n      \"carbsG\": 0,\n      \"proteinG\": 37,\n      \"fatG\": 4.5,\n      \"fiberG\": 0\n    },\n    {\n      \"name\": \"roasted red onion\",\n      \"quantity\": 50,\n      \"unit\": \"g\",\n      \"calories\": 20,\n      \"carbsG\": 5,\n      \"proteinG\": 0.5,\n      \"fatG\": 0,\n      \"fiberG\": 1\n    },\n    {\n      \"name\": \"chickpeas\",\n      \"quantity\": 80,\n      \"unit\": \"g\",\n      \"calories\": 130",
+      "costUSD": 0.00191175,
+      "inputTokens": 2295,
+      "outputTokens": 669
+    }
+  },
+  {
+    "image": "CHICKEN-KIEV463L1-86973a4.png",
+    "gemini": {
+      "success": true,
+      "provider": "Gemini 2.5 Flash",
+      "model": "gemini-2.5-flash",
+      "imageName": "CHICKEN-KIEV463L1-86973a4.png",
+      "responseTimeMs": 8457,
+      "ingredients": [
+        {
+          "name": "Fried Chicken Cutlet (stuffed with herbs)",
+          "quantity": 200,
+          "unit": "g",
+          "calories": 550,
+          "carbsG": 25,
+          "proteinG": 45,
+          "fatG": 25,
+          "fiberG": 1
+        },
+        {
+          "name": "Romaine Lettuce",
+          "quantity": 120,
+          "unit": "g",
+          "calories": 20,
+          "carbsG": 4,
+          "proteinG": 1.4,
+          "fatG": 0.4,
+          "fiberG": 2.5
+        },
+        {
+          "name": "Caesar Dressing",
+          "quantity": 45,
+          "unit": "g",
+          "calories": 225,
+          "carbsG": 4,
+          "proteinG": 2,
+          "fatG": 24,
+          "fiberG": 0
+        },
+        {
+          "name": "Parmesan Cheese",
+          "quantity": 20,
+          "unit": "g",
+          "calories": 80,
+          "carbsG": 0.6,
+          "proteinG": 7,
+          "fatG": 5,
+          "fiberG": 0
+        },
+        {
+          "name": "Fresh Parsley",
+          "quantity": 5,
+          "unit": "g",
+          "calories": 2,
+          "carbsG": 0.3,
+          "proteinG": 0.15,
+          "fatG": 0.04,
+          "fiberG": 0.15
+        }
+      ],
+      "totalCalories": 877,
+      "rawResponse": "{\n  \"ingredients\": [\n    {\n      \"name\": \"Fried Chicken Cutlet (stuffed with herbs)\",\n      \"quantity\": 200,\n      \"unit\": \"g\",\n      \"calories\": 550,\n      \"carbsG\": 25,\n      \"proteinG\": 45,\n      \"fatG\": 25,\n      \"fiberG\": 1\n    },\n    {\n      \"name\": \"Romaine Lettuce\",\n      \"quantity\": 120,\n      \"unit\": \"g\",\n      \"calories\": 20,\n      \"carbsG\": 4,\n      \"proteinG\": 1.4,\n      \"fatG\": 0.4,\n      \"fiberG\": 2.5\n    },\n    {\n      \"name\": \"Caesar Dressing\",\n      \"quantity\": 45,\n      \"unit\"",
+      "costUSD": 0.000128775,
+      "inputTokens": 721,
+      "outputTokens": 249
+    },
+    "openai": {
+      "success": true,
+      "provider": "OpenAI GPT-4.1-mini",
+      "model": "gpt-4.1-mini",
+      "imageName": "CHICKEN-KIEV463L1-86973a4.png",
+      "responseTimeMs": 6135,
+      "ingredients": [
+        {
+          "name": "Romaine lettuce",
+          "quantity": 70,
+          "unit": "g",
+          "calories": 12,
+          "carbsG": 2.4,
+          "proteinG": 1,
+          "fatG": 0.2,
+          "fiberG": 1.2
+        },
+        {
+          "name": "Breaded fried chicken strips",
+          "quantity": 120,
+          "unit": "g",
+          "calories": 270,
+          "carbsG": 10,
+          "proteinG": 28,
+          "fatG": 12,
+          "fiberG": 1
+        },
+        {
+          "name": "Caesar dressing",
+          "quantity": 30,
+          "unit": "ml",
+          "calories": 80,
+          "carbsG": 2,
+          "proteinG": 1,
+          "fatG": 7,
+          "fiberG": 0
+        },
+        {
+          "name": "Parmesan cheese (shavings)",
+          "quantity": 10,
+          "unit": "g",
+          "calories": 43,
+          "carbsG": 0.3,
+          "proteinG": 4,
+          "fatG": 3,
+          "fiberG": 0
+        },
+        {
+          "name": "Fresh parsley (garnish)",
+          "quantity": 2,
+          "unit": "g",
+          "calories": 1,
+          "carbsG": 0.1,
+          "proteinG": 0.1,
+          "fatG": 0,
+          "fiberG": 0.1
+        }
+      ],
+      "totalCalories": 406,
+      "rawResponse": "{\n  \"ingredients\": [\n    {\n      \"name\": \"Romaine lettuce\",\n      \"quantity\": 70,\n      \"unit\": \"g\",\n      \"calories\": 12,\n      \"carbsG\": 2.4,\n      \"proteinG\": 1,\n      \"fatG\": 0.2,\n      \"fiberG\": 1.2\n    },\n    {\n      \"name\": \"Breaded fried chicken strips\",\n      \"quantity\": 120,\n      \"unit\": \"g\",\n      \"calories\": 270,\n      \"carbsG\": 10,\n      \"proteinG\": 28,\n      \"fatG\": 12,\n      \"fiberG\": 1\n    },\n    {\n      \"name\": \"Caesar dressing\",\n      \"quantity\": 30,\n      \"unit\": \"ml\",\n      ",
+      "costUSD": 0.0009995,
+      "inputTokens": 1022,
+      "outputTokens": 372
+    }
+  },
+  {
+    "image": "IMG_25462.jpg",
+    "gemini": {
+      "success": true,
+      "provider": "Gemini 2.5 Flash",
+      "model": "gemini-2.5-flash",
+      "imageName": "IMG_25462.jpg",
+      "responseTimeMs": 11831,
+      "ingredients": [
+        {
+          "name": "Kale",
+          "quantity": 100,
+          "unit": "g",
+          "calories": 49,
+          "carbsG": 9.8,
+          "proteinG": 4.3,
+          "fatG": 0.9,
+          "fiberG": 3.6
+        },
+        {
+          "name": "Cooked Chickpeas",
+          "quantity": 100,
+          "unit": "g",
+          "calories": 164,
+          "carbsG": 27.4,
+          "proteinG": 8.9,
+          "fatG": 2.6,
+          "fiberG": 7.6
+        },
+        {
+          "name": "Cooked Brown Rice",
+          "quantity": 150,
+          "unit": "g",
+          "calories": 168,
+          "carbsG": 35.1,
+          "proteinG": 3.5,
+          "fatG": 1.3,
+          "fiberG": 2.3
+        },
+        {
+          "name": "Roasted Sweet Potatoes",
+          "quantity": 130,
+          "unit": "g",
+          "calories": 112,
+          "carbsG": 25.8,
+          "proteinG": 2,
+          "fatG": 0.2,
+          "fiberG": 3.9
+        },
+        {
+          "name": "Watermelon Radish",
+          "quantity": 30,
+          "unit": "g",
+          "calories": 5,
+          "carbsG": 1,
+          "proteinG": 0.2,
+          "fatG": 0,
+          "fiberG": 0.5
+        },
+        {
+          "name": "Carrot Ribbons",
+          "quantity": 30,
+          "unit": "g",
+          "calories": 12,
+          "carbsG": 2.8,
+          "proteinG": 0.3,
+          "fatG": 0.1,
+          "fiberG": 0.8
+        },
+        {
+          "name": "Microgreens",
+          "quantity": 15,
+          "unit": "g",
+          "calories": 5,
+          "carbsG": 0.7,
+          "proteinG": 0.5,
+          "fatG": 0.1,
+          "fiberG": 0.3
+        },
+        {
+          "name": "Shredded Red Cabbage",
+          "quantity": 35,
+          "unit": "g",
+          "calories": 9,
+          "carbsG": 2,
+          "proteinG": 0.4,
+          "fatG": 0,
+          "fiberG": 0.8
+        },
+        {
+          "name": "Sauerkraut",
+          "quantity": 70,
+          "unit": "g",
+          "calories": 16,
+          "carbsG": 3.7,
+          "proteinG": 0.8,
+          "fatG": 0.1,
+          "fiberG": 2.3
+        },
+        {
+          "name": "Creamy Dressing",
+          "quantity": 30,
+          "unit": "ml",
+          "calories": 100,
+          "carbsG": 5,
+          "proteinG": 2,
+          "fatG": 8,
+          "fiberG": 1
+        },
+        {
+          "name": "Sesame Seeds",
+          "quantity": 3,
+          "unit": "g",
+          "calories": 17,
+          "carbsG": 0.7,
+          "proteinG": 0.5,
+          "fatG": 1.5,
+          "fiberG": 0.3
+        }
+      ],
+      "totalCalories": 657,
+      "rawResponse": "{\n  \"ingredients\": [\n    {\n      \"name\": \"Kale\",\n      \"quantity\": 100,\n      \"unit\": \"g\",\n      \"calories\": 49,\n      \"carbsG\": 9.8,\n      \"proteinG\": 4.3,\n      \"fatG\": 0.9,\n      \"fiberG\": 3.6\n    },\n    {\n      \"name\": \"Cooked Chickpeas\",\n      \"quantity\": 100,\n      \"unit\": \"g\",\n      \"calories\": 164,\n      \"carbsG\": 27.4,\n      \"proteinG\": 8.9,\n      \"fatG\": 2.6,\n      \"fiberG\": 7.6\n    },\n    {\n      \"name\": \"Cooked Brown Rice\",\n      \"quantity\": 150,\n      \"unit\": \"g\",\n      \"calories\": ",
+      "costUSD": 0.00019387499999999998,
+      "inputTokens": 465,
+      "outputTokens": 530
+    },
+    "openai": {
+      "success": true,
+      "provider": "OpenAI GPT-4.1-mini",
+      "model": "gpt-4.1-mini",
+      "imageName": "IMG_25462.jpg",
+      "responseTimeMs": 11981,
+      "ingredients": [
+        {
+          "name": "chickpeas",
+          "quantity": 100,
+          "unit": "g",
+          "calories": 164,
+          "carbsG": 27.4,
+          "proteinG": 8.9,
+          "fatG": 2.6,
+          "fiberG": 7.6
+        },
+        {
+          "name": "kale",
+          "quantity": 50,
+          "unit": "g",
+          "calories": 25,
+          "carbsG": 4.4,
+          "proteinG": 2,
+          "fatG": 0.4,
+          "fiberG": 1.3
+        },
+        {
+          "name": "purple cabbage",
+          "quantity": 30,
+          "unit": "g",
+          "calories": 10,
+          "carbsG": 2.3,
+          "proteinG": 0.5,
+          "fatG": 0.1,
+          "fiberG": 1
+        },
+        {
+          "name": "brown rice",
+          "quantity": 50,
+          "unit": "g",
+          "calories": 56,
+          "carbsG": 12,
+          "proteinG": 1.3,
+          "fatG": 0.4,
+          "fiberG": 1
+        },
+        {
+          "name": "sweet potato",
+          "quantity": 70,
+          "unit": "g",
+          "calories": 60,
+          "carbsG": 14,
+          "proteinG": 1.3,
+          "fatG": 0.1,
+          "fiberG": 2.3
+        },
+        {
+          "name": "radish slices",
+          "quantity": 30,
+          "unit": "g",
+          "calories": 12,
+          "carbsG": 2.7,
+          "proteinG": 0.5,
+          "fatG": 0.1,
+          "fiberG": 1.1
+        },
+        {
+          "name": "carrot ribbons",
+          "quantity": 20,
+          "unit": "g",
+          "calories": 8,
+          "carbsG": 2,
+          "proteinG": 0.2,
+          "fatG": 0,
+          "fiberG": 0.6
+        },
+        {
+          "name": "microgreens",
+          "quantity": 15,
+          "unit": "g",
+          "calories": 4,
+          "carbsG": 0.4,
+          "proteinG": 0.4,
+          "fatG": 0.1,
+          "fiberG": 0.2
+        },
+        {
+          "name": "sauerkraut",
+          "quantity": 30,
+          "unit": "g",
+          "calories": 7,
+          "carbsG": 1.7,
+          "proteinG": 0.3,
+          "fatG": 0,
+          "fiberG": 1.2
+        },
+        {
+          "name": "mustard dressing",
+          "quantity": 30,
+          "unit": "ml",
+          "calories": 80,
+          "carbsG": 2,
+          "proteinG": 0.3,
+          "fatG": 7,
+          "fiberG": 0.3
+        },
+        {
+          "name": "black sesame seeds",
+          "quantity": 5,
+          "unit": "g",
+          "calories": 29,
+          "carbsG": 1.1,
+          "proteinG": 1,
+          "fatG": 2.6,
+          "fiberG": 1.1
+        },
+        {
+          "name": "white sesame seeds",
+          "quantity": 5,
+          "unit": "g",
+          "calories": 29,
+          "carbsG": 1.1,
+          "proteinG": 1,
+          "fatG": 2.6,
+          "fiberG": 1.1
+        }
+      ],
+      "totalCalories": 484,
+      "rawResponse": "{\n  \"ingredients\": [\n    {\n      \"name\": \"chickpeas\",\n      \"quantity\": 100,\n      \"unit\": \"g\",\n      \"calories\": 164,\n      \"carbsG\": 27.4,\n      \"proteinG\": 8.9,\n      \"fatG\": 2.6,\n      \"fiberG\": 7.6\n    },\n    {\n      \"name\": \"kale\",\n      \"quantity\": 50,\n      \"unit\": \"g\",\n      \"calories\": 25,\n      \"carbsG\": 4.4,\n      \"proteinG\": 2,\n      \"fatG\": 0.4,\n      \"fiberG\": 1.3\n    },\n    {\n      \"name\": \"purple cabbage\",\n      \"quantity\": 30,\n      \"unit\": \"g\",\n      \"calories\": 10,\n      \"car",
+      "costUSD": 0.00244725,
+      "inputTokens": 2645,
+      "outputTokens": 893
+    }
+  }
+]
