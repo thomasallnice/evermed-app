@@ -401,3 +401,17 @@ model SubscriptionTier {
 
   @@map("subscription_tiers")
 }
+
+// ============================================
+// Admin Users (Role-Based Access Control)
+// ============================================
+
+model AdminUser {
+  userId    String   @id @map("user_id") // References auth.users.id in Supabase
+  email     String
+  createdAt DateTime @default(now()) @map("created_at")
+  createdBy String?  @map("created_by")
+
+  @@index([email])
+  @@map("admin_users")
+}
