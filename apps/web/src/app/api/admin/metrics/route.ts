@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
+import { isAdmin } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
@@ -39,10 +40,6 @@ function getEventName(e: AnalyticsEvent): string {
 
 function getMetadata(e: AnalyticsEvent): any {
   return (e as any).metadata || (e as any).meta || {};
-}
-
-function isAdmin(req: NextRequest) {
-  return req.headers.get('x-admin') === '1'; // TODO: replace with Supabase role check
 }
 
 function pct(numer: number, denom: number) {
@@ -188,7 +185,7 @@ async function computeTiles(days: number): Promise<Tiles> {
 }
 
 export async function GET(req: NextRequest) {
-  if (!isAdmin(req)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  if (!(await isAdmin(req))) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   const last7 = await computeTiles(7);
   const last30 = await computeTiles(30);
   return NextResponse.json({ last7, last30 });
