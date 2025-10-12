@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase/client'
+import { apiFetch } from '@/lib/api-client'
 import {
   LineChart,
   Line,
@@ -79,7 +80,7 @@ export default function MetabolicDashboardPage() {
       }
 
       // Fetch daily timeline data
-      const timelineRes = await fetch(`/api/analytics/timeline/daily?date=${selectedDate}`)
+      const timelineRes = await apiFetch(`/api/analytics/timeline/daily?date=${selectedDate}`)
       if (!timelineRes.ok) {
         throw new Error('Failed to fetch timeline data')
       }
@@ -88,7 +89,7 @@ export default function MetabolicDashboardPage() {
       setMealMarkers(timelineData.meals || [])
 
       // Fetch correlation data (best/worst meals)
-      const correlationRes = await fetch(
+      const correlationRes = await apiFetch(
         `/api/analytics/correlation?startDate=${selectedDate}&endDate=${selectedDate}`
       )
       if (!correlationRes.ok) {
@@ -99,7 +100,7 @@ export default function MetabolicDashboardPage() {
       setWorstMeals(correlationData.worstMeals || [])
 
       // Fetch daily insights
-      const insightsRes = await fetch(`/api/analytics/insights/daily?date=${selectedDate}`)
+      const insightsRes = await apiFetch(`/api/analytics/insights/daily?date=${selectedDate}`)
       if (!insightsRes.ok) {
         throw new Error('Failed to fetch insights')
       }
