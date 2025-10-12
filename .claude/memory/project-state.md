@@ -1,7 +1,7 @@
 # EverMed Project State
 
 ## Last Updated
-2025-10-11
+2025-10-12
 
 ## Current Status
 ✅ **All Environments Deployed Successfully** (dev, staging, production)
@@ -10,8 +10,13 @@
 ✅ **PWA Features Complete** (offline support, installable)
 ✅ **Validation Commands with Test Accounts** - Automated validation ready
 ✅ **Tech Stack Analysis Complete** - Comprehensive 2025 optimization research completed
+🎯 **METABOLIC INSIGHTS: STAGING & PRODUCTION DEPLOYED** (2025-10-12)
+  - ✅ All 11 metabolic tables deployed to staging + production
+  - ✅ All 40 RLS policies applied (36 table + 4 storage)
+  - ✅ food-photos bucket created in staging + production (PUBLIC for OpenAI Vision API)
+  - ⏳ Admin authentication pending (Sprint 7 Day 2)
+  - 🔶 LSTM model optional for beta launch
 🔍 **DECISION REQUIRED** - Tech stack migration: OpenAI GPT-5 vs Google Gemini 2.5 Flash
-⚠️ **Metabolic Insights** - Migrations ready, pending staging deployment
 
 ## Git Branching Strategy & Environments
 
@@ -88,13 +93,34 @@ Feature Branch → dev → staging → main
 - Each environment has separate API keys and database credentials
 
 ## Current Phase
+**METABOLIC INSIGHTS FINALIZATION (Sprint 7-8: 2-3 weeks to production)**
+
+### Core Platform (Complete)
 - ✅ Core Features Complete
 - ✅ PWA Implemented
 - ✅ Schema Drift Prevention: Implemented (2025-01-10)
 - ✅ All Environments Deployed: Production + Staging/Preview (2025-10-11)
 - ✅ IPv4/IPv6 Database Fix: Transaction Pooler implemented (2025-10-11)
-- 🔄 Metabolic Insights: Migrations pending on staging
-- 📋 Next: Apply migrations to staging, re-enable endpoints
+
+### Metabolic Insights (STAGING & PRODUCTION DEPLOYED - Sprint 7 Day 1 COMPLETE)
+- ✅ Database schema complete (11 tables in Prisma)
+- ✅ API endpoints implemented (10 endpoints)
+- ✅ UI components built (7 pages, Material Design)
+- ✅ Food recognition working (OpenAI Vision + Gemini 2.5 Flash)
+- ✅ Dashboard displaying meals correctly in dev
+- ✅ **STAGING DEPLOYED** (2025-10-12): 11 tables + 40 RLS policies + food-photos bucket
+- ✅ **PRODUCTION DEPLOYED** (2025-10-12): 11 tables + 40 RLS policies + food-photos bucket
+- ⏳ Admin authentication placeholder (Sprint 7 Day 2)
+- 🔶 LSTM model mock baseline (optional for beta)
+
+### Next: Sprint 7 Day 2 - Admin Authentication & Validation
+1. ✅ Apply database migrations to staging (COMPLETE)
+2. ✅ Apply database migrations to production (COMPLETE)
+3. ✅ Create food-photos storage bucket in staging (COMPLETE)
+4. ✅ Create food-photos storage bucket in production (COMPLETE)
+5. ⏳ Implement admin authentication (role-based) - NEXT
+6. ⏳ Deploy code to Vercel staging and validate
+7. ⏳ Deploy code to Vercel production and validate
 
 ## Key Milestones Completed
 - [x] Document vault & RAG implementation
@@ -105,16 +131,49 @@ Feature Branch → dev → staging → main
 - [x] Validation scripts and CI/CD gates
 - [x] Comprehensive documentation
 
-## Active Work
-- ✅ All environments deployed successfully (2025-10-11)
-- ✅ IPv4/IPv6 database connection issue resolved (2025-10-11)
-- ✅ Vercel environment variables cleaned and synchronized (2025-10-11)
-- 📋 Next: Apply metabolic insights migrations to staging
+## Active Work (As of 2025-10-12)
+
+### Metabolic Insights Finalization (Sprint 7-8)
+- 🔄 **STATUS DOCUMENT CREATED**: `docs/METABOLIC_INSIGHTS_STATUS_2025-10-12.md`
+  - Comprehensive 85% completion assessment
+  - Sprint 7-8 roadmap (2-3 weeks to production)
+  - Deployment blocker analysis
+  - Success metrics defined
+
+### Recent Metabolic Insights Fixes (2025-10-12)
+- ✅ Timeline API implemented (was stubbed) - commit `49042ac`
+- ✅ Dashboard empty state fixed - commit `49042ac`
+- ✅ State timing bug resolved - commit `a36ea9e`
+- ✅ OpenAI client lazy initialization - commit `08d4d62`
+- ✅ Dashboard displaying meals correctly in dev environment
+
+### Sprint 7 Day 1 Completed (2025-10-12)
+1. ✅ Apply database migrations to staging Supabase project
+2. ✅ Apply database migrations to production Supabase project
+3. ✅ Create `food-photos` storage bucket in staging
+4. ✅ Create `food-photos` storage bucket in production
+5. ✅ Verify all 40 RLS policies in both environments
+
+### Next Immediate Actions (Sprint 7 Day 2)
+1. ⏳ Implement admin authentication (replace placeholder `isAdmin()`)
+2. ⏳ Deploy metabolic insights code to Vercel staging
+3. ⏳ Run validation tests with staging test account
+4. ⏳ Fix any staging-specific issues
+5. ⏳ Deploy to production and validate
 
 ## Known Issues
-- Metabolic insights migrations not yet applied to staging
-- Some endpoints temporarily stubbed pending migrations
-- AnalyticsEvent schema evolution in progress (old vs new fields)
+
+### Remaining Metabolic Insights Tasks
+1. **Admin Authentication Placeholder** 🚨 CRITICAL (Sprint 7 Day 2)
+   - `isAdmin()` in `apps/web/src/lib/auth.ts` returns `true` for everyone
+   - Risk: Admin endpoints publicly accessible
+   - Endpoints at risk: `/admin/metabolic`, `/api/admin/*`
+   - Status: Next priority for Sprint 7 Day 2
+
+2. **LSTM Model Mock Baseline** 🔶 OPTIONAL (Sprint 9)
+   - Using mock predictor instead of TensorFlow.js LSTM
+   - Risk: Inaccurate predictions (acceptable for beta)
+   - Decision: Can launch beta without, iterate post-launch with real user data
 
 ## Recent Fixes (2025-10-11)
 - ✅ Production database connection failure (IPv4/IPv6 incompatibility) - RESOLVED
