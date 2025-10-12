@@ -129,6 +129,15 @@ export default function MetabolicDashboardPage() {
           glucoseSpikes: spikes,
           trend,
         })
+      } else if (mealMarkers.length > 0) {
+        // If we have meals but no glucose data, create a minimal summary
+        setSummary({
+          avgGlucose: 0,
+          timeInRange: 0,
+          mealsLogged: mealMarkers.length,
+          glucoseSpikes: 0,
+          trend: 'stable',
+        })
       } else {
         setSummary(null)
       }
@@ -194,7 +203,7 @@ export default function MetabolicDashboardPage() {
         )}
 
         {/* Empty State */}
-        {!loading && !error && glucoseData.length === 0 && (
+        {!loading && !error && glucoseData.length === 0 && mealMarkers.length === 0 && (
           <div className="bg-white rounded-2xl shadow-md p-12 text-center">
             <div className="text-6xl mb-4">📊</div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">No data for this day</h2>
@@ -211,7 +220,7 @@ export default function MetabolicDashboardPage() {
         )}
 
         {/* Dashboard Content */}
-        {!loading && !error && summary && glucoseData.length > 0 && (
+        {!loading && !error && (glucoseData.length > 0 || mealMarkers.length > 0) && (
           <>
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
