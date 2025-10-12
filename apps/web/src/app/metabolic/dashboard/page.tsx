@@ -1,4 +1,5 @@
 'use client'
+// Force rebuild for Vercel Deployment Protection bypass fix
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api-client'
