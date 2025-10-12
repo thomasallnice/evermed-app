@@ -145,41 +145,22 @@ export async function analyzeFoodPhotoGemini(
     }
   }
 
-  // If JSON credentials are provided (for Vercel), write to temporary file
-  let credentialsCleanup: (() => void) | null = null
+  // Parse JSON credentials if provided (for Vercel)
+  let parsedCredentials: any = null
   if (hasJsonCredentials && !hasFileCredentials) {
     try {
-      const fs = await import('fs')
-      const path = await import('path')
-      const os = await import('os')
-
       // Decode base64 credentials
       const credentialsJson = Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON!, 'base64').toString('utf-8')
-
-      // Write to temp file
-      const tempDir = os.tmpdir()
-      const tempFilePath = path.join(tempDir, `gcp-credentials-${Date.now()}.json`)
-      fs.writeFileSync(tempFilePath, credentialsJson)
-
-      // Set environment variable for Vertex AI SDK
-      process.env.GOOGLE_APPLICATION_CREDENTIALS = tempFilePath
-
-      // Schedule cleanup
-      credentialsCleanup = () => {
-        try {
-          fs.unlinkSync(tempFilePath)
-        } catch (err) {
-          console.warn('[Gemini] Failed to cleanup temp credentials file:', err)
-        }
-      }
+      parsedCredentials = JSON.parse(credentialsJson)
 
       console.log('[Gemini] Using JSON credentials from environment variable')
+      console.log(`[Gemini] Service account: ${parsedCredentials.client_email}`)
     } catch (err: any) {
-      console.error('[Gemini] Failed to setup JSON credentials:', err.message)
+      console.error('[Gemini] Failed to parse JSON credentials:', err.message)
       return {
         success: false,
         ingredients: [],
-        error: 'Failed to setup Google Cloud credentials'
+        error: 'Failed to parse Google Cloud credentials'
       }
     }
   }
@@ -196,10 +177,19 @@ export async function analyzeFoodPhotoGemini(
       }
 
       // Initialize Vertex AI client
-      const vertexAI = new VertexAI({
-        project: process.env.GOOGLE_CLOUD_PROJECT!,
-        location: 'us-central1', // Use us-central1 for best availability
-      })
+      // If we have parsed credentials, pass them directly; otherwise use GOOGLE_APPLICATION_CREDENTIALS env var
+      const vertexAI = parsedCredentials
+        ? new VertexAI({
+            project: process.env.GOOGLE_CLOUD_PROJECT!,
+            location: 'us-central1',
+            googleAuthOptions: {
+              credentials: parsedCredentials,
+            },
+          })
+        : new VertexAI({
+            project: process.env.GOOGLE_CLOUD_PROJECT!,
+            location: 'us-central1',
+          })
 
       // Get Gemini 2.5 Flash model
       const model = vertexAI.getGenerativeModel({
@@ -325,11 +315,6 @@ Analyze this food photo and provide nutritional information for each ingredient.
 
       console.log(`[Gemini] Success: ${validatedIngredients.length} ingredients detected in ${responseTimeMs}ms (retry: ${retryCount}, cost: $${estimatedCostUSD.toFixed(6)})`)
 
-      // Cleanup temp credentials file
-      if (credentialsCleanup) {
-        credentialsCleanup()
-      }
-
       return {
         success: true,
         ingredients: validatedIngredients,
@@ -363,11 +348,6 @@ Analyze this food photo and provide nutritional information for each ingredient.
   const category = categorizeError(lastError)
 
   console.error(`[Gemini] All ${maxRetries + 1} attempts failed after ${totalTimeMs}ms (${category})`)
-
-  // Cleanup temp credentials file
-  if (credentialsCleanup) {
-    credentialsCleanup()
-  }
 
   // Provide specific error messages based on category
   let errorMessage: string
