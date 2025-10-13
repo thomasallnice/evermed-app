@@ -385,6 +385,42 @@ export default function MetabolicDashboardPage() {
               )}
             </div>
 
+            {/* Meals List */}
+            {mealMarkers.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Meals Today</h2>
+                <div className="space-y-3">
+                  {mealMarkers.map((meal, idx) => (
+                    <div
+                      key={idx}
+                      className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-lg">
+                              {meal.type === 'breakfast' && '🌅'}
+                              {meal.type === 'lunch' && '☀️'}
+                              {meal.type === 'dinner' && '🌙'}
+                              {meal.type === 'snack' && '🍎'}
+                            </span>
+                            <span className="font-semibold text-gray-900 capitalize">{meal.type}</span>
+                          </div>
+                          <div className="text-sm text-gray-700 mb-1">{meal.name || 'No details'}</div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(meal.timestamp).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Best/Worst Meals */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Best Meals */}
