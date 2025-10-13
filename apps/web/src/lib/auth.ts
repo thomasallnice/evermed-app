@@ -46,3 +46,33 @@ export async function getOptionalUserId(req: NextRequest): Promise<string | null
     return null;
   }
 }
+
+/**
+ * Check if the authenticated user is an admin
+ * Uses admin_users table to verify admin status
+ *
+ * @param req - The incoming request
+ * @returns Promise<boolean> - true if user is admin, false otherwise
+ */
+export async function isAdmin(req: NextRequest): Promise<boolean> {
+  try {
+    const userId = await requireUserId(req);
+
+    // Use Prisma to check admin_users table
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+
+    try {
+      const adminUser = await prisma.adminUser.findUnique({
+        where: { userId: userId },
+      });
+
+      return adminUser !== null;
+    } finally {
+      await prisma.$disconnect();
+    }
+  } catch {
+    // If user is not authenticated or any error occurs, they're not admin
+    return false;
+  }
+}

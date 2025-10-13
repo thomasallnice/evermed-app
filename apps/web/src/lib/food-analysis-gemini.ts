@@ -122,9 +122,13 @@ export async function analyzeFoodPhotoGemini(
   let retryCount = 0
   let lastError: any = null
 
+  console.log('[Gemini] Starting food photo analysis')
+  console.log(`[Gemini] Photo URL: ${photoUrl}`)
+  console.log(`[Gemini] Max retries: ${maxRetries}, Timeout: ${timeoutMs}ms`)
+
   // Validate environment variables at startup
   if (!process.env.GOOGLE_CLOUD_PROJECT) {
-    console.error('[Gemini] Missing required environment variable: GOOGLE_CLOUD_PROJECT')
+    console.error('[Gemini] CRITICAL ERROR: Missing GOOGLE_CLOUD_PROJECT')
     return {
       success: false,
       ingredients: [],
@@ -132,12 +136,50 @@ export async function analyzeFoodPhotoGemini(
     }
   }
 
-  if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    console.error('[Gemini] Missing required environment variable: GOOGLE_APPLICATION_CREDENTIALS')
+  console.log(`[Gemini] ✓ GOOGLE_CLOUD_PROJECT: ${process.env.GOOGLE_CLOUD_PROJECT}`)
+
+  // Check for credentials (either file path or JSON string)
+  const hasFileCredentials = !!process.env.GOOGLE_APPLICATION_CREDENTIALS
+  const hasJsonCredentials = !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON
+
+  console.log(`[Gemini] Credentials check:`)
+  console.log(`  - Has file credentials: ${hasFileCredentials}`)
+  console.log(`  - Has JSON credentials: ${hasJsonCredentials}`)
+
+  if (!hasFileCredentials && !hasJsonCredentials) {
+    console.error('[Gemini] CRITICAL ERROR: No credentials found')
     return {
       success: false,
       ingredients: [],
-      error: 'Google Cloud credentials not configured (missing GOOGLE_APPLICATION_CREDENTIALS)'
+      error: 'Google Cloud credentials not configured (missing credentials)'
+    }
+  }
+
+  // Parse JSON credentials if provided (for Vercel)
+  // Prefer JSON credentials over file path for serverless compatibility
+  let parsedCredentials: any = null
+  if (hasJsonCredentials) {
+    try {
+      // Decode base64 credentials
+      const credentialsJson = Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON!, 'base64').toString('utf-8')
+      parsedCredentials = JSON.parse(credentialsJson)
+
+      console.log('[Gemini] ✓ JSON credentials parsed successfully')
+      console.log(`[Gemini] ✓ Service account: ${parsedCredentials.client_email}`)
+    } catch (err: any) {
+      console.error('[Gemini] ERROR parsing JSON credentials:', err.message)
+      console.error('[Gemini] Stack trace:', err.stack)
+
+      // If JSON credentials failed and file credentials exist, fall back to file
+      if (hasFileCredentials) {
+        console.log('[Gemini] Falling back to GOOGLE_APPLICATION_CREDENTIALS file path')
+      } else {
+        return {
+          success: false,
+          ingredients: [],
+          error: 'Failed to parse Google Cloud credentials'
+        }
+      }
     }
   }
 
@@ -148,28 +190,47 @@ export async function analyzeFoodPhotoGemini(
 
       if (attempt > 0) {
         const backoffMs = calculateBackoff(attempt - 1)
-        console.log(`[Gemini] Retry attempt ${attempt}/${maxRetries} after ${backoffMs.toFixed(0)}ms`)
+        console.log(`[Gemini] 🔄 Retry attempt ${attempt}/${maxRetries} after ${backoffMs.toFixed(0)}ms`)
         await sleep(backoffMs)
+      } else {
+        console.log(`[Gemini] 🚀 Starting analysis attempt ${attempt + 1}/${maxRetries + 1}`)
       }
 
       // Initialize Vertex AI client
-      const vertexAI = new VertexAI({
-        project: process.env.GOOGLE_CLOUD_PROJECT!,
-        location: 'us-central1', // Use us-central1 for best availability
-      })
+      // If we have parsed credentials, pass them directly; otherwise use GOOGLE_APPLICATION_CREDENTIALS env var
+      console.log(`[Gemini] Initializing Vertex AI client (using ${parsedCredentials ? 'JSON credentials' : 'file path'})`)
+
+      const vertexAI = parsedCredentials
+        ? new VertexAI({
+            project: process.env.GOOGLE_CLOUD_PROJECT!,
+            location: 'us-central1',
+            googleAuthOptions: {
+              credentials: parsedCredentials,
+            },
+          })
+        : new VertexAI({
+            project: process.env.GOOGLE_CLOUD_PROJECT!,
+            location: 'us-central1',
+          })
+
+      console.log(`[Gemini] ✓ Vertex AI client initialized`)
 
       // Get Gemini 2.5 Flash model
+      console.log(`[Gemini] Getting generative model: gemini-2.5-flash`)
       const model = vertexAI.getGenerativeModel({
         model: 'gemini-2.5-flash', // Updated model name for 2025
       })
+      console.log(`[Gemini] ✓ Model obtained`)
 
       // Fetch image and convert to base64 with timeout
+      console.log(`[Gemini] Fetching image from URL and converting to base64...`)
       const imageBase64 = await Promise.race([
         fetchImageAsBase64(photoUrl),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Image fetch timeout')), timeoutMs / 2)
         )
       ])
+      console.log(`[Gemini] ✓ Image fetched (${imageBase64.length} bytes base64)`)
 
       // System prompt for nutritional analysis
       const prompt = `You are a nutritional analysis assistant. Analyze food photos and provide detailed nutritional information in JSON format.
@@ -203,6 +264,9 @@ Rules:
 Analyze this food photo and provide nutritional information for each ingredient. Return only JSON, no markdown.`
 
       // Generate content with image and timeout
+      console.log(`[Gemini] 📡 Calling Gemini API (timeout: ${timeoutMs}ms)...`)
+      const apiCallStart = Date.now()
+
       const result = await Promise.race([
         model.generateContent({
           contents: [{
@@ -223,17 +287,32 @@ Analyze this food photo and provide nutritional information for each ingredient.
         )
       ])
 
+      const apiCallDuration = Date.now() - apiCallStart
+      console.log(`[Gemini] ✓ API call completed in ${apiCallDuration}ms`)
+
       // Extract response text
       const response = result.response
       const candidates = await response.candidates
+
+      console.log(`[Gemini] Response candidates:`, {
+        count: candidates?.length || 0,
+        hasContent: !!candidates[0]?.content
+      })
+
       const responseText = candidates[0]?.content?.parts?.[0]?.text || ''
 
       if (!responseText) {
+        console.error('[Gemini] ERROR: No response text from API')
+        console.error('[Gemini] Full response:', JSON.stringify(result, null, 2))
         lastError = new Error('No response from Gemini API')
         continue
       }
 
+      console.log(`[Gemini] ✓ Received response (${responseText.length} chars)`)
+      console.log(`[Gemini] Response preview: ${responseText.substring(0, 200)}...`)
+
       // Parse JSON response (handle potential markdown wrapping)
+      console.log(`[Gemini] Parsing JSON response...`)
       let analysisData: { ingredients: FoodIngredientData[] }
       try {
         const cleanedContent = responseText
@@ -242,17 +321,24 @@ Analyze this food photo and provide nutritional information for each ingredient.
           .trim()
 
         analysisData = JSON.parse(cleanedContent)
+        console.log(`[Gemini] ✓ JSON parsed successfully`)
       } catch (parseError) {
-        console.error('[Gemini] Failed to parse response as JSON:', responseText.substring(0, 200))
+        console.error('[Gemini] ERROR: Failed to parse JSON')
+        console.error('[Gemini] Raw response:', responseText.substring(0, 500))
+        console.error('[Gemini] Parse error:', parseError)
         lastError = new Error('Invalid JSON response from Gemini')
         continue
       }
 
       // Validate structure
+      console.log(`[Gemini] Validating response structure...`)
       if (!analysisData.ingredients || !Array.isArray(analysisData.ingredients)) {
+        console.error('[Gemini] ERROR: Invalid structure - missing or invalid ingredients array')
+        console.error('[Gemini] Received data:', JSON.stringify(analysisData, null, 2))
         lastError = new Error('Invalid response structure from Gemini')
         continue
       }
+      console.log(`[Gemini] ✓ Structure validated (${analysisData.ingredients.length} ingredients)`)
 
       // Validate and sanitize ingredients
       const validatedIngredients = analysisData.ingredients
@@ -269,6 +355,8 @@ Analyze this food photo and provide nutritional information for each ingredient.
         }))
 
       if (validatedIngredients.length === 0) {
+        console.error('[Gemini] ERROR: No valid ingredients after validation')
+        console.error('[Gemini] Raw ingredients:', JSON.stringify(analysisData.ingredients, null, 2))
         lastError = new Error('No valid ingredients detected by Gemini')
         continue
       }
@@ -280,7 +368,9 @@ Analyze this food photo and provide nutritional information for each ingredient.
       // Gemini 2.5 Flash Vertex AI pricing (2025): $0.30 per 1M input tokens, $2.50 per 1M output tokens
       const estimatedCostUSD = (estimatedInputTokens * 0.30 / 1_000_000) + (estimatedOutputTokens * 2.50 / 1_000_000)
 
-      console.log(`[Gemini] Success: ${validatedIngredients.length} ingredients detected in ${responseTimeMs}ms (retry: ${retryCount}, cost: $${estimatedCostUSD.toFixed(6)})`)
+      console.log(`[Gemini] ✅ SUCCESS! ${validatedIngredients.length} ingredients detected in ${responseTimeMs}ms`)
+      console.log(`[Gemini] Metrics: retries=${retryCount}, cost=$${estimatedCostUSD.toFixed(6)}`)
+      console.log(`[Gemini] Ingredients:`, validatedIngredients.map(i => i.name).join(', '))
 
       return {
         success: true,
@@ -297,14 +387,22 @@ Analyze this food photo and provide nutritional information for each ingredient.
       lastError = error
       const category = categorizeError(error)
 
-      console.error(`[Gemini] Attempt ${attempt + 1}/${maxRetries + 1} failed (${category}):`, error.message)
+      console.error(`[Gemini] ❌ Attempt ${attempt + 1}/${maxRetries + 1} FAILED (${category})`)
+      console.error(`[Gemini] Error message:`, error.message)
+      console.error(`[Gemini] Error stack:`, error.stack)
+
+      if (error.response) {
+        console.error(`[Gemini] API response status:`, error.response.status)
+        console.error(`[Gemini] API response data:`, JSON.stringify(error.response.data, null, 2))
+      }
 
       // Don't retry on non-retryable errors
       if (!isRetryableError(error)) {
-        console.error('[Gemini] Non-retryable error detected, aborting retry loop')
+        console.error('[Gemini] ⛔ Non-retryable error detected, aborting retry loop')
         break
       }
 
+      console.log(`[Gemini] Will retry...`)
       // Continue to next retry attempt
       continue
     }
@@ -314,7 +412,10 @@ Analyze this food photo and provide nutritional information for each ingredient.
   const totalTimeMs = Date.now() - startTime
   const category = categorizeError(lastError)
 
-  console.error(`[Gemini] All ${maxRetries + 1} attempts failed after ${totalTimeMs}ms (${category})`)
+  console.error(`[Gemini] 💥 ALL ${maxRetries + 1} ATTEMPTS FAILED after ${totalTimeMs}ms`)
+  console.error(`[Gemini] Error category: ${category}`)
+  console.error(`[Gemini] Last error:`, lastError?.message)
+  console.error(`[Gemini] Last error stack:`, lastError?.stack)
 
   // Provide specific error messages based on category
   let errorMessage: string

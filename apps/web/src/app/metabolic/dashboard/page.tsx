@@ -86,8 +86,11 @@ export default function MetabolicDashboardPage() {
         throw new Error('Failed to fetch timeline data')
       }
       const timelineData = await timelineRes.json()
-      setGlucoseData(timelineData.glucose || [])
-      setMealMarkers(timelineData.meals || [])
+      const fetchedGlucose = timelineData.glucose || []
+      const fetchedMeals = timelineData.meals || []
+
+      setGlucoseData(fetchedGlucose)
+      setMealMarkers(fetchedMeals)
 
       // Fetch correlation data (best/worst meals)
       const correlationRes = await apiFetch(
@@ -108,9 +111,9 @@ export default function MetabolicDashboardPage() {
       const insightsData = await insightsRes.json()
       setInsights(insightsData.insights || [])
 
-      // Calculate summary stats
-      if (glucoseData.length > 0) {
-        const values = glucoseData.map((r) => r.value)
+      // Calculate summary stats using fetched data (not state, which isn't updated yet)
+      if (fetchedGlucose.length > 0) {
+        const values = fetchedGlucose.map((r) => r.value)
         const avg = values.reduce((a, b) => a + b, 0) / values.length
         const inRange = values.filter((v) => v >= 70 && v <= 180).length
         const spikes = values.filter((v) => v > 180).length
@@ -125,9 +128,18 @@ export default function MetabolicDashboardPage() {
         setSummary({
           avgGlucose: Math.round(avg),
           timeInRange: Math.round((inRange / values.length) * 100),
-          mealsLogged: mealMarkers.length,
+          mealsLogged: fetchedMeals.length,
           glucoseSpikes: spikes,
           trend,
+        })
+      } else if (fetchedMeals.length > 0) {
+        // If we have meals but no glucose data, create a minimal summary
+        setSummary({
+          avgGlucose: 0,
+          timeInRange: 0,
+          mealsLogged: fetchedMeals.length,
+          glucoseSpikes: 0,
+          trend: 'stable',
         })
       } else {
         setSummary(null)
@@ -194,7 +206,7 @@ export default function MetabolicDashboardPage() {
         )}
 
         {/* Empty State */}
-        {!loading && !error && glucoseData.length === 0 && (
+        {!loading && !error && glucoseData.length === 0 && mealMarkers.length === 0 && (
           <div className="bg-white rounded-2xl shadow-md p-12 text-center">
             <div className="text-6xl mb-4">📊</div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">No data for this day</h2>
@@ -211,7 +223,7 @@ export default function MetabolicDashboardPage() {
         )}
 
         {/* Dashboard Content */}
-        {!loading && !error && summary && glucoseData.length > 0 && (
+        {!loading && !error && (glucoseData.length > 0 || mealMarkers.length > 0) && (
           <>
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { isAdmin } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 const prisma = new PrismaClient();
 
-function isAdmin(req: NextRequest) { return req.headers.get('x-admin') === '1'; }
-
 export async function GET(req: NextRequest) {
-  if (!isAdmin(req)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  if (!(await isAdmin(req))) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   const url = new URL(req.url);
   const days = Number(url.searchParams.get('days') || 30);
   const since = new Date(Date.now() - days * 24 * 3600 * 1000);

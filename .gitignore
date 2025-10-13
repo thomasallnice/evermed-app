@@ -205,3 +205,4 @@ hive-mind-prompt-*.txt
 memory/
 !.claude/memory/
 *.db
+.obsidian/
