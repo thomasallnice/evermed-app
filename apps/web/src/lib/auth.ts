@@ -10,7 +10,7 @@ export async function requireUserId(req: NextRequest): Promise<string> {
     return headerUser;
   }
 
-  const cookieStore = await cookies();
+  const cookieStore = cookies(); // Next.js 14: cookies() is synchronous
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
