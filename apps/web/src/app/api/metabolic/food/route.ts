@@ -155,14 +155,28 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(storagePath)
 
     const photoUrl = urlData.publicUrl
+    console.log(`[FOOD UPLOAD] Photo uploaded to storage: ${storagePath}`)
+    console.log(`[FOOD UPLOAD] Public URL generated: ${photoUrl}`)
 
     // Analyze photo using Gemini or OpenAI (feature flag)
     const useGemini = process.env.USE_GEMINI_FOOD_ANALYSIS === 'true'
-    console.log(`Starting food photo analysis for: ${storagePath} (Provider: ${useGemini ? 'Gemini' : 'OpenAI'})`)
+    console.log(`[FOOD UPLOAD] Starting analysis (Provider: ${useGemini ? 'Gemini' : 'OpenAI'})`)
+    console.log(`[FOOD UPLOAD] Environment check:`)
+    console.log(`  - USE_GEMINI_FOOD_ANALYSIS: ${process.env.USE_GEMINI_FOOD_ANALYSIS}`)
+    console.log(`  - GOOGLE_CLOUD_PROJECT: ${!!process.env.GOOGLE_CLOUD_PROJECT}`)
+    console.log(`  - GOOGLE_APPLICATION_CREDENTIALS_JSON: ${!!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON}`)
+    console.log(`  - OPENAI_API_KEY: ${!!process.env.OPENAI_API_KEY}`)
 
     const analysisResult = useGemini
       ? await analyzeFoodPhotoGemini(photoUrl)
       : await analyzeFoodPhoto(photoUrl)
+
+    console.log(`[FOOD UPLOAD] Analysis result:`, {
+      success: analysisResult.success,
+      ingredientsCount: analysisResult.ingredients?.length || 0,
+      error: analysisResult.error,
+      metadata: analysisResult.metadata
+    })
 
     let analysisStatus: 'pending' | 'completed' | 'failed' = 'completed'
     let ingredients: any[] = []
