@@ -48,12 +48,10 @@ export async function GET(req: NextRequest) {
 
     console.log(`[TIMELINE API] Person ID: ${person.id}`)
 
-    // Parse date and create date range for the entire day
-    const startOfDay = new Date(dateParam);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(dateParam);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Parse date and create date range for the entire day in UTC
+    // Date string format: "2025-10-13" -> treat as UTC midnight
+    const startOfDay = new Date(`${dateParam}T00:00:00.000Z`);
+    const endOfDay = new Date(`${dateParam}T23:59:59.999Z`);
 
     console.log(`[TIMELINE API] Date range: ${startOfDay.toISOString()} to ${endOfDay.toISOString()}`)
 
