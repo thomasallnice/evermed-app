@@ -146,8 +146,9 @@ export async function analyzeFoodPhotoGemini(
   }
 
   // Parse JSON credentials if provided (for Vercel)
+  // Prefer JSON credentials over file path for serverless compatibility
   let parsedCredentials: any = null
-  if (hasJsonCredentials && !hasFileCredentials) {
+  if (hasJsonCredentials) {
     try {
       // Decode base64 credentials
       const credentialsJson = Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON!, 'base64').toString('utf-8')
@@ -157,10 +158,16 @@ export async function analyzeFoodPhotoGemini(
       console.log(`[Gemini] Service account: ${parsedCredentials.client_email}`)
     } catch (err: any) {
       console.error('[Gemini] Failed to parse JSON credentials:', err.message)
-      return {
-        success: false,
-        ingredients: [],
-        error: 'Failed to parse Google Cloud credentials'
+
+      // If JSON credentials failed and file credentials exist, fall back to file
+      if (hasFileCredentials) {
+        console.log('[Gemini] Falling back to GOOGLE_APPLICATION_CREDENTIALS file path')
+      } else {
+        return {
+          success: false,
+          ingredients: [],
+          error: 'Failed to parse Google Cloud credentials'
+        }
       }
     }
   }
