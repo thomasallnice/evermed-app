@@ -166,17 +166,26 @@ export default function MetabolicDashboardPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-3xl font-bold text-gray-900">Metabolic Insights</h1>
-          <div className="flex items-center gap-2">
-            <label htmlFor="date-selector" className="text-sm font-medium text-gray-700">
-              Date:
-            </label>
-            <input
-              id="date-selector"
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+          <div className="flex items-center gap-3">
+            <a
+              href="/metabolic/camera"
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white font-semibold px-4 py-2 hover:bg-blue-700 transition-colors shadow-md"
+            >
+              <span className="text-lg">📸</span>
+              Log Meal
+            </a>
+            <div className="flex items-center gap-2">
+              <label htmlFor="date-selector" className="text-sm font-medium text-gray-700">
+                Date:
+              </label>
+              <input
+                id="date-selector"
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
           </div>
         </div>
 
