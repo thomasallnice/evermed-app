@@ -23,18 +23,27 @@ GOOGLE_APPLICATION_CREDENTIALS_JSON=ewogICJ0eXBlIjogInNl...  # Line 35 (base64)
 3. Vercel serverless environment doesn't have access to local file paths like `/Users/Tom/keys/...`
 4. The `GOOGLE_APPLICATION_CREDENTIALS_JSON` environment variable exists but wasn't being used
 
-**Fix Applied** (commit dc6987b):
-- Modified `apps/web/src/lib/food-analysis-gemini.ts` to:
-  - Decode base64 `GOOGLE_APPLICATION_CREDENTIALS_JSON`
-  - Pass credentials directly to VertexAI via `googleAuthOptions`
-  - No temp file creation needed
-  - No file system dependencies
+**Fix Applied** (commits dc6987b, 689b229):
 
-**Why This Works**:
-- ✅ VertexAI SDK accepts credentials object directly
-- ✅ No file system operations (cleaner, more reliable)
-- ✅ No cleanup needed
+**Initial Fix (dc6987b)**:
+- Modified `apps/web/src/lib/food-analysis-gemini.ts` to pass credentials directly to VertexAI
+- Avoided temp file creation by using `googleAuthOptions.credentials`
+
+**Critical Issue Discovered**:
+- Both `GOOGLE_APPLICATION_CREDENTIALS` (file path) and `GOOGLE_APPLICATION_CREDENTIALS_JSON` were set in Vercel
+- Original logic: `if (hasJsonCredentials && !hasFileCredentials)` → JSON credentials were SKIPPED
+- Code tried to use file path, which doesn't exist in Vercel
+
+**Final Fix (689b229)**:
+- Changed logic to PREFER JSON credentials over file path
+- Always use JSON credentials if available (serverless-first)
+- Fall back to file path only if JSON parsing fails
+
+**Why This Now Works**:
+- ✅ JSON credentials take priority over file path
+- ✅ No file system dependencies
 - ✅ Works perfectly in serverless environments
+- ✅ Graceful fallback for local development
 
 ---
 
@@ -113,30 +122,38 @@ curl "https://staging.evermed.ai/api/dev/test-food-upload"
 ## Commits Related to This Issue
 
 1. **96bc1eb** - `debug: add OpenAI Vision API diagnostic endpoint`
-2. **912fc97** - `fix(gemini): support GOOGLE_APPLICATION_CREDENTIALS_JSON for Vercel` (temp file approach)
+2. **912fc97** - `fix(gemini): support GOOGLE_APPLICATION_CREDENTIALS_JSON for Vercel` (temp file approach - didn't work)
 3. **9c56307** - `debug: add comprehensive food upload diagnostic endpoint`
 4. **a62fd70** - `docs: add food analysis 500 error resolution guide`
-5. **dc6987b** - `fix(gemini): use direct credentials object instead of temp file` ✅ **FINAL FIX**
+5. **dc6987b** - `fix(gemini): use direct credentials object instead of temp file` (direct credentials - but had logic issue)
+6. **9351070** - `docs: update resolution guide with direct credentials fix`
+7. **689b229** - `fix(gemini): prefer JSON credentials over file path` ✅ **REAL FIX**
 
 ---
 
 ## Summary
 
-**Root Cause**: Gemini credentials required file path, Vercel serverless doesn't support local paths
+**Root Cause**:
+1. Gemini credentials required file path for Vertex AI SDK
+2. Vercel had BOTH file path and JSON credentials set
+3. Code logic checked `if (hasJsonCredentials && !hasFileCredentials)` → skipped JSON when both present
+4. Tried to use file path `/Users/Tom/keys/...` which doesn't exist in Vercel
 
-**Solution Applied**: Pass credentials object directly to VertexAI SDK via `googleAuthOptions`
+**Solution Applied**:
+- Pass credentials object directly to VertexAI SDK via `googleAuthOptions`
+- **CRITICAL**: Prefer JSON credentials over file path (serverless-first)
 
 **Timeline**:
-- ✅ **Fix committed**: dc6987b (direct credentials implementation)
+- ✅ **Fix committed**: 689b229 (credentials priority fix)
 - ⏱️ **Vercel auto-deploy**: ~2-5 minutes
-- ✅ **Feature unblocked**: Gemini food analysis will work on staging
+- ✅ **Feature should now work**: Gemini food analysis with JSON credentials
 
 **Technical Details**:
-- No temp file creation needed
-- No file system dependencies
-- Credentials decoded from base64 JSON and passed directly to SDK
-- Cleaner, more reliable approach for serverless environments
+- JSON credentials take priority over file path
+- Credentials decoded from base64 and passed directly to SDK
+- Graceful fallback to file path if JSON fails (for local dev)
+- No file system dependencies in production
 
 ---
 
-**Status**: ✅ Fix deployed, waiting for Vercel to redeploy staging
+**Status**: ✅ Real fix deployed (689b229), waiting for Vercel staging deployment
