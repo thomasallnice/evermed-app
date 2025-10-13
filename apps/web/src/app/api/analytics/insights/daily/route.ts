@@ -4,6 +4,9 @@ import { requireUserId } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
+// Force dynamic rendering (no static optimization)
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   console.log('[INSIGHTS API] Request received')
   try {
