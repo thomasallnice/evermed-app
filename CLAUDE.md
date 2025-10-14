@@ -106,6 +106,8 @@ npx vitest run tests/unit/auth.spec.ts
 - **OCR**: External service via `PDF_EXTRACT_URL`
 
 ### Key Data Models (db/schema.prisma)
+
+#### Core Health Vault Models
 - **Person**: User profiles linked to Supabase auth.uid() via `ownerId`
 - **Document**: Uploaded PDFs/images stored in Supabase Storage
 - **DocChunk**: Text chunks with pgvector embeddings for RAG
@@ -114,12 +116,73 @@ npx vitest run tests/unit/auth.spec.ts
 - **SharePack**: Passcode-protected shareable packs with 7-day expiry
 - **TokenUsage**, **AnalyticsEvent**: Non-PHI telemetry
 
+#### Metabolic Insights Models (Premium Feature - 85% Complete)
+**Status**: Feature complete in dev, deployment pending (Sprint 7-8)
+
+**Food Tracking** (4 tables):
+- **FoodEntry**: Meal logging with nutrition totals, glucose predictions, meal type
+- **FoodPhoto**: Photos with AI analysis status tracking (OpenAI Vision / Gemini 2.5 Flash)
+- **FoodIngredient**: Detailed nutrition breakdown per ingredient (Nutritionix API)
+- **MealTemplate**: Reusable recipes saved by users
+
+**Glucose & Predictions** (3 tables):
+- **GlucoseReading**: Time-series glucose data (CGM/fingerstick), source tracking
+- **GlucosePrediction**: AI glucose forecasts with confidence scores, model provenance
+- **PersonalModel**: Per-user LSTM models with versioning, training metadata
+
+**Analytics & Admin** (4 tables):
+- **MetabolicInsight**: Daily/weekly summaries, pattern detection (spikes, trends)
+- **SubscriptionTier**: Usage limits and billing (Stripe integration ready)
+- **FeatureFlag**: Feature toggles with rollout percentage (hash-based bucketing)
+- **AnalyticsEvent**: Non-PHI telemetry (refactored for privacy compliance)
+
+**Key Features**:
+- Photo-first food logging (< 5 seconds to log)
+- AI food recognition (OpenAI GPT-4o Vision + Google Gemini 2.5 Flash)
+- Nutrition database (Nutritionix API with caching)
+- Glucose-meal correlation (time-aligned pattern detection)
+- Personalized predictions (LSTM models, mock baseline for beta)
+- Daily insights (5 pattern types: spikes, trends, meal impact)
+- Admin dashboard (adoption, engagement, performance metrics)
+- Feature flags (gradual rollout, A/B testing)
+
+**Deployment Blockers** (Sprint 7-8):
+- ⚠️ Database migrations NOT applied to staging/production
+- ⚠️ Storage buckets NOT created (`food-photos`, `ml-models`)
+- ⚠️ Admin authentication placeholder (CRITICAL security risk)
+- 🔶 LSTM model mock baseline (optional, can launch without)
+
+**Documentation**:
+- Status: `docs/METABOLIC_INSIGHTS_STATUS_2025-10-12.md`
+- Sprint Plan: `docs/metabolic-insights-sprint-7-8-finalization.md`
+- Complete Summary: `docs/METABOLIC_INSIGHTS_COMPLETE.md`
+- PRD: `docs/metabolic-insights-prd.md`
+- Technical Plan: `docs/metabolic-insights-technical-plan.md`
+
 ### API Routes Pattern
 All API routes in `apps/web/src/app/api/`:
 - Authentication via `x-user-id` header (dev) or Supabase session (prod)
 - RLS enforced at database level via Supabase policies
 - JSON responses with proper error handling
-- Key routes: `/api/uploads`, `/api/chat`, `/api/explain`, `/api/share-packs`, `/api/documents/:id`
+
+**Core Health Vault APIs**:
+- `/api/uploads` - Document upload with OCR
+- `/api/chat` - RAG-powered chat with citations
+- `/api/explain` - Document explanation
+- `/api/share-packs` - Passcode-protected sharing
+- `/api/documents/:id` - Document management
+
+**Metabolic Insights APIs** (85% complete):
+- `/api/metabolic/food` - POST (photo upload + entry), GET (list entries)
+- `/api/metabolic/food/[id]` - GET (entry details), PATCH (edit), DELETE
+- `/api/metabolic/onboarding` - POST (save targets and CGM preferences)
+- `/api/analytics/correlation` - GET (glucose-meal correlation data)
+- `/api/analytics/timeline/daily` - GET (daily timeline with meals + glucose)
+- `/api/analytics/insights/daily` - GET (daily insights and patterns)
+- `/api/predictions/glucose` - POST (predict glucose response to meal)
+- `/api/admin/metabolic` - GET (admin metrics dashboard) ⚠️ Auth placeholder
+- `/api/admin/feature-flags` - GET/POST (manage feature flags) ⚠️ Auth placeholder
+- `/api/analytics/track` - POST (non-PHI event tracking)
 
 ### RAG Architecture
 1. Documents uploaded → stored in Supabase Storage

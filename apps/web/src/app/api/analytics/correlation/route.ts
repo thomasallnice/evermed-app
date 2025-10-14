@@ -19,13 +19,19 @@ export const dynamic = 'force-dynamic';
  * - Return best and worst meals for the date range
  */
 export async function GET(req: NextRequest) {
+  console.log('[CORRELATION API] Request received')
   try {
     const userId = await requireUserId(req);
+    console.log(`[CORRELATION API] User ID: ${userId}`)
+
     const { searchParams } = new URL(req.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
+    console.log(`[CORRELATION API] Date range: ${startDate} to ${endDate}`)
+
     if (!startDate || !endDate) {
+      console.error('[CORRELATION API] Missing date parameters')
       return NextResponse.json(
         { error: 'Missing startDate or endDate parameter' },
         { status: 400 }
@@ -36,6 +42,7 @@ export async function GET(req: NextRequest) {
     // See: db/migrations/20251010090000_add_metabolic_insights/migration.sql
 
     // Return placeholder data for staging deployment
+    console.log('[CORRELATION API] ✓ Returning placeholder data (migrations pending)')
     return NextResponse.json(
       {
         bestMeals: [],
@@ -45,7 +52,9 @@ export async function GET(req: NextRequest) {
       { status: 200 }
     );
   } catch (e: any) {
-    console.error('Correlation error:', e);
+    console.error('[CORRELATION API] ❌ Error:', e);
+    console.error('[CORRELATION API] Error message:', e?.message);
+    console.error('[CORRELATION API] Error stack:', e?.stack);
     return NextResponse.json(
       { error: e?.message || 'Unexpected error' },
       { status: 500 }

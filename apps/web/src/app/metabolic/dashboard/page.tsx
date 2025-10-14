@@ -22,9 +22,17 @@ interface GlucoseReading {
 }
 
 interface MealMarker {
+  id: string
   timestamp: string
   name: string
   type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  photoUrl: string | null
+  analysisStatus: 'pending' | 'completed' | 'failed'
+  calories: number
+  carbs: number
+  protein: number
+  fat: number
+  fiber: number
 }
 
 interface DailySummary {
@@ -61,10 +69,29 @@ export default function MetabolicDashboardPage() {
   const [worstMeals, setWorstMeals] = useState<MealImpact[]>([])
   const [insights, setInsights] = useState<DailyInsight[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [deletingMealId, setDeletingMealId] = useState<string | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
     loadDashboardData()
   }, [selectedDate])
+
+  // Auto-refresh when there are meals being analyzed
+  useEffect(() => {
+    const hasProcessingMeals = mealMarkers.some(
+      meal => meal.analysisStatus === 'pending'
+    )
+
+    if (hasProcessingMeals && !loading) {
+      // Poll every 3 seconds
+      const intervalId = setInterval(() => {
+        console.log('[DASHBOARD] Polling for analysis updates...')
+        loadDashboardData()
+      }, 3000)
+
+      return () => clearInterval(intervalId)
+    }
+  }, [mealMarkers, loading])
 
   async function loadDashboardData() {
     setLoading(true)
@@ -86,8 +113,11 @@ export default function MetabolicDashboardPage() {
         throw new Error('Failed to fetch timeline data')
       }
       const timelineData = await timelineRes.json()
-      setGlucoseData(timelineData.glucose || [])
-      setMealMarkers(timelineData.meals || [])
+      const fetchedGlucose = timelineData.glucose || []
+      const fetchedMeals = timelineData.meals || []
+
+      setGlucoseData(fetchedGlucose)
+      setMealMarkers(fetchedMeals)
 
       // Fetch correlation data (best/worst meals)
       const correlationRes = await apiFetch(
@@ -108,9 +138,9 @@ export default function MetabolicDashboardPage() {
       const insightsData = await insightsRes.json()
       setInsights(insightsData.insights || [])
 
-      // Calculate summary stats
-      if (glucoseData.length > 0) {
-        const values = glucoseData.map((r) => r.value)
+      // Calculate summary stats using fetched data (not state, which isn't updated yet)
+      if (fetchedGlucose.length > 0) {
+        const values = fetchedGlucose.map((r) => r.value)
         const avg = values.reduce((a, b) => a + b, 0) / values.length
         const inRange = values.filter((v) => v >= 70 && v <= 180).length
         const spikes = values.filter((v) => v > 180).length
@@ -125,9 +155,18 @@ export default function MetabolicDashboardPage() {
         setSummary({
           avgGlucose: Math.round(avg),
           timeInRange: Math.round((inRange / values.length) * 100),
-          mealsLogged: mealMarkers.length,
+          mealsLogged: fetchedMeals.length,
           glucoseSpikes: spikes,
           trend,
+        })
+      } else if (fetchedMeals.length > 0) {
+        // If we have meals but no glucose data, create a minimal summary
+        setSummary({
+          avgGlucose: 0,
+          timeInRange: 0,
+          mealsLogged: fetchedMeals.length,
+          glucoseSpikes: 0,
+          trend: 'stable',
         })
       } else {
         setSummary(null)
@@ -136,6 +175,42 @@ export default function MetabolicDashboardPage() {
       setError(err.message || 'Failed to load dashboard data')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Helper function to get meal type color classes
+  function getMealTypeColorClasses(mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') {
+    const colorMap = {
+      breakfast: 'bg-orange-100 text-orange-700 border-orange-200',
+      lunch: 'bg-green-100 text-green-700 border-green-200',
+      dinner: 'bg-purple-100 text-purple-700 border-purple-200',
+      snack: 'bg-amber-100 text-amber-700 border-amber-200',
+    };
+    return colorMap[mealType];
+  }
+
+  // Delete meal function
+  async function deleteMeal(mealId: string) {
+    setDeletingMealId(mealId)
+    try {
+      const response = await apiFetch(`/api/metabolic/food/${mealId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete meal')
+      }
+
+      // Remove from local state
+      setMealMarkers((prev) => prev.filter((m) => m.id !== mealId))
+      setConfirmDeleteId(null)
+
+      // Reload dashboard to update stats
+      await loadDashboardData()
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete meal')
+    } finally {
+      setDeletingMealId(null)
     }
   }
 
@@ -194,7 +269,7 @@ export default function MetabolicDashboardPage() {
         )}
 
         {/* Empty State */}
-        {!loading && !error && glucoseData.length === 0 && (
+        {!loading && !error && glucoseData.length === 0 && mealMarkers.length === 0 && (
           <div className="bg-white rounded-2xl shadow-md p-12 text-center">
             <div className="text-6xl mb-4">📊</div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-2">No data for this day</h2>
@@ -211,7 +286,7 @@ export default function MetabolicDashboardPage() {
         )}
 
         {/* Dashboard Content */}
-        {!loading && !error && summary && glucoseData.length > 0 && (
+        {!loading && !error && (glucoseData.length > 0 || mealMarkers.length > 0) && (
           <>
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -296,54 +371,112 @@ export default function MetabolicDashboardPage() {
             {/* Glucose Timeline Chart */}
             <div className="bg-white rounded-2xl shadow-md p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Glucose Timeline</h2>
-              <div className="w-full h-80 sm:h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis
-                      dataKey="time"
-                      stroke="#6b7280"
-                      style={{ fontSize: '12px' }}
-                    />
-                    <YAxis
-                      stroke="#6b7280"
-                      style={{ fontSize: '12px' }}
-                      label={{
-                        value: 'Glucose (mg/dL)',
-                        angle: -90,
-                        position: 'insideLeft',
-                        style: { fontSize: '12px', fill: '#6b7280' },
-                      }}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#fff',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                      }}
-                    />
-                    {/* Target range shading (70-180 mg/dL) */}
-                    <ReferenceArea
-                      y1={70}
-                      y2={180}
-                      fill="#dcfce7"
-                      fillOpacity={0.3}
-                      label={{ value: 'Target Range', position: 'insideTopRight', fontSize: 10 }}
-                    />
-                    <ReferenceLine y={180} stroke="#ef4444" strokeDasharray="3 3" />
-                    <ReferenceLine y={70} stroke="#f59e0b" strokeDasharray="3 3" />
-                    <Line
-                      type="monotone"
-                      dataKey="glucose"
-                      stroke="#2563eb"
-                      strokeWidth={2}
-                      dot={{ fill: '#2563eb', r: 3 }}
-                      activeDot={{ r: 5 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              {glucoseData.length === 0 ? (
+                <div className="w-full h-80 sm:h-96 flex flex-col items-center justify-center bg-gray-50 rounded-2xl border border-gray-200">
+                  <div className="text-6xl mb-4">📈</div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No Glucose Data Yet</h3>
+                  <p className="text-sm text-gray-600 text-center max-w-md mb-6">
+                    Import glucose readings from Apple Health or connect your CGM to see your glucose timeline and correlations with meals.
+                  </p>
+                  <div className="flex gap-3">
+                    <a
+                      href="/metabolic/onboarding"
+                      className="inline-flex items-center gap-2 rounded-lg bg-gray-100 text-gray-700 font-semibold px-4 py-2 hover:bg-gray-200 transition-colors border border-gray-300"
+                    >
+                      <span>📱</span>
+                      <span className="text-sm">Import HealthKit</span>
+                    </a>
+                    <a
+                      href="/metabolic/onboarding"
+                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white font-semibold px-4 py-2 hover:bg-blue-700 transition-colors shadow-md"
+                    >
+                      <span>🔗</span>
+                      <span className="text-sm">Connect CGM</span>
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full h-80 sm:h-96">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis
+                        dataKey="time"
+                        stroke="#6b7280"
+                        style={{ fontSize: '12px' }}
+                      />
+                      <YAxis
+                        stroke="#6b7280"
+                        style={{ fontSize: '12px' }}
+                        label={{
+                          value: 'Glucose (mg/dL)',
+                          angle: -90,
+                          position: 'insideLeft',
+                          style: { fontSize: '12px', fill: '#6b7280' },
+                        }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#fff',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                        }}
+                      />
+                      {/* Target range shading (70-180 mg/dL) */}
+                      <ReferenceArea
+                        y1={70}
+                        y2={180}
+                        fill="#dcfce7"
+                        fillOpacity={0.3}
+                        label={{ value: 'Target Range', position: 'insideTopRight', fontSize: 10 }}
+                      />
+                      <ReferenceLine y={180} stroke="#ef4444" strokeDasharray="3 3" />
+                      <ReferenceLine y={70} stroke="#f59e0b" strokeDasharray="3 3" />
+
+                      {/* Meal markers as vertical lines */}
+                      {mealMarkers.map((meal) => {
+                        const mealTime = new Date(meal.timestamp).toLocaleTimeString('en-US', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        });
+                        // Color coding: breakfast=orange, lunch=green, dinner=purple, snack=amber
+                        const mealColors = {
+                          breakfast: '#f97316', // orange-500
+                          lunch: '#10b981',     // green-500
+                          dinner: '#8b5cf6',    // purple-500
+                          snack: '#f59e0b',     // amber-500
+                        };
+                        const color = mealColors[meal.type as keyof typeof mealColors];
+
+                        return (
+                          <ReferenceLine
+                            key={meal.id}
+                            x={mealTime}
+                            stroke={color}
+                            strokeWidth={2}
+                            strokeDasharray="5 5"
+                            label={{
+                              value: meal.type === 'breakfast' ? '🌅' : meal.type === 'lunch' ? '☀️' : meal.type === 'dinner' ? '🌙' : '🍎',
+                              position: 'top',
+                              fontSize: 16,
+                            }}
+                          />
+                        );
+                      })}
+
+                      <Line
+                        type="monotone"
+                        dataKey="glucose"
+                        stroke="#2563eb"
+                        strokeWidth={2}
+                        dot={{ fill: '#2563eb', r: 3 }}
+                        activeDot={{ r: 5 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
               {/* Meal markers */}
               {mealMarkers.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -351,7 +484,7 @@ export default function MetabolicDashboardPage() {
                   {mealMarkers.map((meal, idx) => (
                     <span
                       key={idx}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200"
+                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getMealTypeColorClasses(meal.type)}`}
                     >
                       {meal.type === 'breakfast' && '🌅'}
                       {meal.type === 'lunch' && '☀️'}
@@ -363,6 +496,136 @@ export default function MetabolicDashboardPage() {
                 </div>
               )}
             </div>
+
+            {/* Meals List */}
+            {mealMarkers.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-md p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Meals Today</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[...mealMarkers].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map((meal) => (
+                    <div
+                      key={meal.id}
+                      className="group border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-blue-300 transition-all relative"
+                    >
+                      <a href={`/metabolic/entry/${meal.id}`} className="no-underline">
+                        {/* Square Image */}
+                        <div className="relative aspect-square w-full bg-gray-100">
+                          {meal.photoUrl ? (
+                            <img
+                              src={meal.photoUrl}
+                              alt={meal.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-6xl">
+                              {meal.type === 'breakfast' && '🌅'}
+                              {meal.type === 'lunch' && '☀️'}
+                              {meal.type === 'dinner' && '🌙'}
+                              {meal.type === 'snack' && '🍎'}
+                            </div>
+                          )}
+
+                          {/* Analyzing Indicator */}
+                          {meal.analysisStatus === 'pending' && (
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm">
+                              <div className="text-center text-white">
+                                <div className="animate-spin text-4xl mb-2">⏳</div>
+                                <p className="text-sm font-medium">Analyzing...</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Delete Button */}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              setConfirmDeleteId(meal.id)
+                            }}
+                            disabled={deletingMealId === meal.id}
+                            className="absolute top-2 right-2 bg-white/90 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-full p-2 shadow-lg transition-colors z-10"
+                            aria-label="Delete meal"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+
+                        {/* Card Content */}
+                        <div className="p-4">
+                          {/* Meal Type Badge */}
+                          <div className="mb-2">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide border ${getMealTypeColorClasses(meal.type)}`}>
+                              {meal.type}
+                            </span>
+                          </div>
+
+                          {/* Food Name */}
+                          <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">
+                            {meal.name || 'Meal'}
+                          </h3>
+
+                          {/* Time */}
+                          <p className="text-xs text-gray-500 mb-3">
+                            {new Date(meal.timestamp).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </p>
+
+                          {/* Nutrition Stats */}
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="bg-gray-50 rounded-lg px-2 py-1.5">
+                              <div className="text-gray-600 uppercase tracking-wide font-medium">Calories</div>
+                              <div className="font-semibold text-gray-900">{meal.calories}</div>
+                            </div>
+                            <div className="bg-gray-50 rounded-lg px-2 py-1.5">
+                              <div className="text-gray-600 uppercase tracking-wide font-medium">Carbs</div>
+                              <div className="font-semibold text-gray-900">{meal.carbs}g</div>
+                            </div>
+                            <div className="bg-gray-50 rounded-lg px-2 py-1.5">
+                              <div className="text-gray-600 uppercase tracking-wide font-medium">Protein</div>
+                              <div className="font-semibold text-gray-900">{meal.protein}g</div>
+                            </div>
+                            <div className="bg-gray-50 rounded-lg px-2 py-1.5">
+                              <div className="text-gray-600 uppercase tracking-wide font-medium">Fat</div>
+                              <div className="font-semibold text-gray-900">{meal.fat}g</div>
+                            </div>
+                          </div>
+                        </div>
+                      </a>
+
+                      {/* Delete Confirmation Dialog - MOBILE-FRIENDLY BUTTONS */}
+                      {confirmDeleteId === meal.id && (
+                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center p-4 z-20 rounded-2xl">
+                          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Meal?</h3>
+                            <p className="text-sm text-gray-600 mb-6">
+                              Are you sure you want to delete this meal? This action cannot be undone.
+                            </p>
+                            <div className="flex flex-col gap-3">
+                              <button
+                                onClick={() => deleteMeal(meal.id)}
+                                disabled={deletingMealId === meal.id}
+                                className="w-full rounded-xl bg-red-600 text-white font-semibold px-6 py-4 min-h-[56px] hover:bg-red-700 transition-colors disabled:opacity-50 text-lg"
+                              >
+                                {deletingMealId === meal.id ? 'Deleting...' : 'Delete Meal'}
+                              </button>
+                              <button
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="w-full rounded-xl bg-white text-gray-700 font-semibold px-6 py-4 min-h-[56px] hover:bg-gray-50 transition-colors border-2 border-gray-200 text-lg"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Best/Worst Meals */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -480,6 +743,16 @@ export default function MetabolicDashboardPage() {
           </p>
         </div>
       </div>
+
+      {/* Floating Action Button - Log Meal - BIGGER FOR MOBILE */}
+      <a
+        href="/metabolic/camera"
+        className="fixed bottom-6 right-6 inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 text-white font-semibold px-6 sm:px-8 py-5 min-h-[64px] min-w-[64px] hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl z-50"
+        aria-label="Log Meal"
+      >
+        <span className="text-3xl">📸</span>
+        <span className="hidden sm:inline text-lg">Log Meal</span>
+      </a>
     </div>
   )
 }

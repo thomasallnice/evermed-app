@@ -1,3 +1,7 @@
+'use client'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { getSupabase } from '@/lib/supabase/client'
 import Link from 'next/link'
 import {
   HeartPulse,
@@ -14,6 +18,37 @@ import {
 } from 'lucide-react'
 
 export default function HomePage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function checkAuth() {
+      const supabase = getSupabase()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (user) {
+        // Redirect logged-in users to dashboard
+        router.push('/metabolic/dashboard')
+      } else {
+        setLoading(false)
+      }
+    }
+    checkAuth()
+  }, [router])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⏳</div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen -mt-4 sm:-mt-6">
       {/* Hero Section */}

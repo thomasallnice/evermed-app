@@ -15,22 +15,15 @@ import {
   createFeatureFlag,
   FeatureFlagName,
 } from '@/lib/feature-flags';
-
-// TODO: Implement proper admin auth check
-// For now, this is a placeholder - should verify user has admin role
-function isAdmin(request: NextRequest): boolean {
-  // In production, check JWT token for admin role
-  // For beta, allow access (will be secured in production)
-  return true;
-}
+import { isAdmin } from '@/lib/auth';
 
 /**
  * GET /api/admin/feature-flags
  * Returns all feature flags
  */
 export async function GET(request: NextRequest) {
-  if (!isAdmin(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await isAdmin(request))) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   try {
@@ -52,8 +45,8 @@ export async function GET(request: NextRequest) {
  * Body: { name, enabled, rolloutPercent }
  */
 export async function POST(request: NextRequest) {
-  if (!isAdmin(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await isAdmin(request))) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   try {
@@ -99,8 +92,8 @@ export async function POST(request: NextRequest) {
  * Body: { name, description, enabled?, rolloutPercent? }
  */
 export async function PUT(request: NextRequest) {
-  if (!isAdmin(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!(await isAdmin(request))) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   try {

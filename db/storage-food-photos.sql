@@ -1,9 +1,13 @@
 -- ============================================================================
 -- Storage Bucket: food-photos
 -- Purpose: Store user-uploaded food photos for meal logging and AI analysis
--- Privacy: Private with RLS enforcement
+-- Privacy: PUBLIC bucket (required for OpenAI Vision API access)
+--          RLS policies enforce write-only access (users can only upload to own folder)
 -- Path Structure: {userId}/{photoId}.jpg
--- File Limits: JPEG/PNG only, max 5MB
+-- File Limits: JPEG/PNG/WEBP only, max 5MB
+-- ============================================================================
+-- IMPORTANT: This bucket MUST be PUBLIC for OpenAI Vision API to download images
+-- See: docs/fixes/food-photos-bucket-fix.md (2025-10-11)
 -- ============================================================================
 
 -- ============================================================================
@@ -14,15 +18,15 @@ INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 VALUES (
   'food-photos',
   'food-photos',
-  false, -- Private bucket (requires authentication)
+  true, -- PUBLIC bucket (required for OpenAI Vision API to download images)
   5242880, -- 5MB in bytes (5 * 1024 * 1024)
-  ARRAY['image/jpeg', 'image/jpg', 'image/png'] -- Only JPEG and PNG
+  ARRAY['image/jpeg', 'image/jpg', 'image/png', 'image/webp'] -- JPEG, PNG, WEBP
 )
 ON CONFLICT (id) DO UPDATE
 SET
-  public = false,
+  public = true,
   file_size_limit = 5242880,
-  allowed_mime_types = ARRAY['image/jpeg', 'image/jpg', 'image/png'];
+  allowed_mime_types = ARRAY['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
 -- ============================================================================
 -- STEP 2: Enable RLS on storage.objects table (if not already enabled)

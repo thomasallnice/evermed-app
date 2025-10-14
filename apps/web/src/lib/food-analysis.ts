@@ -1,8 +1,15 @@
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Lazy-initialize OpenAI client to avoid module-load-time env var issues
+let openaiClient: OpenAI | null = null
+function getOpenAIClient() {
+  if (!openaiClient) {
+    openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  }
+  return openaiClient
+}
 
 export interface FoodIngredientData {
   name: string
@@ -29,6 +36,7 @@ export interface FoodAnalysisResult {
  */
 export async function analyzeFoodPhoto(photoUrl: string): Promise<FoodAnalysisResult> {
   try {
+    const openai = getOpenAIClient()
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
