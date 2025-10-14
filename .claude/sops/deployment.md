@@ -293,9 +293,51 @@ For major deployments, communicate to team:
 
 **Never hardcode secrets in code!**
 
+### ⚠️ CRITICAL: Setting Environment Variables via CLI
+
+**ALWAYS use `printf`, NEVER use `echo`** when piping values to Vercel CLI:
+
+```bash
+# ❌ WRONG - Adds newline character to value, corrupts the variable
+echo "my-secret-value" | vercel env add MY_SECRET production
+
+# ✅ CORRECT - No newline added
+printf "my-secret-value" | vercel env add MY_SECRET production
+```
+
+**Why this matters:**
+- `echo` automatically appends a newline character (`\n`) to the output
+- When piped to `vercel env add`, this newline becomes part of the stored value
+- This causes:
+  - Authentication failures (500 errors)
+  - API key validation failures
+  - Database connection failures
+  - Complete deployment breakage
+
+**Root cause:** The stored value becomes `"my-secret-value\n"` instead of `"my-secret-value"`
+
+**If you suspect corrupted environment variables:**
+```bash
+# Remove the corrupted variable
+vercel env rm MY_SECRET production
+
+# Re-add using printf (CORRECT)
+printf "my-secret-value" | vercel env add MY_SECRET production
+```
+
+**Alternative: Use interactive mode (safest)**
+```bash
+# Vercel prompts you for the value, no echo/printf needed
+vercel env add MY_SECRET production
+# Type or paste value when prompted
+```
+
+### Setting Environment Variables
+
 **Staging:**
 - Set in Vercel staging environment settings
 - Sync with `.env.example`
+- Use interactive mode or `printf` for CLI
 
 **Production:**
 - Set in Vercel production environment settings
