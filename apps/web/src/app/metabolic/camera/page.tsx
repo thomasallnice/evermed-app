@@ -133,8 +133,8 @@ export default function CameraPage() {
 
       const data = await uploadRes.json()
 
-      // Redirect to entry detail page
-      window.location.href = `/metabolic/entry/${data.foodEntryId}`
+      // Redirect back to dashboard
+      window.location.href = `/metabolic/dashboard`
     } catch (err: any) {
       console.error('Upload error:', err)
       setError(err.message || 'Failed to upload photo. Please try again.')

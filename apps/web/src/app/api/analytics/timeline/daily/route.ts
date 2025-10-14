@@ -105,6 +105,7 @@ export async function GET(req: NextRequest) {
             id: true,
             storagePath: true,
             thumbnailPath: true,
+            analysisStatus: true,
           },
         },
         ingredients: {
@@ -173,6 +174,7 @@ export async function GET(req: NextRequest) {
         type: entry.mealType,
         name: entry.ingredients.map((ing) => ing.name).join(', ') || 'Meal',
         photoUrl,
+        analysisStatus: entry.photos[0]?.analysisStatus || 'completed',
         calories: Math.round(entry.totalCalories),
         carbs: Math.round(entry.totalCarbsG * 10) / 10,
         protein: Math.round(entry.totalProteinG * 10) / 10,
