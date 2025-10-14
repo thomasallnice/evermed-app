@@ -14,6 +14,35 @@ function adminClient() {
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
+// GET: Check if Person record exists for current user
+export async function GET(req: NextRequest) {
+  try {
+    const userId = await requireUserId(req);
+
+    const person = await prisma.person.findFirst({
+      where: { ownerId: userId },
+      select: { id: true, givenName: true, locale: true }
+    });
+
+    if (!person) {
+      return NextResponse.json(
+        { error: 'Person record not found', hasCompletedOnboarding: false },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      hasCompletedOnboarding: true,
+      person
+    });
+  } catch (e: any) {
+    if (e?.message === 'unauthorized') {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    }
+    return NextResponse.json({ error: e?.message || 'Unexpected' }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const userId = await requireUserId(req);

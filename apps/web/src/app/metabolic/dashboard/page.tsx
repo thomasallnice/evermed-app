@@ -110,6 +110,11 @@ export default function MetabolicDashboardPage() {
       // Fetch daily timeline data
       const timelineRes = await apiFetch(`/api/analytics/timeline/daily?date=${selectedDate}`)
       if (!timelineRes.ok) {
+        // If 404, it means Person record is missing - redirect to onboarding
+        if (timelineRes.status === 404) {
+          window.location.href = '/auth/onboarding'
+          return
+        }
         throw new Error('Failed to fetch timeline data')
       }
       const timelineData = await timelineRes.json()
