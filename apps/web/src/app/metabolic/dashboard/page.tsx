@@ -405,6 +405,38 @@ export default function MetabolicDashboardPage() {
                       />
                       <ReferenceLine y={180} stroke="#ef4444" strokeDasharray="3 3" />
                       <ReferenceLine y={70} stroke="#f59e0b" strokeDasharray="3 3" />
+
+                      {/* Meal markers as vertical lines */}
+                      {mealMarkers.map((meal) => {
+                        const mealTime = new Date(meal.timestamp).toLocaleTimeString('en-US', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        });
+                        // Color coding: breakfast=orange, lunch=green, dinner=purple, snack=amber
+                        const mealColors = {
+                          breakfast: '#f97316', // orange-500
+                          lunch: '#10b981',     // green-500
+                          dinner: '#8b5cf6',    // purple-500
+                          snack: '#f59e0b',     // amber-500
+                        };
+                        const color = mealColors[meal.type as keyof typeof mealColors];
+
+                        return (
+                          <ReferenceLine
+                            key={meal.id}
+                            x={mealTime}
+                            stroke={color}
+                            strokeWidth={2}
+                            strokeDasharray="5 5"
+                            label={{
+                              value: meal.type === 'breakfast' ? '🌅' : meal.type === 'lunch' ? '☀️' : meal.type === 'dinner' ? '🌙' : '🍎',
+                              position: 'top',
+                              fontSize: 16,
+                            }}
+                          />
+                        );
+                      })}
+
                       <Line
                         type="monotone"
                         dataKey="glucose"
