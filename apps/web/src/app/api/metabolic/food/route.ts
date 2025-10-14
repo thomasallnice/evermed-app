@@ -38,8 +38,8 @@ async function analyzeAndUpdateFoodEntry(
 
     if (analysisResult.success && analysisResult.ingredients.length > 0) {
       // Analysis succeeded - prepare ingredients
+      // Note: Don't include foodEntryId in nested create - Prisma handles it automatically
       const ingredients = analysisResult.ingredients.map(ing => ({
-        foodEntryId,
         name: ing.name,
         quantity: ing.quantity ?? 0,
         unit: ing.unit ?? 'serving',
