@@ -11,6 +11,109 @@ const prisma = new PrismaClient()
 // Force dynamic rendering (no static optimization)
 export const dynamic = 'force-dynamic'
 
+/**
+ * Background analysis function
+ * Analyzes food photo and updates FoodEntry with results
+ */
+async function analyzeAndUpdateFoodEntry(
+  foodEntryId: string,
+  photoUrl: string,
+  useGemini: boolean,
+  prisma: PrismaClient
+) {
+  console.log(`[FOOD ANALYSIS] Starting analysis for entry ${foodEntryId}`)
+  console.log(`[FOOD ANALYSIS] Provider: ${useGemini ? 'Gemini' : 'OpenAI'}`)
+
+  try {
+    // Perform analysis
+    const analysisResult = useGemini
+      ? await analyzeFoodPhotoGemini(photoUrl)
+      : await analyzeFoodPhoto(photoUrl)
+
+    console.log(`[FOOD ANALYSIS] Analysis completed for entry ${foodEntryId}:`, {
+      success: analysisResult.success,
+      ingredientsCount: analysisResult.ingredients?.length || 0,
+      error: analysisResult.error,
+    })
+
+    if (analysisResult.success && analysisResult.ingredients.length > 0) {
+      // Analysis succeeded - prepare ingredients
+      const ingredients = analysisResult.ingredients.map(ing => ({
+        foodEntryId,
+        name: ing.name,
+        quantity: ing.quantity ?? 0,
+        unit: ing.unit ?? 'serving',
+        calories: ing.calories,
+        carbsG: ing.carbsG,
+        proteinG: ing.proteinG,
+        fatG: ing.fatG,
+        fiberG: ing.fiberG,
+        confidenceScore: 0.85,
+        source: 'ai_detected' as const,
+      }))
+
+      // Calculate totals
+      const totalCalories = analysisResult.ingredients.reduce((sum, ing) => sum + ing.calories, 0)
+      const totalCarbsG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.carbsG, 0)
+      const totalProteinG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.proteinG, 0)
+      const totalFatG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.fatG, 0)
+      const totalFiberG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.fiberG, 0)
+
+      // Update FoodEntry with results
+      await prisma.foodEntry.update({
+        where: { id: foodEntryId },
+        data: {
+          totalCalories,
+          totalCarbsG,
+          totalProteinG,
+          totalFatG,
+          totalFiberG,
+          ingredients: {
+            create: ingredients,
+          },
+        },
+      })
+
+      // Update photo status to completed
+      await prisma.foodPhoto.updateMany({
+        where: { foodEntryId },
+        data: {
+          analysisStatus: 'completed',
+          analysisCompletedAt: new Date(),
+        },
+      })
+
+      console.log(`[FOOD ANALYSIS] ✓ Successfully updated entry ${foodEntryId}`)
+    } else {
+      // Analysis failed - mark as failed
+      await prisma.foodPhoto.updateMany({
+        where: { foodEntryId },
+        data: {
+          analysisStatus: 'failed',
+          analysisCompletedAt: new Date(),
+        },
+      })
+
+      console.error(`[FOOD ANALYSIS] ✗ Analysis failed for entry ${foodEntryId}:`, analysisResult.error)
+    }
+  } catch (error) {
+    console.error(`[FOOD ANALYSIS] ✗ Exception during analysis for entry ${foodEntryId}:`, error)
+
+    // Mark as failed on exception
+    try {
+      await prisma.foodPhoto.updateMany({
+        where: { foodEntryId },
+        data: {
+          analysisStatus: 'failed',
+          analysisCompletedAt: new Date(),
+        },
+      })
+    } catch (updateError) {
+      console.error(`[FOOD ANALYSIS] Failed to update status to failed:`, updateError)
+    }
+  }
+}
+
 // Validation schemas
 const PostFoodEntrySchema = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
@@ -158,86 +261,24 @@ export async function POST(request: NextRequest) {
     console.log(`[FOOD UPLOAD] Photo uploaded to storage: ${storagePath}`)
     console.log(`[FOOD UPLOAD] Public URL generated: ${photoUrl}`)
 
-    // Analyze photo using Gemini or OpenAI (feature flag)
-    const useGemini = process.env.USE_GEMINI_FOOD_ANALYSIS === 'true'
-    console.log(`[FOOD UPLOAD] Starting analysis (Provider: ${useGemini ? 'Gemini' : 'OpenAI'})`)
-    console.log(`[FOOD UPLOAD] Environment check:`)
-    console.log(`  - USE_GEMINI_FOOD_ANALYSIS: ${process.env.USE_GEMINI_FOOD_ANALYSIS}`)
-    console.log(`  - GOOGLE_CLOUD_PROJECT: ${!!process.env.GOOGLE_CLOUD_PROJECT}`)
-    console.log(`  - GOOGLE_APPLICATION_CREDENTIALS_JSON: ${!!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON}`)
-    console.log(`  - OPENAI_API_KEY: ${!!process.env.OPENAI_API_KEY}`)
-
-    const analysisResult = useGemini
-      ? await analyzeFoodPhotoGemini(photoUrl)
-      : await analyzeFoodPhoto(photoUrl)
-
-    console.log(`[FOOD UPLOAD] Analysis result:`, {
-      success: analysisResult.success,
-      ingredientsCount: analysisResult.ingredients?.length || 0,
-      error: analysisResult.error,
-      metadata: analysisResult.metadata
-    })
-
-    let analysisStatus: 'pending' | 'completed' | 'failed' = 'completed'
-    let ingredients: any[] = []
-    let totalCalories = 0
-    let totalCarbsG = 0
-    let totalProteinG = 0
-    let totalFatG = 0
-    let totalFiberG = 0
-
-    if (analysisResult.success && analysisResult.ingredients.length > 0) {
-      // Analysis succeeded
-      console.log('Analysis succeeded with', analysisResult.ingredients.length, 'ingredients')
-      analysisStatus = 'completed'
-
-      // Prepare ingredients for database
-      ingredients = analysisResult.ingredients.map(ing => ({
-        name: ing.name,
-        quantity: ing.quantity ?? 0,
-        unit: ing.unit ?? 'serving',
-        calories: ing.calories,
-        carbsG: ing.carbsG,
-        proteinG: ing.proteinG,
-        fatG: ing.fatG,
-        fiberG: ing.fiberG,
-        confidenceScore: 0.85, // Default AI confidence
-        source: 'ai_detected',
-      }))
-
-      // Calculate totals
-      totalCalories = analysisResult.ingredients.reduce((sum, ing) => sum + ing.calories, 0)
-      totalCarbsG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.carbsG, 0)
-      totalProteinG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.proteinG, 0)
-      totalFatG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.fatG, 0)
-      totalFiberG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.fiberG, 0)
-    } else {
-      // Analysis failed
-      console.error('Analysis failed:', analysisResult.error)
-      analysisStatus = 'failed'
-    }
-
-    // Create FoodEntry with analysis results
+    // Create FoodEntry immediately with 'pending' status (before analysis)
     const foodEntry = await prisma.foodEntry.create({
       data: {
         personId: person.id,
         timestamp: new Date(),
         mealType: mealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
-        totalCalories,
-        totalCarbsG,
-        totalProteinG,
-        totalFatG,
-        totalFiberG,
+        totalCalories: 0,
+        totalCarbsG: 0,
+        totalProteinG: 0,
+        totalFatG: 0,
+        totalFiberG: 0,
         photos: {
           create: {
             storagePath,
             originalSizeBytes: photo.size,
-            analysisStatus,
-            analysisCompletedAt: analysisStatus !== 'pending' ? new Date() : null,
+            analysisStatus: 'pending',
+            analysisCompletedAt: null,
           },
-        },
-        ingredients: {
-          create: ingredients,
         },
       },
       include: {
@@ -246,28 +287,35 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    console.log(`[FOOD UPLOAD] FoodEntry created with ID: ${foodEntry.id}, status: processing`)
+
+    // Start analysis in background (don't await, let it complete asynchronously)
+    const useGemini = process.env.USE_GEMINI_FOOD_ANALYSIS === 'true'
+    console.log(`[FOOD UPLOAD] Starting background analysis (Provider: ${useGemini ? 'Gemini' : 'OpenAI'})`)
+
+    // Fire-and-forget analysis (will complete after response is sent)
+    analyzeAndUpdateFoodEntry(
+      foodEntry.id,
+      photoUrl,
+      useGemini,
+      prisma
+    ).catch(error => {
+      console.error(`[FOOD UPLOAD] Background analysis failed for entry ${foodEntry.id}:`, error)
+    })
+
     return NextResponse.json(
       {
         foodEntryId: foodEntry.id,
         photoUrl,
         mealType: foodEntry.mealType,
         timestamp: foodEntry.timestamp.toISOString(),
-        analysisStatus: foodEntry.photos[0]?.analysisStatus || 'pending',
-        ingredients: foodEntry.ingredients.map(ing => ({
-          name: ing.name,
-          quantity: ing.quantity,
-          unit: ing.unit,
-          calories: ing.calories,
-          carbsG: ing.carbsG,
-          proteinG: ing.proteinG,
-          fatG: ing.fatG,
-          fiberG: ing.fiberG,
-        })),
-        totalCalories: foodEntry.totalCalories,
-        totalCarbsG: foodEntry.totalCarbsG,
-        totalProteinG: foodEntry.totalProteinG,
-        totalFatG: foodEntry.totalFatG,
-        totalFiberG: foodEntry.totalFiberG,
+        analysisStatus: 'pending',
+        ingredients: [],
+        totalCalories: 0,
+        totalCarbsG: 0,
+        totalProteinG: 0,
+        totalFatG: 0,
+        totalFiberG: 0,
       },
       { status: 201 }
     )

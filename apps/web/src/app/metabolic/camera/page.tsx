@@ -152,17 +152,24 @@ export default function CameraPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container py-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Log Your Meal</h1>
+      {/* Mobile-First Header */}
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between px-4 h-16">
           <a
             href="/metabolic/dashboard"
-            className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Back to Dashboard"
           >
-            ← Back to Dashboard
+            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
           </a>
+          <h1 className="text-lg font-semibold text-gray-900">Log Your Meal</h1>
+          <div className="w-12"></div> {/* Spacer for centering */}
         </div>
+      </div>
+
+      <div className="container py-4 px-4">
 
         {/* Error Message */}
         {error && (
@@ -204,40 +211,59 @@ export default function CameraPage() {
                 <div className="w-full aspect-[4/3] bg-gray-100 flex flex-col items-center justify-center p-6">
                   <div className="text-center max-w-md">
                     <div className="text-6xl mb-4">📸</div>
-                    <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                      {cameraPermissionDenied ? 'Camera Access Denied' : 'Ready to Capture'}
-                    </h2>
+                    <h2 className="text-2xl font-semibold text-gray-900 mb-2">Take a Photo</h2>
                     <p className="text-gray-600 mb-6">
-                      {cameraPermissionDenied
-                        ? 'Please use the file upload option below or enable camera permissions in your browser settings.'
-                        : 'Take a photo of your meal to analyze its nutritional content.'}
+                      Snap a photo of your meal to analyze its nutritional content.
                     </p>
 
+                    {/* Camera Input (opens camera on mobile) */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+
+                    {/* Gallery Input (opens file picker) */}
+                    <input
+                      ref={(input) => {
+                        if (input) {
+                          (window as any).galleryInputRef = input
+                        }
+                      }}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+
+                    {/* Primary: Open Camera */}
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full rounded-xl bg-blue-600 text-white font-semibold px-8 py-4 min-h-[56px] hover:bg-blue-700 transition-colors shadow-md text-lg mb-3"
+                    >
+                      📸 Open Camera
+                    </button>
+
+                    {/* Secondary: Choose from Gallery */}
+                    <button
+                      onClick={() => (window as any).galleryInputRef?.click()}
+                      className="w-full rounded-xl bg-gray-100 text-gray-700 font-semibold px-8 py-4 min-h-[56px] hover:bg-gray-200 transition-colors border border-gray-300 text-lg mb-3"
+                    >
+                      🖼️ Choose from Gallery
+                    </button>
+
+                    {/* Tertiary: WebRTC Camera (desktop only) */}
                     {!cameraPermissionDenied && (
                       <button
                         onClick={startCamera}
-                        className="rounded-lg bg-blue-600 text-white font-semibold px-6 py-3 hover:bg-blue-700 transition-colors shadow-md"
+                        className="hidden md:block w-full rounded-xl bg-white text-gray-700 font-semibold px-8 py-4 min-h-[56px] hover:bg-gray-50 transition-colors border border-gray-300 text-lg"
                       >
-                        Start Camera
+                        Use Webcam (Desktop)
                       </button>
                     )}
-
-                    {/* File Upload Option */}
-                    <div className="mt-6">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="rounded-lg bg-gray-100 text-gray-700 font-semibold px-6 py-3 hover:bg-gray-200 transition-colors border border-gray-300"
-                      >
-                        Upload from Gallery
-                      </button>
-                    </div>
                   </div>
                 </div>
               )}
@@ -261,24 +287,26 @@ export default function CameraPage() {
 
         {/* Meal Type Selector */}
         {capturedImage && (
-          <div className="mt-6 bg-white rounded-2xl shadow-md p-6">
+          <div className="mt-4 bg-white rounded-2xl shadow-md p-4">
             <label className="block text-sm font-medium text-gray-700 mb-3">Meal Type</label>
-            <div className="flex gap-3 overflow-x-auto pb-2">
+            <div className="grid grid-cols-2 gap-3">
               {(['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]).map((type) => (
                 <button
                   key={type}
                   onClick={() => setSelectedMealType(type)}
-                  className={`flex-shrink-0 px-6 py-3 rounded-full font-semibold text-sm transition-all ${
+                  className={`flex items-center justify-center gap-2 px-4 py-4 min-h-[56px] rounded-xl font-semibold text-base transition-all ${
                     selectedMealType === type
                       ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-300 hover:bg-gray-50'
                   }`}
                 >
-                  {type === 'breakfast' && '🌅 '}
-                  {type === 'lunch' && '☀️ '}
-                  {type === 'dinner' && '🌙 '}
-                  {type === 'snack' && '🍎 '}
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                  <span className="text-xl">
+                    {type === 'breakfast' && '🌅'}
+                    {type === 'lunch' && '☀️'}
+                    {type === 'dinner' && '🌙'}
+                    {type === 'snack' && '🍎'}
+                  </span>
+                  <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
                 </button>
               ))}
             </div>
@@ -287,30 +315,30 @@ export default function CameraPage() {
 
         {/* Action Buttons */}
         {capturedImage && (
-          <div className="mt-6 flex flex-col sm:flex-row gap-3">
+          <div className="mt-4 flex flex-col gap-3 pb-6">
+            <button
+              onClick={uploadPhoto}
+              disabled={uploading}
+              className="w-full rounded-xl bg-blue-600 text-white font-semibold px-6 py-4 min-h-[56px] hover:bg-blue-700 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg"
+            >
+              {uploading ? (
+                <>
+                  <span className="animate-spin">⏳</span>
+                  Uploading...
+                </>
+              ) : (
+                'Upload Meal'
+              )}
+            </button>
             <button
               onClick={() => {
                 setCapturedImage(null)
                 setError(null)
               }}
               disabled={uploading}
-              className="flex-1 rounded-lg bg-white text-gray-700 font-semibold px-6 py-3 hover:bg-gray-50 transition-colors border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-xl bg-white text-gray-700 font-semibold px-6 py-4 min-h-[56px] hover:bg-gray-50 transition-colors border-2 border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
             >
-              Retake
-            </button>
-            <button
-              onClick={uploadPhoto}
-              disabled={uploading}
-              className="flex-1 rounded-lg bg-blue-600 text-white font-semibold px-6 py-3 hover:bg-blue-700 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {uploading ? (
-                <>
-                  <span className="animate-spin">⏳</span>
-                  Analyzing...
-                </>
-              ) : (
-                'Upload & Analyze'
-              )}
+              Retake Photo
             </button>
           </div>
         )}

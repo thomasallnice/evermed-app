@@ -27,7 +27,7 @@ interface MealMarker {
   name: string
   type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
   photoUrl: string | null
-  analysisStatus: 'pending' | 'processing' | 'completed' | 'failed'
+  analysisStatus: 'pending' | 'completed' | 'failed'
   calories: number
   carbs: number
   protein: number
@@ -75,6 +75,23 @@ export default function MetabolicDashboardPage() {
   useEffect(() => {
     loadDashboardData()
   }, [selectedDate])
+
+  // Auto-refresh when there are meals being analyzed
+  useEffect(() => {
+    const hasProcessingMeals = mealMarkers.some(
+      meal => meal.analysisStatus === 'pending'
+    )
+
+    if (hasProcessingMeals && !loading) {
+      // Poll every 3 seconds
+      const intervalId = setInterval(() => {
+        console.log('[DASHBOARD] Polling for analysis updates...')
+        loadDashboardData()
+      }, 3000)
+
+      return () => clearInterval(intervalId)
+    }
+  }, [mealMarkers, loading])
 
   async function loadDashboardData() {
     setLoading(true)
@@ -509,7 +526,7 @@ export default function MetabolicDashboardPage() {
                           )}
 
                           {/* Analyzing Indicator */}
-                          {(meal.analysisStatus === 'pending' || meal.analysisStatus === 'processing') && (
+                          {meal.analysisStatus === 'pending' && (
                             <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm">
                               <div className="text-center text-white">
                                 <div className="animate-spin text-4xl mb-2">⏳</div>
@@ -578,27 +595,27 @@ export default function MetabolicDashboardPage() {
                         </div>
                       </a>
 
-                      {/* Delete Confirmation Dialog */}
+                      {/* Delete Confirmation Dialog - MOBILE-FRIENDLY BUTTONS */}
                       {confirmDeleteId === meal.id && (
-                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center p-4 z-20">
+                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center p-4 z-20 rounded-2xl">
                           <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
                             <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Meal?</h3>
-                            <p className="text-sm text-gray-600 mb-4">
+                            <p className="text-sm text-gray-600 mb-6">
                               Are you sure you want to delete this meal? This action cannot be undone.
                             </p>
-                            <div className="flex gap-3">
-                              <button
-                                onClick={() => setConfirmDeleteId(null)}
-                                className="flex-1 rounded-lg bg-white text-gray-700 font-semibold px-4 py-2 hover:bg-gray-50 transition-colors border border-gray-300"
-                              >
-                                Cancel
-                              </button>
+                            <div className="flex flex-col gap-3">
                               <button
                                 onClick={() => deleteMeal(meal.id)}
                                 disabled={deletingMealId === meal.id}
-                                className="flex-1 rounded-lg bg-red-600 text-white font-semibold px-4 py-2 hover:bg-red-700 transition-colors disabled:opacity-50"
+                                className="w-full rounded-xl bg-red-600 text-white font-semibold px-6 py-4 min-h-[56px] hover:bg-red-700 transition-colors disabled:opacity-50 text-lg"
                               >
-                                {deletingMealId === meal.id ? 'Deleting...' : 'Delete'}
+                                {deletingMealId === meal.id ? 'Deleting...' : 'Delete Meal'}
+                              </button>
+                              <button
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="w-full rounded-xl bg-white text-gray-700 font-semibold px-6 py-4 min-h-[56px] hover:bg-gray-50 transition-colors border-2 border-gray-200 text-lg"
+                              >
+                                Cancel
                               </button>
                             </div>
                           </div>
@@ -727,14 +744,14 @@ export default function MetabolicDashboardPage() {
         </div>
       </div>
 
-      {/* Floating Action Button - Log Meal */}
+      {/* Floating Action Button - Log Meal - BIGGER FOR MOBILE */}
       <a
         href="/metabolic/camera"
-        className="fixed bottom-6 right-6 inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 text-white font-semibold px-6 py-4 hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl z-50"
+        className="fixed bottom-6 right-6 inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 text-white font-semibold px-6 sm:px-8 py-5 min-h-[64px] min-w-[64px] hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl z-50"
         aria-label="Log Meal"
       >
-        <span className="text-2xl">📸</span>
-        <span className="hidden sm:inline">Log Meal</span>
+        <span className="text-3xl">📸</span>
+        <span className="hidden sm:inline text-lg">Log Meal</span>
       </a>
     </div>
   )
