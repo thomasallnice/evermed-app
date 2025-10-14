@@ -343,54 +343,80 @@ export default function MetabolicDashboardPage() {
             {/* Glucose Timeline Chart */}
             <div className="bg-white rounded-2xl shadow-md p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Glucose Timeline</h2>
-              <div className="w-full h-80 sm:h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis
-                      dataKey="time"
-                      stroke="#6b7280"
-                      style={{ fontSize: '12px' }}
-                    />
-                    <YAxis
-                      stroke="#6b7280"
-                      style={{ fontSize: '12px' }}
-                      label={{
-                        value: 'Glucose (mg/dL)',
-                        angle: -90,
-                        position: 'insideLeft',
-                        style: { fontSize: '12px', fill: '#6b7280' },
-                      }}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#fff',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                      }}
-                    />
-                    {/* Target range shading (70-180 mg/dL) */}
-                    <ReferenceArea
-                      y1={70}
-                      y2={180}
-                      fill="#dcfce7"
-                      fillOpacity={0.3}
-                      label={{ value: 'Target Range', position: 'insideTopRight', fontSize: 10 }}
-                    />
-                    <ReferenceLine y={180} stroke="#ef4444" strokeDasharray="3 3" />
-                    <ReferenceLine y={70} stroke="#f59e0b" strokeDasharray="3 3" />
-                    <Line
-                      type="monotone"
-                      dataKey="glucose"
-                      stroke="#2563eb"
-                      strokeWidth={2}
-                      dot={{ fill: '#2563eb', r: 3 }}
-                      activeDot={{ r: 5 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              {glucoseData.length === 0 ? (
+                <div className="w-full h-80 sm:h-96 flex flex-col items-center justify-center bg-gray-50 rounded-2xl border border-gray-200">
+                  <div className="text-6xl mb-4">📈</div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No Glucose Data Yet</h3>
+                  <p className="text-sm text-gray-600 text-center max-w-md mb-6">
+                    Import glucose readings from Apple Health or connect your CGM to see your glucose timeline and correlations with meals.
+                  </p>
+                  <div className="flex gap-3">
+                    <a
+                      href="/metabolic/onboarding"
+                      className="inline-flex items-center gap-2 rounded-lg bg-gray-100 text-gray-700 font-semibold px-4 py-2 hover:bg-gray-200 transition-colors border border-gray-300"
+                    >
+                      <span>📱</span>
+                      <span className="text-sm">Import HealthKit</span>
+                    </a>
+                    <a
+                      href="/metabolic/onboarding"
+                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white font-semibold px-4 py-2 hover:bg-blue-700 transition-colors shadow-md"
+                    >
+                      <span>🔗</span>
+                      <span className="text-sm">Connect CGM</span>
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full h-80 sm:h-96">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis
+                        dataKey="time"
+                        stroke="#6b7280"
+                        style={{ fontSize: '12px' }}
+                      />
+                      <YAxis
+                        stroke="#6b7280"
+                        style={{ fontSize: '12px' }}
+                        label={{
+                          value: 'Glucose (mg/dL)',
+                          angle: -90,
+                          position: 'insideLeft',
+                          style: { fontSize: '12px', fill: '#6b7280' },
+                        }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#fff',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                        }}
+                      />
+                      {/* Target range shading (70-180 mg/dL) */}
+                      <ReferenceArea
+                        y1={70}
+                        y2={180}
+                        fill="#dcfce7"
+                        fillOpacity={0.3}
+                        label={{ value: 'Target Range', position: 'insideTopRight', fontSize: 10 }}
+                      />
+                      <ReferenceLine y={180} stroke="#ef4444" strokeDasharray="3 3" />
+                      <ReferenceLine y={70} stroke="#f59e0b" strokeDasharray="3 3" />
+                      <Line
+                        type="monotone"
+                        dataKey="glucose"
+                        stroke="#2563eb"
+                        strokeWidth={2}
+                        dot={{ fill: '#2563eb', r: 3 }}
+                        activeDot={{ r: 5 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
               {/* Meal markers */}
               {mealMarkers.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -416,12 +442,12 @@ export default function MetabolicDashboardPage() {
               <div className="bg-white rounded-2xl shadow-md p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Meals Today</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {mealMarkers.map((meal) => (
+                  {[...mealMarkers].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map((meal) => (
                     <div
                       key={meal.id}
                       className="group border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-blue-300 transition-all relative"
                     >
-                      <a href={`/metabolic/entry/${meal.id}`}>
+                      <a href={`/metabolic/entry/${meal.id}`} className="no-underline">
                         {/* Square Image */}
                         <div className="relative aspect-square w-full bg-gray-100">
                           {meal.photoUrl ? (
