@@ -20,7 +20,28 @@ export default function LoginPage() {
       setLoading(false)
       return
     }
-    window.location.href = '/metabolic/dashboard'
+
+    // Check if user has completed onboarding (Person record exists)
+    try {
+      const response = await fetch('/api/onboarding', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.status === 404) {
+        // Person record doesn't exist, redirect to onboarding
+        window.location.href = '/auth/onboarding'
+        return
+      }
+
+      // Person record exists, proceed to dashboard
+      window.location.href = '/metabolic/dashboard'
+    } catch {
+      // If check fails, default to dashboard (fallback will catch it)
+      window.location.href = '/metabolic/dashboard'
+    }
   }
 
   const handleDemoLogin = async () => {
@@ -37,7 +58,28 @@ export default function LoginPage() {
       setLoading(false)
       return
     }
-    window.location.href = '/metabolic/dashboard'
+
+    // Check if user has completed onboarding (Person record exists)
+    try {
+      const response = await fetch('/api/onboarding', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (response.status === 404) {
+        // Person record doesn't exist, redirect to onboarding
+        window.location.href = '/auth/onboarding'
+        return
+      }
+
+      // Person record exists, proceed to dashboard
+      window.location.href = '/metabolic/dashboard'
+    } catch {
+      // If check fails, default to dashboard (fallback will catch it)
+      window.location.href = '/metabolic/dashboard'
+    }
   }
 
   return (
