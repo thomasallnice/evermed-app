@@ -22,9 +22,16 @@ interface GlucoseReading {
 }
 
 interface MealMarker {
+  id: string
   timestamp: string
   name: string
   type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  photoUrl: string | null
+  calories: number
+  carbs: number
+  protein: number
+  fat: number
+  fiber: number
 }
 
 interface DailySummary {
@@ -389,33 +396,74 @@ export default function MetabolicDashboardPage() {
             {mealMarkers.length > 0 && (
               <div className="bg-white rounded-2xl shadow-md p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Meals Today</h2>
-                <div className="space-y-3">
-                  {mealMarkers.map((meal, idx) => (
-                    <div
-                      key={idx}
-                      className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {mealMarkers.map((meal) => (
+                    <a
+                      key={meal.id}
+                      href={`/metabolic/entry/${meal.id}`}
+                      className="group border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-blue-300 transition-all"
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-lg">
-                              {meal.type === 'breakfast' && '🌅'}
-                              {meal.type === 'lunch' && '☀️'}
-                              {meal.type === 'dinner' && '🌙'}
-                              {meal.type === 'snack' && '🍎'}
-                            </span>
-                            <span className="font-semibold text-gray-900 capitalize">{meal.type}</span>
+                      {/* Square Image */}
+                      <div className="relative aspect-square w-full bg-gray-100">
+                        {meal.photoUrl ? (
+                          <img
+                            src={meal.photoUrl}
+                            alt={meal.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-6xl">
+                            {meal.type === 'breakfast' && '🌅'}
+                            {meal.type === 'lunch' && '☀️'}
+                            {meal.type === 'dinner' && '🌙'}
+                            {meal.type === 'snack' && '🍎'}
                           </div>
-                          <div className="text-sm text-gray-700 mb-1">{meal.name || 'No details'}</div>
-                          <div className="text-xs text-gray-500">
-                            {new Date(meal.timestamp).toLocaleTimeString('en-US', {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })}
+                        )}
+                      </div>
+
+                      {/* Card Content */}
+                      <div className="p-4">
+                        {/* Meal Type Badge */}
+                        <div className="mb-2">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide bg-orange-100 text-orange-700 border border-orange-200">
+                            {meal.type}
+                          </span>
+                        </div>
+
+                        {/* Food Name */}
+                        <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                          {meal.name || 'Meal'}
+                        </h3>
+
+                        {/* Time */}
+                        <p className="text-xs text-gray-500 mb-3">
+                          {new Date(meal.timestamp).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })}
+                        </p>
+
+                        {/* Nutrition Stats */}
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="bg-gray-50 rounded-lg px-2 py-1.5">
+                            <div className="text-gray-600 uppercase tracking-wide font-medium">Calories</div>
+                            <div className="font-semibold text-gray-900">{meal.calories}</div>
+                          </div>
+                          <div className="bg-gray-50 rounded-lg px-2 py-1.5">
+                            <div className="text-gray-600 uppercase tracking-wide font-medium">Carbs</div>
+                            <div className="font-semibold text-gray-900">{meal.carbs}g</div>
+                          </div>
+                          <div className="bg-gray-50 rounded-lg px-2 py-1.5">
+                            <div className="text-gray-600 uppercase tracking-wide font-medium">Protein</div>
+                            <div className="font-semibold text-gray-900">{meal.protein}g</div>
+                          </div>
+                          <div className="bg-gray-50 rounded-lg px-2 py-1.5">
+                            <div className="text-gray-600 uppercase tracking-wide font-medium">Fat</div>
+                            <div className="font-semibold text-gray-900">{meal.fat}g</div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </a>
                   ))}
                 </div>
               </div>

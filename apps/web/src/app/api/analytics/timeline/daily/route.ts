@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { requireUserId } from '@/lib/auth';
+import { createClient } from '@supabase/supabase-js';
 
 const prisma = new PrismaClient();
 
@@ -90,17 +91,60 @@ export async function GET(req: NextRequest) {
         timestamp: 'asc',
       },
       select: {
+        id: true,
         timestamp: true,
         mealType: true,
+        totalCalories: true,
+        totalCarbsG: true,
+        totalProteinG: true,
+        totalFatG: true,
+        totalFiberG: true,
+        notes: true,
+        photos: {
+          select: {
+            id: true,
+            storagePath: true,
+            thumbnailPath: true,
+          },
+        },
         ingredients: {
           select: {
+            id: true,
             name: true,
+            quantity: true,
+            unit: true,
+            calories: true,
+            carbsG: true,
+            proteinG: true,
+            fatG: true,
+            fiberG: true,
           },
         },
       },
     });
 
     console.log(`[TIMELINE API] Found ${foodEntries.length} food entries`)
+
+    // Create Supabase client for generating public URLs (if credentials available)
+    let supabase = null;
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY,
+          {
+            auth: {
+              autoRefreshToken: false,
+              persistSession: false,
+            },
+          }
+        );
+      } catch (err) {
+        console.warn('[TIMELINE API] Failed to create Supabase client for photo URLs:', err);
+      }
+    } else {
+      console.warn('[TIMELINE API] Supabase credentials not available, photo URLs will be null');
+    }
 
     // Format glucose data
     console.log('[TIMELINE API] Formatting response data...')
@@ -109,12 +153,45 @@ export async function GET(req: NextRequest) {
       value: reading.value,
     }));
 
-    // Format meal data
-    const meals = foodEntries.map((entry) => ({
-      timestamp: entry.timestamp.toISOString(),
-      type: entry.mealType,
-      name: entry.ingredients.map((ing) => ing.name).join(', ') || 'Meal',
-    }));
+    // Format meal data with photo URLs
+    const meals = foodEntries.map((entry) => {
+      let photoUrl = null;
+
+      if (supabase && entry.photos[0]) {
+        try {
+          photoUrl = supabase.storage
+            .from('food-photos')
+            .getPublicUrl(entry.photos[0].storagePath).data.publicUrl;
+        } catch (err) {
+          console.warn('[TIMELINE API] Failed to generate photo URL:', err);
+        }
+      }
+
+      return {
+        id: entry.id,
+        timestamp: entry.timestamp.toISOString(),
+        type: entry.mealType,
+        name: entry.ingredients.map((ing) => ing.name).join(', ') || 'Meal',
+        photoUrl,
+        calories: Math.round(entry.totalCalories),
+        carbs: Math.round(entry.totalCarbsG * 10) / 10,
+        protein: Math.round(entry.totalProteinG * 10) / 10,
+        fat: Math.round(entry.totalFatG * 10) / 10,
+        fiber: Math.round(entry.totalFiberG * 10) / 10,
+        notes: entry.notes,
+        ingredients: entry.ingredients.map((ing) => ({
+          id: ing.id,
+          name: ing.name,
+          quantity: ing.quantity,
+          unit: ing.unit,
+          calories: Math.round(ing.calories),
+          carbs: Math.round((ing.carbsG || 0) * 10) / 10,
+          protein: Math.round((ing.proteinG || 0) * 10) / 10,
+          fat: Math.round((ing.fatG || 0) * 10) / 10,
+          fiber: Math.round((ing.fiberG || 0) * 10) / 10,
+        })),
+      };
+    });
 
     console.log(`[TIMELINE API] ✓ Success! Returning ${glucose.length} glucose readings and ${meals.length} meals`)
 
