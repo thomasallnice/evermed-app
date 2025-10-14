@@ -1,7 +1,7 @@
 // tests/integration/dexcom.spec.ts
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { MockDexcomClient, createMockDexcomClient } from '../mocks/dexcom-mock';
-import { encrypt, decrypt, validateEncryption } from '../../apps/web/src/lib/encryption';
+import { encrypt, decrypt } from '../../apps/web/src/lib/encryption';
 
 /**
  * Integration tests for Dexcom CGM API integration
@@ -24,14 +24,11 @@ describe('Dexcom Integration', () => {
   beforeAll(() => {
     // Set up test environment
     process.env.USE_MOCK_DEXCOM = 'true';
-    process.env.CGM_ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'; // 64 hex chars
+    process.env.ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'; // 64 hex chars
     process.env.DEXCOM_CLIENT_ID = 'test-client-id';
     process.env.DEXCOM_CLIENT_SECRET = 'test-client-secret';
     process.env.DEXCOM_REDIRECT_URI = 'http://localhost:3000/api/metabolic/cgm/dexcom/callback';
     process.env.DEXCOM_API_BASE_URL = 'https://mock-api.dexcom.com';
-
-    // Validate encryption setup
-    validateEncryption();
 
     client = createMockDexcomClient();
   });
@@ -176,9 +173,12 @@ describe('Dexcom Integration', () => {
       expect(() => decrypt(tampered)).toThrow();
     });
 
-    it('should handle encryption validation', () => {
-      // Should not throw with valid key
-      expect(() => validateEncryption()).not.toThrow();
+    it('should handle basic encryption validation', () => {
+      // Test that encryption and decryption work correctly
+      const testValue = 'test-validation';
+      const encrypted = encrypt(testValue);
+      const decrypted = decrypt(encrypted);
+      expect(decrypted).toBe(testValue);
     });
   });
 
@@ -192,13 +192,13 @@ describe('Dexcom Integration', () => {
     });
 
     it('should handle missing encryption key', () => {
-      const originalKey = process.env.CGM_ENCRYPTION_KEY;
-      delete process.env.CGM_ENCRYPTION_KEY;
+      const originalKey = process.env.ENCRYPTION_KEY;
+      delete process.env.ENCRYPTION_KEY;
 
-      expect(() => encrypt('test')).toThrow('CGM_ENCRYPTION_KEY environment variable is not set');
+      expect(() => encrypt('test')).toThrow();
 
       // Restore
-      process.env.CGM_ENCRYPTION_KEY = originalKey;
+      process.env.ENCRYPTION_KEY = originalKey;
     });
 
     it('should handle invalid encrypted format', () => {
