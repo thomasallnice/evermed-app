@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api-client'
+import { Check, X } from 'lucide-react'
 import {
   LineChart,
   Line,
@@ -72,6 +73,11 @@ export default function MetabolicDashboardPage() {
   const [deletingMealId, setDeletingMealId] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
+  // Toast notification state
+  const [showSuccessToast, setShowSuccessToast] = useState(false)
+  const [completedMealName, setCompletedMealName] = useState<string>('')
+  const [previousMealStatuses, setPreviousMealStatuses] = useState<Map<string, string>>(new Map())
+
   useEffect(() => {
     loadDashboardData()
   }, [selectedDate])
@@ -122,6 +128,27 @@ export default function MetabolicDashboardPage() {
       const fetchedMeals = timelineData.meals || []
 
       setGlucoseData(fetchedGlucose)
+
+      // Check for newly completed meals and show toast
+      if (previousMealStatuses.size > 0) {
+        for (const meal of fetchedMeals) {
+          const previousStatus = previousMealStatuses.get(meal.id)
+          if (previousStatus === 'pending' && meal.analysisStatus === 'completed') {
+            setCompletedMealName(meal.name || 'Your meal')
+            setShowSuccessToast(true)
+            setTimeout(() => setShowSuccessToast(false), 5000)
+            break // Only show one toast at a time
+          }
+        }
+      }
+
+      // Update meal status tracking
+      const newStatuses = new Map()
+      for (const meal of fetchedMeals) {
+        newStatuses.set(meal.id, meal.analysisStatus)
+      }
+      setPreviousMealStatuses(newStatuses)
+
       setMealMarkers(fetchedMeals)
 
       // Fetch correlation data (best/worst meals)
@@ -758,6 +785,30 @@ export default function MetabolicDashboardPage() {
         <span className="text-3xl">📸</span>
         <span className="hidden sm:inline text-lg">Log Meal</span>
       </a>
+
+      {/* Success Toast */}
+      {showSuccessToast && (
+        <div
+          className="fixed top-4 right-4 z-50 bg-green-600 text-white rounded-lg shadow-lg p-4 flex items-center gap-3 animate-slide-in-right max-w-md"
+          role="alert"
+          aria-live="assertive"
+        >
+          <div className="bg-white bg-opacity-20 rounded-full p-1 flex-shrink-0">
+            <Check className="w-5 h-5" />
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold">Analysis complete!</p>
+            <p className="text-sm text-green-100">{completedMealName} has been analyzed</p>
+          </div>
+          <button
+            onClick={() => setShowSuccessToast(false)}
+            className="ml-2 text-white hover:text-green-100 transition-colors flex-shrink-0"
+            aria-label="Dismiss notification"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
