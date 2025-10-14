@@ -161,6 +161,17 @@ export default function MetabolicDashboardPage() {
     }
   }
 
+  // Helper function to get meal type color classes
+  function getMealTypeColorClasses(mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') {
+    const colorMap = {
+      breakfast: 'bg-orange-100 text-orange-700 border-orange-200',
+      lunch: 'bg-green-100 text-green-700 border-green-200',
+      dinner: 'bg-purple-100 text-purple-700 border-purple-200',
+      snack: 'bg-amber-100 text-amber-700 border-amber-200',
+    };
+    return colorMap[mealType];
+  }
+
   // Delete meal function
   async function deleteMeal(mealId: string) {
     setDeletingMealId(mealId)
@@ -456,7 +467,7 @@ export default function MetabolicDashboardPage() {
                   {mealMarkers.map((meal, idx) => (
                     <span
                       key={idx}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200"
+                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getMealTypeColorClasses(meal.type)}`}
                     >
                       {meal.type === 'breakfast' && '🌅'}
                       {meal.type === 'lunch' && '☀️'}
@@ -527,7 +538,7 @@ export default function MetabolicDashboardPage() {
                         <div className="p-4">
                           {/* Meal Type Badge */}
                           <div className="mb-2">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide bg-orange-100 text-orange-700 border border-orange-200">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide border ${getMealTypeColorClasses(meal.type)}`}>
                               {meal.type}
                             </span>
                           </div>
