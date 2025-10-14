@@ -193,21 +193,7 @@ export default function MetabolicDashboardPage() {
       minute: '2-digit',
     }),
     glucose: reading.value,
-    timestamp: reading.timestamp,
   }))
-
-  // Find glucose values at meal times (or closest reading)
-  const getMealGlucoseValue = (mealTimestamp: string) => {
-    const mealTime = new Date(mealTimestamp).getTime()
-    // Find the closest glucose reading within 30 minutes
-    const closestReading = glucoseData.reduce((closest, reading) => {
-      const readingTime = new Date(reading.timestamp).getTime()
-      const timeDiff = Math.abs(readingTime - mealTime)
-      const closestDiff = closest ? Math.abs(new Date(closest.timestamp).getTime() - mealTime) : Infinity
-      return timeDiff < closestDiff && timeDiff <= 30 * 60 * 1000 ? reading : closest
-    }, null as GlucoseReading | null)
-    return closestReading?.value || 100 // Default to 100 if no reading found
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -356,30 +342,7 @@ export default function MetabolicDashboardPage() {
 
             {/* Glucose Timeline Chart */}
             <div className="bg-white rounded-2xl shadow-md p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">Glucose Timeline</h2>
-                {/* Meal Type Legend */}
-                {mealMarkers.length > 0 && (
-                  <div className="flex gap-3 text-xs">
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                      <span className="text-gray-600">Breakfast</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                      <span className="text-gray-600">Lunch</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                      <span className="text-gray-600">Snack</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                      <span className="text-gray-600">Dinner</span>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Glucose Timeline</h2>
               {glucoseData.length === 0 ? (
                 <div className="w-full h-80 sm:h-96 flex flex-col items-center justify-center bg-gray-50 rounded-2xl border border-gray-200">
                   <div className="text-6xl mb-4">📈</div>
@@ -405,7 +368,7 @@ export default function MetabolicDashboardPage() {
                   </div>
                 </div>
               ) : (
-                <div className="w-full h-80 sm:h-96 relative">
+                <div className="w-full h-80 sm:h-96">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -465,6 +428,11 @@ export default function MetabolicDashboardPage() {
                             stroke={color}
                             strokeWidth={2}
                             strokeDasharray="5 5"
+                            label={{
+                              value: meal.type === 'breakfast' ? '🌅' : meal.type === 'lunch' ? '☀️' : meal.type === 'dinner' ? '🌙' : '🍎',
+                              position: 'top',
+                              fontSize: 16,
+                            }}
                           />
                         );
                       })}
@@ -479,47 +447,6 @@ export default function MetabolicDashboardPage() {
                       />
                     </LineChart>
                   </ResponsiveContainer>
-
-                  {/* Meal image markers overlaid on chart */}
-                  {mealMarkers.map((meal) => {
-                    if (!meal.photoUrl) return null;
-
-                    const mealTime = new Date(meal.timestamp);
-                    const startTime = glucoseData.length > 0 ? new Date(glucoseData[0].timestamp) : mealTime;
-                    const endTime = glucoseData.length > 0 ? new Date(glucoseData[glucoseData.length - 1].timestamp) : mealTime;
-                    const totalDuration = endTime.getTime() - startTime.getTime();
-                    const mealOffset = mealTime.getTime() - startTime.getTime();
-                    const mealPercent = totalDuration > 0 ? (mealOffset / totalDuration) * 100 : 50;
-
-                    // Color coding for borders
-                    const borderColors = {
-                      breakfast: 'border-orange-500',
-                      lunch: 'border-green-500',
-                      dinner: 'border-purple-500',
-                      snack: 'border-amber-500',
-                    };
-                    const borderColor = borderColors[meal.type as keyof typeof borderColors];
-
-                    return (
-                      <div
-                        key={meal.id}
-                        className="absolute pointer-events-none"
-                        style={{
-                          left: `${Math.max(8, Math.min(92, mealPercent))}%`,
-                          top: '10px',
-                          transform: 'translateX(-50%)',
-                        }}
-                      >
-                        <div className={`w-12 h-12 rounded-full border-3 ${borderColor} overflow-hidden bg-white shadow-lg`}>
-                          <img
-                            src={meal.photoUrl}
-                            alt={meal.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
                 </div>
               )}
               {/* Meal markers */}
@@ -547,21 +474,11 @@ export default function MetabolicDashboardPage() {
               <div className="bg-white rounded-2xl shadow-md p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Meals Today</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[...mealMarkers].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map((meal) => {
-                    // Color coding for meal cards
-                    const cardBorderColors = {
-                      breakfast: 'border-orange-500 hover:border-orange-600',
-                      lunch: 'border-green-500 hover:border-green-600',
-                      dinner: 'border-purple-500 hover:border-purple-600',
-                      snack: 'border-amber-500 hover:border-amber-600',
-                    };
-                    const cardBorderColor = cardBorderColors[meal.type as keyof typeof cardBorderColors];
-
-                    return (
-                      <div
-                        key={meal.id}
-                        className={`group border-2 ${cardBorderColor} rounded-2xl overflow-hidden hover:shadow-lg transition-all relative`}
-                      >
+                  {[...mealMarkers].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map((meal) => (
+                    <div
+                      key={meal.id}
+                      className="group border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-blue-300 transition-all relative"
+                    >
                       <a href={`/metabolic/entry/${meal.id}`} className="no-underline">
                         {/* Square Image */}
                         <div className="relative aspect-square w-full bg-gray-100">
