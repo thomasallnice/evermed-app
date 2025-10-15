@@ -9,7 +9,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Prisma schema for EverMed MVP (Postgres/Supabase)
+// Prisma schema for GlucoLens (Postgres/Supabase)
 
 // Enums for Metabolic Insights feature
 enum MealType {
@@ -66,11 +66,6 @@ model Person {
   targetGlucoseMin Float?  @map("target_glucose_min")
   targetGlucoseMax Float?  @map("target_glucose_max")
 
-  // Existing relations
-  documents    Document[]
-  observations Observation[]
-  sharePacks   SharePack[]
-
   // Metabolic Insights relations
   foodEntries        FoodEntry[]
   glucoseReadings    GlucoseReading[]
@@ -81,112 +76,10 @@ model Person {
   subscription       SubscriptionTier?
 }
 
-model Document {
-  id          String    @id @default(uuid())
-  personId    String
-  kind        String // 'pdf'|'image'|'note'
-  topic       String?
-  filename    String
-  storagePath String
-  sha256      String
-  uploadedAt  DateTime  @default(now())
-  processedAt DateTime?
-
-  person         Person          @relation(fields: [personId], references: [id], onDelete: Cascade)
-  chunks         DocChunk[]
-  observations   Observation[]   @relation("DocToObs")
-  sharePackItems SharePackItem[] // back-relation
-  chatMessages   ChatMessage[] // back-relation
-}
-
-model Observation {
-  id           String    @id @default(uuid())
-  personId     String
-  code         String
-  display      String
-  valueNum     Float?
-  unit         String?
-  refLow       Float?
-  refHigh      Float?
-  effectiveAt  DateTime?
-  sourceDocId  String
-  sourceAnchor String?
-
-  person         Person          @relation(fields: [personId], references: [id], onDelete: Cascade)
-  sourceDoc      Document        @relation("DocToObs", fields: [sourceDocId], references: [id], onDelete: Cascade)
-  sharePackItems SharePackItem[] // back-relation
-
-  @@index([personId, code, effectiveAt])
-}
-
-model SharePack {
-  id           String    @id @default(uuid())
-  personId     String
-  title        String
-  audience     String // 'clinician'|'school'|'urgent'
-  passcodeHash String // Argon2id(PEPPER+passcode)
-  expiresAt    DateTime
-  revokedAt    DateTime?
-  viewsCount   Int       @default(0)
-  createdAt    DateTime  @default(now())
-
-  person Person          @relation(fields: [personId], references: [id], onDelete: Cascade)
-  items  SharePackItem[]
-  events ShareEvent[]
-}
-
-model SharePackItem {
-  id            String  @id @default(uuid())
-  packId        String
-  documentId    String?
-  observationId String?
-
-  pack        SharePack    @relation(fields: [packId], references: [id], onDelete: Cascade)
-  document    Document?    @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  observation Observation? @relation(fields: [observationId], references: [id], onDelete: Cascade)
-}
-
-model ShareEvent {
-  id        String   @id @default(uuid())
-  packId    String
-  kind      String // 'view'|'revoke' etc.
-  createdAt DateTime @default(now())
-  ipHash    String?
-
-  pack SharePack @relation(fields: [packId], references: [id], onDelete: Cascade)
-}
-
-model DocChunk {
-  id           String                 @id @default(uuid())
-  documentId   String
-  chunkId      Int
-  text         String
-  sourceAnchor String?
-  createdAt    DateTime               @default(now())
-  embedding    Unsupported("vector")?
-
-  document Document @relation(fields: [documentId], references: [id])
-
-  @@unique([documentId, chunkId])
-}
-
-model ChatMessage {
-  id         String   @id @default(uuid())
-  userId     String
-  role       String
-  content    String
-  documentId String?
-  createdAt  DateTime @default(now())
-
-  document Document? @relation(fields: [documentId], references: [id])
-
-  @@index([userId, createdAt])
-}
-
 model TokenUsage {
   id        String   @id @default(uuid())
   userId    String?
-  feature   String // 'explain'|'ask'|'ocr'|'index'
+  feature   String // 'food_analysis'|'glucose_prediction'|'insight_generation'
   model     String
   tokensIn  Int
   tokensOut Int
