@@ -9,7 +9,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Prisma schema for GlucoLens (Postgres/Supabase)
+// Prisma schema for EverMed - Glucose Tracking (Postgres/Supabase)
 
 // Enums for Metabolic Insights feature
 enum MealType {
