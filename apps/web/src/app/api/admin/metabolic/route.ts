@@ -17,6 +17,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { isAdmin } from '@/lib/auth';
 
 // Cache dashboard queries for 5 minutes
 export const revalidate = 300;
@@ -28,6 +29,11 @@ export const revalidate = 300;
  * NOTE: This endpoint is stubbed until metabolic insights migrations are run on staging.
  */
 export async function GET(request: NextRequest) {
+  // Admin authentication required
+  if (!(await isAdmin(request))) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   // TODO: Enable this endpoint after running metabolic insights migrations
   // See: db/migrations/20251010090000_add_metabolic_insights/migration.sql
 

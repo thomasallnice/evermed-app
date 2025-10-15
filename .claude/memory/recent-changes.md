@@ -1,5 +1,62 @@
 # Recent Changes
 
+## 2025-10-14: CRITICAL FIX - Vercel Environment Variable Corruption via `echo` Command
+
+**Problem Discovered:**
+Using `echo "value" | vercel env add KEY production` corrupts environment variables by appending newline characters (`\n`) to the stored values. This caused:
+- ❌ Authentication failures (500 errors)
+- ❌ API key validation failures
+- ❌ Database connection failures
+- ❌ Complete deployment breakage
+
+**Root Cause:**
+- The `echo` command automatically appends a newline character (`\n`) to its output
+- When piped to `vercel env add`, this newline becomes part of the stored value
+- The stored value becomes `"my-secret-value\n"` instead of `"my-secret-value"`
+- All API clients reject the corrupted value as invalid
+
+**Examples of Broken Values:**
+```bash
+# What we tried to set
+OPENAI_API_KEY=sk-proj-abc123...
+
+# What actually got stored in Vercel
+OPENAI_API_KEY=sk-proj-abc123...\n
+```
+
+**Solution:**
+**ALWAYS use `printf`, NEVER use `echo`** when piping values to Vercel CLI:
+
+```bash
+# ❌ WRONG - Adds newline, corrupts the variable
+echo "my-secret-value" | vercel env add MY_SECRET production
+
+# ✅ CORRECT - No newline added
+printf "my-secret-value" | vercel env add MY_SECRET production
+```
+
+**Alternative (Safest):**
+Use interactive mode where Vercel prompts for the value:
+```bash
+vercel env add MY_SECRET production
+# Paste value when prompted
+```
+
+**Impact:**
+- ✅ Documented in `.claude/sops/deployment.md` with critical warning section
+- ✅ Updated memory with root cause analysis
+- ✅ Prevented future deployment failures from this issue
+
+**Files Updated:**
+- `.claude/sops/deployment.md` - Added "⚠️ CRITICAL: Setting Environment Variables via CLI" section
+- `.claude/memory/recent-changes.md` - This entry
+
+**Lessons Learned:**
+1. **Never trust `echo` for piping secrets** - Use `printf` or interactive mode
+2. **Environment variable corruption is silent** - No error, just broken deployments
+3. **Always test after setting environment variables** - Don't wait for deployment to fail
+4. **If deployment suddenly breaks after env var changes** - Check for trailing newlines
+
 ## 2025-10-12: Gemini 2.5 Flash Staging Deployment COMPLETED ✅
 
 **What Was Done:**

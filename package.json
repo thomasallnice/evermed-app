@@ -22,6 +22,8 @@
     "prisma:format": "prisma format --schema=db/schema.prisma",
     "db:policies": "node -e \"console.log('Apply db/policies.sql on Supabase (SQL editor) — extensions enabled by project')\"",
     "seed": "tsx db/seed.ts",
+    "admin:add": "tsx scripts/add-admin-user.ts",
+    "admin:list": "tsx scripts/list-admin-users.ts",
     "validate:migrations": "./scripts/validate-migrations.sh",
     "validate:schema": "tsx scripts/validate-schema-compatibility.ts",
     "validate:all": "npm run validate:migrations && npm run validate:schema",
