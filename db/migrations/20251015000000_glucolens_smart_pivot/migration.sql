@@ -5,23 +5,25 @@
 BEGIN;
 
 -- Drop health vault tables in correct order (respect foreign keys)
-DROP TABLE IF EXISTS doc_chunks CASCADE;
-DROP TABLE IF EXISTS chat_messages CASCADE;
-DROP TABLE IF EXISTS share_events CASCADE;
-DROP TABLE IF EXISTS share_pack_items CASCADE;
-DROP TABLE IF EXISTS share_packs CASCADE;
-DROP TABLE IF EXISTS observations CASCADE;
-DROP TABLE IF EXISTS documents CASCADE;
+-- Note: Using exact PascalCase names from staging database
+DROP TABLE IF EXISTS "DocChunk" CASCADE;
+DROP TABLE IF EXISTS "ChatMessage" CASCADE;
+DROP TABLE IF EXISTS "ShareEvent" CASCADE;
+DROP TABLE IF EXISTS "SharePackItem" CASCADE;
+DROP TABLE IF EXISTS "SharePack" CASCADE;
+DROP TABLE IF EXISTS "Observation" CASCADE;
+DROP TABLE IF EXISTS "Document" CASCADE;
+DROP TABLE IF EXISTS "Summary" CASCADE;
 
 -- Clean up token usage for deleted features
-DELETE FROM token_usage WHERE feature IN ('ocr', 'index', 'explain', 'ask');
+DELETE FROM "TokenUsage" WHERE feature IN ('ocr', 'index', 'explain', 'ask');
 
 -- Update feature flags for GlucoLens
-INSERT INTO feature_flags (name, enabled, rollout_percent, description)
+INSERT INTO feature_flags (name, enabled, "rolloutPercent", description)
 VALUES ('glucolens_public_beta', true, 10, 'Enable GlucoLens for 10% of users (beta cohort)')
 ON CONFLICT (name) DO UPDATE SET
   enabled = EXCLUDED.enabled,
-  rollout_percent = EXCLUDED.rollout_percent,
+  "rolloutPercent" = EXCLUDED."rolloutPercent",
   description = EXCLUDED.description;
 
 -- Add pivot metadata to existing users
