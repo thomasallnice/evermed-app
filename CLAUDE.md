@@ -102,22 +102,19 @@ npx vitest run tests/unit/auth.spec.ts
 - **Backend**: Next.js API routes
 - **Database**: PostgreSQL (Supabase) with Prisma ORM
 - **Auth/Storage**: Supabase Auth + Storage
-- **AI/ML**: OpenAI (embeddings, chat), pgvector (semantic search)
-- **OCR**: External service via `PDF_EXTRACT_URL`
+- **AI/ML**: Google Gemini 2.5 Flash (food recognition), Nutritionix API (nutrition database)
+- **Future ML**: LSTM models for glucose prediction (optional, mock baseline for beta)
 
 ### Key Data Models (db/schema.prisma)
 
-#### Core Health Vault Models
-- **Person**: User profiles linked to Supabase auth.uid() via `ownerId`
-- **Document**: Uploaded PDFs/images stored in Supabase Storage
-- **DocChunk**: Text chunks with pgvector embeddings for RAG
-- **ChatMessage**: Chat history, optionally linked to documents
-- **Observation**: Extracted medical data (FHIR-aligned codes)
-- **SharePack**: Passcode-protected shareable packs with 7-day expiry
+**Product Focus:** EverMed is a glucose tracking application. The health document vault features (Document, OCR, RAG, SharePacks) were removed in October 2025 pivot.
+
+#### Core Models
+- **Person**: User profiles linked to Supabase auth.uid() via `ownerId`, glucose targets, meal preferences
 - **TokenUsage**, **AnalyticsEvent**: Non-PHI telemetry
 
-#### Metabolic Insights Models (Premium Feature - 85% Complete)
-**Status**: Feature complete in dev, deployment pending (Sprint 7-8)
+#### Metabolic Tracking Models (Core Product - Deployed to Staging)
+**Status**: Database deployed to staging (October 15, 2025), beta launch in progress
 
 **Food Tracking** (4 tables):
 - **FoodEntry**: Meal logging with nutrition totals, glucose predictions, meal type
@@ -146,18 +143,17 @@ npx vitest run tests/unit/auth.spec.ts
 - Admin dashboard (adoption, engagement, performance metrics)
 - Feature flags (gradual rollout, A/B testing)
 
-**Deployment Blockers** (Sprint 7-8):
-- ⚠️ Database migrations NOT applied to staging/production
-- ⚠️ Storage buckets NOT created (`food-photos`, `ml-models`)
-- ⚠️ Admin authentication placeholder (CRITICAL security risk)
-- 🔶 LSTM model mock baseline (optional, can launch without)
+**Deployment Status** (October 15, 2025):
+- ✅ Database migrations applied to staging (health vault tables dropped, metabolic tables active)
+- ✅ Storage buckets created and secured (`food-photos` with RLS policies)
+- ✅ Admin authentication implemented (AdminUser table with RLS)
+- 🔶 LSTM model predictions (future feature, mock baseline for beta)
 
 **Documentation**:
-- Status: `docs/METABOLIC_INSIGHTS_STATUS_2025-10-12.md`
-- Sprint Plan: `docs/metabolic-insights-sprint-7-8-finalization.md`
-- Complete Summary: `docs/METABOLIC_INSIGHTS_COMPLETE.md`
 - PRD: `docs/metabolic-insights-prd.md`
-- Technical Plan: `docs/metabolic-insights-technical-plan.md`
+- Product Description: `docs/project-description.md`
+- Technical Details: `docs/METABOLIC_INSIGHTS_COMPLETE.md`
+- Archived Pivot Docs: `docs/archive/pivot-2025-10-15/`
 
 ### API Routes Pattern
 All API routes in `apps/web/src/app/api/`:
@@ -165,14 +161,7 @@ All API routes in `apps/web/src/app/api/`:
 - RLS enforced at database level via Supabase policies
 - JSON responses with proper error handling
 
-**Core Health Vault APIs**:
-- `/api/uploads` - Document upload with OCR
-- `/api/chat` - RAG-powered chat with citations
-- `/api/explain` - Document explanation
-- `/api/share-packs` - Passcode-protected sharing
-- `/api/documents/:id` - Document management
-
-**Metabolic Insights APIs** (85% complete):
+**Metabolic Tracking APIs** (Core Product):
 - `/api/metabolic/food` - POST (photo upload + entry), GET (list entries)
 - `/api/metabolic/food/[id]` - GET (entry details), PATCH (edit), DELETE
 - `/api/metabolic/onboarding` - POST (save targets and CGM preferences)
@@ -180,16 +169,18 @@ All API routes in `apps/web/src/app/api/`:
 - `/api/analytics/timeline/daily` - GET (daily timeline with meals + glucose)
 - `/api/analytics/insights/daily` - GET (daily insights and patterns)
 - `/api/predictions/glucose` - POST (predict glucose response to meal)
-- `/api/admin/metabolic` - GET (admin metrics dashboard) ⚠️ Auth placeholder
-- `/api/admin/feature-flags` - GET/POST (manage feature flags) ⚠️ Auth placeholder
+- `/api/admin/metabolic` - GET (admin metrics dashboard) ✅ Admin auth enforced
+- `/api/admin/feature-flags` - GET/POST (manage feature flags) ✅ Admin auth enforced
 - `/api/analytics/track` - POST (non-PHI event tracking)
 
-### RAG Architecture
-1. Documents uploaded → stored in Supabase Storage
-2. OCR via external service (`/api/ocr`)
-3. Text chunked → stored in `DocChunk` with pgvector embeddings
-4. Chat queries → semantic search via pgvector → LLM with citations
-5. Implementation in `apps/web/src/lib/rag.ts`
+### Glucose Tracking Architecture
+1. Food photos uploaded → Google Gemini 2.5 Flash (AI food recognition)
+2. Ingredient identification → Nutritionix API (nutrition database lookup)
+3. Nutrition totals calculated → FoodEntry created with macros
+4. Glucose readings (manual or CGM) → GlucoseReading time-series
+5. Correlation engine → Align meals with glucose curves (2-4 hour windows)
+6. Daily insights → Pattern detection (spikes, stable meals, trends)
+7. Weekly summaries → PDF export for doctor appointments
 
 ### Authentication Flow
 - Supabase Auth for signup/login
@@ -293,11 +284,11 @@ const networkRequests = mcp__chrome_devtools__list_network_requests();
 **Subagent Integration:**
 See specific Chrome DevTools requirements in each subagent's description below (pr-validation-orchestrator, vitest-test-writer, nextjs-ui-builder).
 
-### Share Packs
-- Passcode-protected with scrypt hashing (`SHARE_LINK_PEPPER` + passcode)
-- 7-day expiry, view logs, one-tap revoke
-- Public viewer at `/share/[token]` after passcode verification
-- Never exposes full vault, only selected items
+### Admin Management
+- AdminUser table with RLS policies for role-based access control
+- Scripts: `npm run admin:add <user-id> <email>` and `npm run admin:list`
+- Admin endpoints protected via `isAdmin()` helper in `apps/web/src/lib/auth.ts`
+- Admin dashboard shows aggregated, non-PHI metrics only
 
 ## Memory & SOPs System
 
@@ -589,11 +580,9 @@ Before implementing ANY technical change, ask yourself:
      - Sync RLS policies via CLI rather than manual SQL when possible
      - Use `supabase db push` for deployment instead of direct Prisma migrate deploy when RLS/triggers are involved
 
-3. **rag-pipeline-manager**
-   - **ALWAYS USE FOR**: RAG pipeline changes, embedding logic, semantic search modifications, chunking strategies
-   - **WITHOUT EXCEPTION**: All changes to OCR ingestion, text chunking, pgvector queries, citation tracking
-   - **WHY CRITICAL**: Maintains retrieval accuracy, ensures proper citation flow, optimizes search performance
-   - **NEVER SKIP**: RAG is core functionality; manual changes will degrade quality
+3. **rag-pipeline-manager** (DEPRECATED - Health vault removed in October 2025 pivot)
+   - Previously used for RAG pipeline, now obsolete
+   - EverMed is now a glucose tracking app without document/RAG features
 
 4. **supabase-rls-security**
    - **ALWAYS USE FOR**: RLS policy changes, storage security, multi-tenant isolation, deployment security setup
