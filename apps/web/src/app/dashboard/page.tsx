@@ -222,15 +222,15 @@ export default function DashboardPage() {
             <span className="font-semibold text-gray-900 text-center">Log Meal</span>
           </a>
 
-          <a
-            href="/glucose/entry"
+          <button
+            onClick={() => alert('Manual glucose entry coming soon! For now, connect your CGM via Settings.')}
             className="flex flex-col items-center justify-center gap-3 bg-white rounded-2xl shadow-md p-6 hover:shadow-lg hover:border-green-300 border border-gray-200 transition-all min-h-[120px]"
           >
             <div className="w-14 h-14 rounded-full bg-green-600 text-white flex items-center justify-center shadow-md">
               <Plus className="w-7 h-7" />
             </div>
             <span className="font-semibold text-gray-900 text-center">Add Glucose</span>
-          </a>
+          </button>
         </div>
 
         {/* Today's Timeline */}

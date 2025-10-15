@@ -1,50 +1,44 @@
 {
-  "name": "EverMed.ai - Personal Health Records",
-  "short_name": "EverMed",
-  "description": "Your personal health records and metabolic insights, organized and accessible anywhere.",
+  "name": "GlucoLens - See How Food Affects Your Blood Sugar",
+  "short_name": "GlucoLens",
+  "description": "Photo-first glucose tracking with AI food recognition and personalized metabolic insights.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
   "orientation": "portrait-primary",
   "scope": "/",
-  "icons": [
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
+  "icons": [],
   "categories": [
     "health",
     "medical",
-    "lifestyle"
+    "lifestyle",
+    "food"
   ],
   "shortcuts": [
     {
-      "name": "Upload Document",
-      "short_name": "Upload",
-      "description": "Upload a new medical document",
-      "url": "/upload"
+      "name": "Log Meal",
+      "short_name": "Camera",
+      "description": "Take a photo of your meal for instant nutrition analysis",
+      "url": "/camera"
     },
     {
-      "name": "Document Vault",
-      "short_name": "Vault",
-      "description": "View your document vault",
-      "url": "/vault"
+      "name": "Meal History",
+      "short_name": "History",
+      "description": "View your meal history and patterns",
+      "url": "/history"
     },
     {
-      "name": "Chat with AI",
-      "short_name": "Chat",
-      "description": "Ask questions about your health records",
-      "url": "/chat"
-    },
-    {
-      "name": "Metabolic Insights",
+      "name": "Insights",
       "short_name": "Insights",
-      "description": "View your metabolic insights dashboard",
-      "url": "/metabolic/dashboard"
+      "description": "View daily insights and glucose patterns",
+      "url": "/insights"
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your glucose dashboard",
+      "url": "/dashboard"
     }
   ]
 }
