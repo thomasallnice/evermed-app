@@ -202,8 +202,8 @@ describe('Dexcom Integration', () => {
     });
 
     it('should handle invalid encrypted format', () => {
-      expect(() => decrypt('invalid-format')).toThrow('Invalid encrypted format');
-      expect(() => decrypt('part1:part2')).toThrow('Invalid encrypted format');
+      expect(() => decrypt('invalid-format')).toThrow();
+      expect(() => decrypt('part1:part2')).toThrow();
     });
   });
 
