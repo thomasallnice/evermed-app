@@ -2,6 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createDexcomService } from '@/lib/services/dexcom';
 
+// Force dynamic rendering for OAuth callback (uses searchParams)
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/metabolic/cgm/dexcom/callback
  *

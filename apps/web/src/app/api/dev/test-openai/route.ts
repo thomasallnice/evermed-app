@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
+// Force dynamic rendering for dev test endpoint (uses request.url)
+export const dynamic = 'force-dynamic';
+
 /**
  * DEV ONLY: Test OpenAI Vision API connectivity
  *
