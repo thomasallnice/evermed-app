@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api-client'
@@ -40,7 +40,7 @@ interface SyncHistory {
   error?: string
 }
 
-export default function CGMSettingsPage() {
+function CGMSettingsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -346,5 +346,23 @@ export default function CGMSettingsPage() {
 
       <BottomNav />
     </div>
+  )
+}
+
+// Wrap the content in Suspense to handle useSearchParams()
+export default function CGMSettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center pb-20">
+          <div className="text-center">
+            <div className="text-6xl mb-4 animate-pulse">⚙️</div>
+            <p className="text-gray-600 font-medium">Loading CGM settings...</p>
+          </div>
+        </div>
+      }
+    >
+      <CGMSettingsContent />
+    </Suspense>
   )
 }
