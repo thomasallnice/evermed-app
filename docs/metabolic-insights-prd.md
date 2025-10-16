@@ -1,17 +1,17 @@
 # **Metabolic Insights — Product Requirements Document**
 
-**Version:** 1.0 • October 10, 2025  
-**Product Track:** Premium Feature Addition to EverMed.ai  
-**Regulatory Classification:** Wellness/Lifestyle (Non-SaMD initially, with pathway to Class II SaMD)  
-**Status:** Proposed
+**Version:** 2.0 • October 15, 2025
+**Product:** Core EverMed Product (Glucose Tracking Focus)
+**Regulatory Classification:** Wellness/Lifestyle (Non-SaMD)
+**Status:** **Deployed to Staging** (Beta Launch in Progress)
 
 ---
 
 ## **Executive Summary**
 
-Metabolic Insights is a premium feature track within EverMed.ai that enables users to track food intake through photos, monitor blood sugar responses, and receive personalized predictions about how specific foods affect their glucose levels. By combining visual food logging with continuous glucose monitor (CGM) data or fingerstick readings, the system learns individual metabolic patterns to provide increasingly accurate predictions and actionable insights.
+EverMed is a glucose tracking application that enables users to track food intake through photos, monitor blood sugar responses, and receive personalized insights about how specific foods affect their glucose levels. By combining visual food logging with continuous glucose monitor (CGM) data or fingerstick readings, the system learns individual metabolic patterns to provide actionable insights.
 
-**Key Innovation:** Personalized ML models that learn each user's unique glycemic response patterns, integrated within their existing health vault for comprehensive metabolic health management.
+**Key Innovation:** Photo-first meal logging (< 5 seconds), AI-powered food recognition with 900k+ food database, glucose-meal correlation, and personalized pattern detection—all with non-SaMD compliance and strong privacy.
 
 ---
 

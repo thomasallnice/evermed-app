@@ -142,6 +142,108 @@ rules: {
 
 ## Resolved Recently
 
+### ✅ CRITICAL: Vercel Environment Variable Corruption via echo (2025-10-16)
+**Was**:
+- Vercel deployment failing with authentication errors (500 status)
+- API calls returning "invalid API key" errors
+- Production deployment completely broken
+- Error: `Authentication failed: Invalid credentials`
+
+**Root Cause**:
+- Used `echo "value" | vercel env add KEY_NAME production` to sync environment variables
+- The `echo` command adds a newline character (`\n`) by default
+- When piped to Vercel CLI, the newline becomes part of the stored value
+- Example: `OPENAI_API_KEY` stored as `sk-proj-abc123\n` instead of `sk-proj-abc123`
+- OpenAI API rejected the key because of the trailing newline
+
+**Symptoms**:
+- 500 Internal Server Error on API endpoints requiring authentication
+- Error logs showed "Invalid API key" from external services
+- Environment variables looked correct in Vercel dashboard (newline not visible)
+- Local development worked fine (no newline in .env files)
+
+**Fix**:
+- **NEVER use `echo` when piping to `vercel env add`**
+- **ALWAYS use `printf` instead** - it doesn't add newlines by default
+- Correct command: `printf '%s' "$value" | vercel env add KEY_NAME production`
+
+**Wrong (Corrupts Values)**:
+```bash
+echo "$OPENAI_API_KEY" | vercel env add OPENAI_API_KEY production
+# Stores: "sk-proj-abc123\n" ❌
+```
+
+**Correct (No Newline)**:
+```bash
+printf '%s' "$OPENAI_API_KEY" | vercel env add OPENAI_API_KEY production
+# Stores: "sk-proj-abc123" ✅
+```
+
+**Solution Implemented**:
+1. Created automated sync script: `scripts/sync-vercel-env.sh`
+2. Script uses `printf '%s'` exclusively for all variable syncing
+3. Created slash command `/syncVercel` for easy invocation
+4. Documented in project memory and SOPs
+
+**Prevention**:
+- Use `/syncVercel` slash command for all environment variable syncing
+- Never manually pipe values with `echo` to Vercel CLI
+- Script validates variables after syncing
+- Pre-deployment validation checks env var integrity
+
+**Files Created**:
+- `scripts/sync-vercel-env.sh` - Automated sync script using printf
+- `.claude/commands/syncVercel.md` - Slash command definition
+- Documentation added to `.claude/memory/active-issues.md`
+
+**Duration**: 4+ hours debugging across multiple deployments, 30 minutes to fix once identified
+
+**Related**: This issue caused the failed Vercel deployment at 2025-10-16 13:38 (dpl_CxpJe5dv1h1ywZCCx4d5EuXn5oq2)
+
+**Lesson Learned**:
+- `echo` is unsafe for piping sensitive values to external CLIs
+- Always use `printf '%s'` for exact value replication
+- Trailing whitespace/newlines are invisible in web dashboards
+- Test environment variables immediately after syncing
+- Automate environment syncing to prevent human error
+
+---
+
+### ✅ CRITICAL: PgBouncer Cache Issue with Manual Schema Changes (2025-10-16)
+**Was**:
+- Food upload endpoint failing with "The column `food_ingredients.food_photo_id` does not exist" error
+- Column verified to exist in database via psql
+- Prisma Client correctly generated with foodPhotoId field
+- Error persisted despite multiple cache clears and Prisma client regenerations
+
+**Root Cause**:
+- DATABASE_URL used PgBouncer connection pooler (port 6543) with `pgbouncer=true`
+- Manual schema change (ALTER TABLE to add column) bypassed PgBouncer's schema cache
+- Prisma's runtime schema validation checked against stale PgBouncer cache
+- PgBouncer cached old schema without food_photo_id column
+
+**Fix**:
+- Changed DATABASE_URL from pooler (port 6543) to direct connection (port 5432)
+- Removed `pgbouncer=true` parameter
+- Restarted Next.js dev server to pick up new connection string
+- Food upload endpoint now works correctly
+
+**Lesson Learned**:
+- ALWAYS use direct connection (port 5432) for schema changes and development
+- Only use pooler connection (port 6543) for production/high-concurrency scenarios
+- When manually applying schema changes, PgBouncer cache must be invalidated OR use direct connection
+- Prisma migrate deploy should use direct connection to avoid cache issues
+
+**Files Changed**:
+- `/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/apps/web/.env.local` - Updated DATABASE_URL
+- `/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/apps/web/src/app/api/metabolic/food/route.ts` - Removed ingredients from create include
+
+**Duration**: 3 hours debugging, 5 minutes to fix once root cause identified
+
+**Related**: Migration `20251015000001_add_multi_dish_support` applied manually to `wukrnqifpgjwbqxpockm` database
+
+---
+
 ### ✅ BLOCKER: Metabolic Insights Full Deployment Complete (Staging + Production) (2025-10-12)
 **Was**:
 - Database migrations NOT applied to staging/production (11 tables missing)

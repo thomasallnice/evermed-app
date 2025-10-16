@@ -157,14 +157,20 @@ export async function GET(req: NextRequest) {
     // Format meal data with photo URLs
     const meals = foodEntries.map((entry) => {
       let photoUrl = null;
+      const photoUrls: string[] = [];
 
-      if (supabase && entry.photos[0]) {
-        try {
-          photoUrl = supabase.storage
-            .from('food-photos')
-            .getPublicUrl(entry.photos[0].storagePath).data.publicUrl;
-        } catch (err) {
-          console.warn('[TIMELINE API] Failed to generate photo URL:', err);
+      // Generate URLs for all photos
+      if (supabase && entry.photos.length > 0) {
+        for (const photo of entry.photos) {
+          try {
+            const url = supabase.storage
+              .from('food-photos')
+              .getPublicUrl(photo.storagePath).data.publicUrl;
+            photoUrls.push(url);
+            if (!photoUrl) photoUrl = url; // Keep first URL for backward compatibility
+          } catch (err) {
+            console.warn('[TIMELINE API] Failed to generate photo URL:', err);
+          }
         }
       }
 
@@ -173,7 +179,8 @@ export async function GET(req: NextRequest) {
         timestamp: entry.timestamp.toISOString(),
         type: entry.mealType,
         name: entry.ingredients.map((ing) => ing.name).join(', ') || 'Meal',
-        photoUrl,
+        photoUrl, // Keep for backward compatibility
+        photoUrls, // New array of all photo URLs
         analysisStatus: entry.photos[0]?.analysisStatus || 'completed',
         calories: Math.round(entry.totalCalories),
         carbs: Math.round(entry.totalCarbsG * 10) / 10,

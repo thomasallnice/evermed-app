@@ -50,6 +50,18 @@ enum TierLevel {
   family
 }
 
+enum CGMConnectionStatus {
+  connected
+  disconnected
+  error
+  expired
+}
+
+enum CGMProvider {
+  dexcom
+  libre
+}
+
 model Person {
   id         String   @id @default(uuid())
   ownerId    String // supabase auth.uid()
@@ -74,6 +86,7 @@ model Person {
   mealTemplates      MealTemplate[]
   metabolicInsights  MetabolicInsight[]
   subscription       SubscriptionTier?
+  cgmConnections     CGMConnection[]
 }
 
 model TokenUsage {
@@ -155,7 +168,8 @@ model FoodPhoto {
   analysisCompletedAt DateTime?      @map("analysis_completed_at")
   createdAt           DateTime       @default(now()) @map("created_at")
 
-  foodEntry FoodEntry @relation(fields: [foodEntryId], references: [id], onDelete: Cascade)
+  foodEntry   FoodEntry        @relation(fields: [foodEntryId], references: [id], onDelete: Cascade)
+  ingredients FoodIngredient[] // Ingredients detected in this specific photo/dish
 
   @@map("food_photos")
 }
@@ -163,6 +177,7 @@ model FoodPhoto {
 model FoodIngredient {
   id              String           @id @default(uuid())
   foodEntryId     String           @map("food_entry_id")
+  foodPhotoId     String?          @map("food_photo_id") // Links ingredient to specific dish/photo
   name            String
   quantity        Float
   unit            String
@@ -175,27 +190,61 @@ model FoodIngredient {
   source          IngredientSource
   createdAt       DateTime         @default(now()) @map("created_at")
 
-  foodEntry FoodEntry @relation(fields: [foodEntryId], references: [id], onDelete: Cascade)
+  foodEntry FoodEntry  @relation(fields: [foodEntryId], references: [id], onDelete: Cascade)
+  foodPhoto FoodPhoto? @relation(fields: [foodPhotoId], references: [id], onDelete: SetNull)
 
+  @@index([foodPhotoId])
   @@map("food_ingredients")
 }
 
 model GlucoseReading {
-  id          String        @id @default(uuid())
-  personId    String        @map("person_id")
-  timestamp   DateTime
-  value       Float // mg/dL
-  source      GlucoseSource
-  deviceId    String?       @map("device_id")
-  foodEntryId String?       @map("food_entry_id")
-  confidence  Float?
-  createdAt   DateTime      @default(now()) @map("created_at")
+  id              String        @id @default(uuid())
+  personId        String        @map("person_id")
+  timestamp       DateTime
+  value           Float // mg/dL
+  source          GlucoseSource
+  deviceId        String?       @map("device_id")
+  foodEntryId     String?       @map("food_entry_id")
+  cgmConnectionId String?       @map("cgm_connection_id")
+  confidence      Float?
+  createdAt       DateTime      @default(now()) @map("created_at")
 
-  person    Person     @relation(fields: [personId], references: [id], onDelete: Cascade)
-  foodEntry FoodEntry? @relation(fields: [foodEntryId], references: [id], onDelete: SetNull)
+  person        Person         @relation(fields: [personId], references: [id], onDelete: Cascade)
+  foodEntry     FoodEntry?     @relation(fields: [foodEntryId], references: [id], onDelete: SetNull)
+  cgmConnection CGMConnection? @relation(fields: [cgmConnectionId], references: [id], onDelete: SetNull)
 
   @@index([personId, timestamp])
+  @@index([cgmConnectionId])
   @@map("glucose_readings")
+}
+
+// CGM (Continuous Glucose Monitor) Connection Management
+// Stores OAuth tokens and sync status for external CGM providers (Dexcom, FreeStyle Libre)
+model CGMConnection {
+  id             String              @id @default(uuid())
+  personId       String              @map("person_id")
+  provider       CGMProvider
+  accessToken    String              @map("access_token") // Encrypted with ENCRYPTION_KEY
+  refreshToken   String              @map("refresh_token") // Encrypted with ENCRYPTION_KEY
+  tokenExpiresAt DateTime            @map("token_expires_at")
+  lastSyncAt     DateTime?           @map("last_sync_at")
+  syncCursor     String?             @map("sync_cursor") // For incremental sync
+  status         CGMConnectionStatus @default(connected)
+  errorMessage   String?             @map("error_message")
+  deviceId       String?             @map("device_id")
+  metadata       Json? // Extensible: { apiVersion, deviceModel, ... }
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  person          Person           @relation(fields: [personId], references: [id], onDelete: Cascade)
+  glucoseReadings GlucoseReading[]
+
+  @@unique([personId, provider])
+  @@index([personId])
+  @@index([status])
+  @@index([lastSyncAt])
+  @@index([personId, status])
+  @@map("cgm_connections")
 }
 
 model GlucosePrediction {

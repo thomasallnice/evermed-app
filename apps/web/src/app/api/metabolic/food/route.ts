@@ -12,16 +12,18 @@ const prisma = new PrismaClient()
 export const dynamic = 'force-dynamic'
 
 /**
- * Background analysis function
- * Analyzes food photo and updates FoodEntry with results
+ * Background analysis function - MULTI-DISH VERSION
+ * Analyzes a single food photo and updates FoodEntry with results
+ * Links ingredients to the specific photo/dish
  */
-async function analyzeAndUpdateFoodEntry(
+async function analyzeSinglePhoto(
   foodEntryId: string,
+  foodPhotoId: string,
   photoUrl: string,
   useGemini: boolean,
   prisma: PrismaClient
 ) {
-  console.log(`[FOOD ANALYSIS] Starting analysis for entry ${foodEntryId}`)
+  console.log(`[FOOD ANALYSIS] Starting analysis for photo ${foodPhotoId} in entry ${foodEntryId}`)
   console.log(`[FOOD ANALYSIS] Provider: ${useGemini ? 'Gemini' : 'OpenAI'}`)
 
   try {
@@ -30,16 +32,17 @@ async function analyzeAndUpdateFoodEntry(
       ? await analyzeFoodPhotoGemini(photoUrl)
       : await analyzeFoodPhoto(photoUrl)
 
-    console.log(`[FOOD ANALYSIS] Analysis completed for entry ${foodEntryId}:`, {
+    console.log(`[FOOD ANALYSIS] Analysis completed for photo ${foodPhotoId}:`, {
       success: analysisResult.success,
       ingredientsCount: analysisResult.ingredients?.length || 0,
       error: analysisResult.error,
     })
 
     if (analysisResult.success && analysisResult.ingredients.length > 0) {
-      // Analysis succeeded - prepare ingredients
-      // Note: Don't include foodEntryId in nested create - Prisma handles it automatically
+      // Analysis succeeded - prepare ingredients linked to this specific photo
       const ingredients = analysisResult.ingredients.map(ing => ({
+        foodEntryId,
+        foodPhotoId, // Link to specific dish/photo
         name: ing.name,
         quantity: ing.quantity ?? 0,
         unit: ing.unit ?? 'serving',
@@ -52,14 +55,31 @@ async function analyzeAndUpdateFoodEntry(
         source: 'ai_detected' as const,
       }))
 
-      // Calculate totals
-      const totalCalories = analysisResult.ingredients.reduce((sum, ing) => sum + ing.calories, 0)
-      const totalCarbsG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.carbsG, 0)
-      const totalProteinG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.proteinG, 0)
-      const totalFatG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.fatG, 0)
-      const totalFiberG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.fiberG, 0)
+      // Create ingredients for this photo
+      await prisma.foodIngredient.createMany({
+        data: ingredients,
+      })
 
-      // Update FoodEntry with results
+      // Calculate totals for this photo
+      const photoCalories = analysisResult.ingredients.reduce((sum, ing) => sum + ing.calories, 0)
+      const photoCarbsG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.carbsG, 0)
+      const photoProteinG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.proteinG, 0)
+      const photoFatG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.fatG, 0)
+      const photoFiberG = analysisResult.ingredients.reduce((sum, ing) => sum + ing.fiberG, 0)
+
+      // Get ALL ingredients for this meal (across all photos)
+      const allIngredients = await prisma.foodIngredient.findMany({
+        where: { foodEntryId },
+      })
+
+      // Calculate meal totals (sum across all dishes)
+      const totalCalories = allIngredients.reduce((sum, ing) => sum + ing.calories, 0)
+      const totalCarbsG = allIngredients.reduce((sum, ing) => sum + ing.carbsG, 0)
+      const totalProteinG = allIngredients.reduce((sum, ing) => sum + ing.proteinG, 0)
+      const totalFatG = allIngredients.reduce((sum, ing) => sum + ing.fatG, 0)
+      const totalFiberG = allIngredients.reduce((sum, ing) => sum + ing.fiberG, 0)
+
+      // Update FoodEntry with combined totals
       await prisma.foodEntry.update({
         where: { id: foodEntryId },
         data: {
@@ -68,48 +88,45 @@ async function analyzeAndUpdateFoodEntry(
           totalProteinG,
           totalFatG,
           totalFiberG,
-          ingredients: {
-            create: ingredients,
-          },
         },
       })
 
-      // Update photo status to completed
-      await prisma.foodPhoto.updateMany({
-        where: { foodEntryId },
+      // Update this photo's status to completed
+      await prisma.foodPhoto.update({
+        where: { id: foodPhotoId },
         data: {
           analysisStatus: 'completed',
           analysisCompletedAt: new Date(),
         },
       })
 
-      console.log(`[FOOD ANALYSIS] ✓ Successfully updated entry ${foodEntryId}`)
+      console.log(`[FOOD ANALYSIS] ✓ Successfully analyzed photo ${foodPhotoId}: ${photoCalories} kcal`)
     } else {
-      // Analysis failed - mark as failed
-      await prisma.foodPhoto.updateMany({
-        where: { foodEntryId },
+      // Analysis failed - mark this photo as failed
+      await prisma.foodPhoto.update({
+        where: { id: foodPhotoId },
         data: {
           analysisStatus: 'failed',
           analysisCompletedAt: new Date(),
         },
       })
 
-      console.error(`[FOOD ANALYSIS] ✗ Analysis failed for entry ${foodEntryId}:`, analysisResult.error)
+      console.error(`[FOOD ANALYSIS] ✗ Analysis failed for photo ${foodPhotoId}:`, analysisResult.error)
     }
   } catch (error) {
-    console.error(`[FOOD ANALYSIS] ✗ Exception during analysis for entry ${foodEntryId}:`, error)
+    console.error(`[FOOD ANALYSIS] ✗ Exception during analysis for photo ${foodPhotoId}:`, error)
 
-    // Mark as failed on exception
+    // Mark this photo as failed on exception
     try {
-      await prisma.foodPhoto.updateMany({
-        where: { foodEntryId },
+      await prisma.foodPhoto.update({
+        where: { id: foodPhotoId },
         data: {
           analysisStatus: 'failed',
           analysisCompletedAt: new Date(),
         },
       })
     } catch (updateError) {
-      console.error(`[FOOD ANALYSIS] Failed to update status to failed:`, updateError)
+      console.error(`[FOOD ANALYSIS] Failed to update photo status to failed:`, updateError)
     }
   }
 }
@@ -184,13 +201,29 @@ export async function POST(request: NextRequest) {
 
     // Parse multipart form data
     const formData = await request.formData()
-    const photo = formData.get('photo') as File | null
     const mealType = formData.get('mealType') as string | null
 
+    // Collect all photos (support both single 'photo' and multiple 'photo1', 'photo2', etc.)
+    const photos: File[] = []
+    const singlePhoto = formData.get('photo') as File | null
+    if (singlePhoto) {
+      photos.push(singlePhoto)
+    } else {
+      // Try numbered photos (photo1, photo2, etc.)
+      let index = 1
+      while (index <= 5) {
+        const photo = formData.get(`photo${index}`) as File | null
+        if (photo) {
+          photos.push(photo)
+        }
+        index++
+      }
+    }
+
     // Validate required fields
-    if (!photo) {
+    if (photos.length === 0) {
       return NextResponse.json(
-        { error: 'Photo is required' },
+        { error: 'At least one photo is required' },
         { status: 400 }
       )
     }
@@ -202,19 +235,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate file size (5MB max)
-    if (photo.size > 5 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: 'Photo must be less than 5MB' },
-        { status: 413 }
-      )
+    // Validate each photo
+    for (const photo of photos) {
+      // Validate file size (5MB max per photo)
+      if (photo.size > 5 * 1024 * 1024) {
+        return NextResponse.json(
+          { error: 'Each photo must be less than 5MB' },
+          { status: 413 }
+        )
+      }
+
+      // Validate MIME type
+      if (!photo.type.startsWith('image/')) {
+        return NextResponse.json(
+          { error: 'All files must be images (JPEG, PNG, WebP)' },
+          { status: 415 }
+        )
+      }
     }
 
-    // Validate MIME type
-    if (!photo.type.startsWith('image/')) {
+    // Validate total size (15MB max for all photos)
+    const totalSize = photos.reduce((sum, photo) => sum + photo.size, 0)
+    if (totalSize > 15 * 1024 * 1024) {
       return NextResponse.json(
-        { error: 'Photo must be an image (JPEG, PNG, WebP)' },
-        { status: 415 }
+        { error: 'Total photo size must be less than 15MB' },
+        { status: 413 }
       )
     }
 
@@ -230,38 +275,49 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    // Generate unique file path
+    // Upload all photos to Supabase Storage
     const timestamp = Date.now()
-    const fileExt = photo.name.split('.').pop() || 'jpg'
-    const storagePath = `${person.id}/meals/${timestamp}.${fileExt}`
+    const uploadedPhotos: Array<{ storagePath: string; originalSizeBytes: number; publicUrl: string }> = []
 
-    // Upload to Supabase Storage
-    const photoBuffer = Buffer.from(await photo.arrayBuffer())
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('food-photos')
-      .upload(storagePath, photoBuffer, {
-        contentType: photo.type,
-        upsert: false,
+    for (let i = 0; i < photos.length; i++) {
+      const photo = photos[i]
+      const fileExt = photo.name.split('.').pop() || 'jpg'
+      const storagePath = `${person.id}/meals/${timestamp}-${i + 1}.${fileExt}`
+
+      // Upload to Supabase Storage
+      const photoBuffer = Buffer.from(await photo.arrayBuffer())
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('food-photos')
+        .upload(storagePath, photoBuffer, {
+          contentType: photo.type,
+          upsert: false,
+        })
+
+      if (uploadError) {
+        console.error('Supabase storage upload error:', uploadError)
+        return NextResponse.json(
+          { error: `Failed to upload photo ${i + 1} to storage` },
+          { status: 500 }
+        )
+      }
+
+      // Generate public URL for the photo
+      const { data: urlData } = supabase.storage
+        .from('food-photos')
+        .getPublicUrl(storagePath)
+
+      const publicUrl = urlData.publicUrl
+      uploadedPhotos.push({
+        storagePath,
+        originalSizeBytes: photo.size,
+        publicUrl,
       })
 
-    if (uploadError) {
-      console.error('Supabase storage upload error:', uploadError)
-      return NextResponse.json(
-        { error: 'Failed to upload photo to storage' },
-        { status: 500 }
-      )
+      console.log(`[FOOD UPLOAD] Photo ${i + 1} uploaded to storage: ${storagePath}`)
     }
 
-    // Generate public URL for the photo
-    const { data: urlData } = supabase.storage
-      .from('food-photos')
-      .getPublicUrl(storagePath)
-
-    const photoUrl = urlData.publicUrl
-    console.log(`[FOOD UPLOAD] Photo uploaded to storage: ${storagePath}`)
-    console.log(`[FOOD UPLOAD] Public URL generated: ${photoUrl}`)
-
-    // Create FoodEntry immediately with 'pending' status (before analysis)
+    // Create FoodEntry with all photos
+    // Note: Don't include ingredients here - they'll be created later during analysis
     const foodEntry = await prisma.foodEntry.create({
       data: {
         personId: person.id,
@@ -273,40 +329,42 @@ export async function POST(request: NextRequest) {
         totalFatG: 0,
         totalFiberG: 0,
         photos: {
-          create: {
-            storagePath,
-            originalSizeBytes: photo.size,
+          create: uploadedPhotos.map(photo => ({
+            storagePath: photo.storagePath,
+            originalSizeBytes: photo.originalSizeBytes,
             analysisStatus: 'pending',
             analysisCompletedAt: null,
-          },
+          })),
         },
       },
       include: {
         photos: true,
-        ingredients: true,
       },
     })
 
-    console.log(`[FOOD UPLOAD] FoodEntry created with ID: ${foodEntry.id}, status: processing`)
+    console.log(`[FOOD UPLOAD] FoodEntry created with ID: ${foodEntry.id}, ${uploadedPhotos.length} photo(s)`)
 
-    // Start analysis in background (don't await, let it complete asynchronously)
+    // Start analysis in background for ALL photos (multi-dish support)
     const useGemini = process.env.USE_GEMINI_FOOD_ANALYSIS === 'true'
-    console.log(`[FOOD UPLOAD] Starting background analysis (Provider: ${useGemini ? 'Gemini' : 'OpenAI'})`)
+    console.log(`[FOOD UPLOAD] Starting background analysis for ${uploadedPhotos.length} photo(s) (Provider: ${useGemini ? 'Gemini' : 'OpenAI'})`)
 
-    // Fire-and-forget analysis (will complete after response is sent)
-    analyzeAndUpdateFoodEntry(
-      foodEntry.id,
-      photoUrl,
-      useGemini,
-      prisma
-    ).catch(error => {
-      console.error(`[FOOD UPLOAD] Background analysis failed for entry ${foodEntry.id}:`, error)
+    // Fire-and-forget analysis for each photo separately (will complete after response is sent)
+    foodEntry.photos.forEach((photo, index) => {
+      analyzeSinglePhoto(
+        foodEntry.id,
+        photo.id,
+        uploadedPhotos[index].publicUrl,
+        useGemini,
+        prisma
+      ).catch(error => {
+        console.error(`[FOOD UPLOAD] Background analysis failed for photo ${photo.id}:`, error)
+      })
     })
 
     return NextResponse.json(
       {
         foodEntryId: foodEntry.id,
-        photoUrl,
+        photoUrls: uploadedPhotos.map(p => p.publicUrl),
         mealType: foodEntry.mealType,
         timestamp: foodEntry.timestamp.toISOString(),
         analysisStatus: 'pending',

@@ -7,28 +7,26 @@ html, body {
 }
 
 body {
-  @apply bg-neutral-50 text-neutral-900;
+  @apply bg-gray-50 text-gray-900;
+  font-family: 'Inter', 'SF Pro Text', system-ui, sans-serif;
 }
 
+/* GlucoLens: Remove global button styles to prevent conflicts */
+/* All button styles are now explicit via Tailwind classes */
+
+/* Links: subtle, professional */
 a {
-  @apply text-blue-600 hover:underline;
+  @apply text-blue-600 hover:text-blue-700 transition-colors;
+  text-decoration: none;
 }
 
-button {
-  @apply rounded-md px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50;
-}
-
-/* Subtle, secondary button style for destructive/low‑emphasis actions */
-.button-quiet {
-  @apply rounded-md px-3 py-2 bg-transparent text-neutral-700 hover:text-red-600 disabled:opacity-50;
-}
-
+/* Form inputs: rounded, clean */
 input, textarea, select {
-  @apply border border-neutral-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+  @apply border border-gray-300 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all;
 }
 
 .container {
-  @apply mx-auto max-w-5xl px-3 sm:px-4;
+  @apply mx-auto max-w-6xl px-4 sm:px-6;
 }
 
 /* Markdown / prose polish */
