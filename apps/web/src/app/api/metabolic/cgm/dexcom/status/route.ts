@@ -6,6 +6,9 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// Force dynamic rendering for status endpoint (uses request.headers for auth)
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/metabolic/cgm/dexcom/status
  *

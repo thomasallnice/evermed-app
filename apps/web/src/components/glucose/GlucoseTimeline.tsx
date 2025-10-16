@@ -14,12 +14,27 @@ interface GlucoseReading {
   value: number
 }
 
+interface MealMarker {
+  id: string
+  timestamp: string
+  name: string
+  type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  photoUrl: string | null
+  analysisStatus: 'pending' | 'completed' | 'failed'
+  calories: number
+  carbs: number
+  protein: number
+  fat: number
+  fiber: number
+}
+
 interface GlucoseTimelineProps {
   data: GlucoseReading[]
+  meals?: MealMarker[]
   selectedDate?: string
 }
 
-export function GlucoseTimeline({ data, selectedDate }: GlucoseTimelineProps) {
+export function GlucoseTimeline({ data, meals = [], selectedDate }: GlucoseTimelineProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('day')
 
   // Calculate statistics based on current data
@@ -74,7 +89,7 @@ export function GlucoseTimeline({ data, selectedDate }: GlucoseTimelineProps) {
 
     switch (timeRange) {
       case 'day':
-        return <GlucoseDayChart data={data} />
+        return <GlucoseDayChart data={data} meals={meals} />
       case 'week':
         return <GlucoseWeekChart data={data} />
       case 'month':
@@ -84,12 +99,12 @@ export function GlucoseTimeline({ data, selectedDate }: GlucoseTimelineProps) {
       case 'year':
         return <GlucoseYearChart data={data} />
       default:
-        return <GlucoseDayChart data={data} />
+        return <GlucoseDayChart data={data} meals={meals} />
     }
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
+    <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header with Time Range Selector */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
         <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Glucose Timeline</h2>

@@ -383,7 +383,7 @@ export default function MetabolicDashboardPage() {
             </div>
 
             {/* Glucose Timeline - Apple Health Inspired */}
-            <GlucoseTimeline data={glucoseData} selectedDate={selectedDate} />
+            <GlucoseTimeline data={glucoseData} meals={mealMarkers} selectedDate={selectedDate} />
 
             {/* Meals List */}
             {mealMarkers.length > 0 && (
