@@ -4,17 +4,7 @@ import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api-client'
 import { Check, X } from 'lucide-react'
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-  ReferenceArea,
-} from 'recharts'
+import { GlucoseTimeline } from '@/components/glucose/GlucoseTimeline'
 
 // Types
 interface GlucoseReading {
@@ -246,14 +236,6 @@ export default function MetabolicDashboardPage() {
     }
   }
 
-  // Transform glucose data for Recharts
-  const chartData = glucoseData.map((reading) => ({
-    time: new Date(reading.timestamp).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-    }),
-    glucose: reading.value,
-  }))
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -400,134 +382,8 @@ export default function MetabolicDashboardPage() {
               </div>
             </div>
 
-            {/* Glucose Timeline Chart */}
-            <div className="bg-white rounded-2xl shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Glucose Timeline</h2>
-              {glucoseData.length === 0 ? (
-                <div className="w-full h-80 sm:h-96 flex flex-col items-center justify-center bg-gray-50 rounded-2xl border border-gray-200">
-                  <div className="text-6xl mb-4">📈</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No Glucose Data Yet</h3>
-                  <p className="text-sm text-gray-600 text-center max-w-md mb-6">
-                    Import glucose readings from Apple Health or connect your CGM to see your glucose timeline and correlations with meals.
-                  </p>
-                  <div className="flex gap-3">
-                    <a
-                      href="/metabolic/onboarding"
-                      className="inline-flex items-center gap-2 rounded-lg bg-gray-100 text-gray-700 font-semibold px-4 py-2 hover:bg-gray-200 transition-colors border border-gray-300"
-                    >
-                      <span>📱</span>
-                      <span className="text-sm">Import HealthKit</span>
-                    </a>
-                    <a
-                      href="/metabolic/onboarding"
-                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white font-semibold px-4 py-2 hover:bg-blue-700 transition-colors shadow-md"
-                    >
-                      <span>🔗</span>
-                      <span className="text-sm">Connect CGM</span>
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                <div className="w-full h-80 sm:h-96">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis
-                        dataKey="time"
-                        stroke="#6b7280"
-                        style={{ fontSize: '12px' }}
-                      />
-                      <YAxis
-                        stroke="#6b7280"
-                        style={{ fontSize: '12px' }}
-                        label={{
-                          value: 'Glucose (mg/dL)',
-                          angle: -90,
-                          position: 'insideLeft',
-                          style: { fontSize: '12px', fill: '#6b7280' },
-                        }}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: '#fff',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                        }}
-                      />
-                      {/* Target range shading (70-180 mg/dL) */}
-                      <ReferenceArea
-                        y1={70}
-                        y2={180}
-                        fill="#dcfce7"
-                        fillOpacity={0.3}
-                        label={{ value: 'Target Range', position: 'insideTopRight', fontSize: 10 }}
-                      />
-                      <ReferenceLine y={180} stroke="#ef4444" strokeDasharray="3 3" />
-                      <ReferenceLine y={70} stroke="#f59e0b" strokeDasharray="3 3" />
-
-                      {/* Meal markers as vertical lines */}
-                      {mealMarkers.map((meal) => {
-                        const mealTime = new Date(meal.timestamp).toLocaleTimeString('en-US', {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                        });
-                        // Color coding: breakfast=orange, lunch=green, dinner=purple, snack=amber
-                        const mealColors = {
-                          breakfast: '#f97316', // orange-500
-                          lunch: '#10b981',     // green-500
-                          dinner: '#8b5cf6',    // purple-500
-                          snack: '#f59e0b',     // amber-500
-                        };
-                        const color = mealColors[meal.type as keyof typeof mealColors];
-
-                        return (
-                          <ReferenceLine
-                            key={meal.id}
-                            x={mealTime}
-                            stroke={color}
-                            strokeWidth={2}
-                            strokeDasharray="5 5"
-                            label={{
-                              value: meal.type === 'breakfast' ? '🌅' : meal.type === 'lunch' ? '☀️' : meal.type === 'dinner' ? '🌙' : '🍎',
-                              position: 'top',
-                              fontSize: 16,
-                            }}
-                          />
-                        );
-                      })}
-
-                      <Line
-                        type="monotone"
-                        dataKey="glucose"
-                        stroke="#2563eb"
-                        strokeWidth={2}
-                        dot={{ fill: '#2563eb', r: 3 }}
-                        activeDot={{ r: 5 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-              {/* Meal markers */}
-              {mealMarkers.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="text-xs font-medium text-gray-600">Meals:</span>
-                  {mealMarkers.map((meal, idx) => (
-                    <span
-                      key={idx}
-                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getMealTypeColorClasses(meal.type)}`}
-                    >
-                      {meal.type === 'breakfast' && '🌅'}
-                      {meal.type === 'lunch' && '☀️'}
-                      {meal.type === 'dinner' && '🌙'}
-                      {meal.type === 'snack' && '🍎'}
-                      {meal.name} ({new Date(meal.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })})
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Glucose Timeline - Apple Health Inspired */}
+            <GlucoseTimeline data={glucoseData} selectedDate={selectedDate} />
 
             {/* Meals List */}
             {mealMarkers.length > 0 && (

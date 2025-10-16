@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase/client'
 import BottomNav from '@/components/BottomNav'
-import { ArrowLeft, Camera as CameraIcon, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Camera as CameraIcon, RotateCcw, X } from 'lucide-react'
 
 /**
  * GlucoLens Camera Page - Photo-first food logging
@@ -24,7 +24,8 @@ export default function CameraPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [cameraActive, setCameraActive] = useState(false)
-  const [capturedImage, setCapturedImage] = useState<string | null>(null)
+  const [capturedImages, setCapturedImages] = useState<string[]>([])
+  const [showCamera, setShowCamera] = useState(true)
   const [selectedMealType, setSelectedMealType] = useState<MealType>('lunch')
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -83,7 +84,10 @@ export default function CameraPage() {
 
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
     const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9)
-    setCapturedImage(imageDataUrl)
+
+    // Add to captured images array
+    setCapturedImages(prev => [...prev, imageDataUrl])
+    setShowCamera(false)
     stopCamera()
 
     if ('vibrate' in navigator) {
@@ -102,13 +106,39 @@ export default function CameraPage() {
 
     const reader = new FileReader()
     reader.onload = (event) => {
-      setCapturedImage(event.target?.result as string)
+      const imageDataUrl = event.target?.result as string
+      setCapturedImages(prev => [...prev, imageDataUrl])
+      setShowCamera(false)
     }
     reader.readAsDataURL(file)
   }
 
+  function removePhoto(index: number) {
+    setCapturedImages(prev => prev.filter((_, i) => i !== index))
+
+    // If all photos removed, show camera again
+    if (capturedImages.length === 1) {
+      setShowCamera(true)
+    }
+  }
+
+  function addMorePhotos() {
+    // Check max limit
+    if (capturedImages.length >= 5) {
+      setError('Maximum 5 photos per meal')
+      return
+    }
+    setShowCamera(true)
+  }
+
+  function retakeAllPhotos() {
+    setCapturedImages([])
+    setShowCamera(true)
+    setError(null)
+  }
+
   async function uploadPhoto() {
-    if (!capturedImage) return
+    if (capturedImages.length === 0) return
 
     setUploading(true)
     setError(null)
@@ -122,11 +152,23 @@ export default function CameraPage() {
         return
       }
 
-      const response = await fetch(capturedImage)
-      const blob = await response.blob()
+      // Validate total size (15MB max for all photos)
+      const blobs = await Promise.all(
+        capturedImages.map(async (imageDataUrl) => {
+          const response = await fetch(imageDataUrl)
+          return response.blob()
+        })
+      )
+
+      const totalSize = blobs.reduce((sum, blob) => sum + blob.size, 0)
+      if (totalSize > 15 * 1024 * 1024) {
+        throw new Error('Total photo size exceeds 15MB. Please remove some photos.')
+      }
 
       const formData = new FormData()
-      formData.append('photo', blob, `meal-${Date.now()}.jpg`)
+      blobs.forEach((blob, index) => {
+        formData.append(`photo${index + 1}`, blob, `meal-${Date.now()}-${index + 1}.jpg`)
+      })
       formData.append('mealType', selectedMealType)
 
       const uploadRes = await fetch('/api/metabolic/food', {
@@ -136,7 +178,7 @@ export default function CameraPage() {
 
       if (!uploadRes.ok) {
         const errorData = await uploadRes.json()
-        throw new Error(errorData.error || 'Failed to upload photo')
+        throw new Error(errorData.error || 'Failed to upload photos')
       }
 
       router.push('/dashboard')
@@ -182,7 +224,7 @@ export default function CameraPage() {
         )}
 
         {/* Camera or Preview */}
-        {!capturedImage ? (
+        {showCamera && capturedImages.length === 0 ? (
           <>
             {/* Camera View */}
             {cameraActive && (
@@ -263,18 +305,126 @@ export default function CameraPage() {
               </div>
             )}
           </>
+        ) : showCamera && capturedImages.length > 0 ? (
+          <>
+            {/* Camera View for Additional Photos */}
+            {cameraActive && (
+              <div className="relative w-full h-[calc(100vh-80px)] bg-black">
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  playsInline
+                />
+                {/* Photo Count Badge */}
+                <div className="absolute top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg font-semibold text-sm">
+                  {capturedImages.length} photo{capturedImages.length !== 1 ? 's' : ''}
+                </div>
+                {/* Capture Button */}
+                <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-4">
+                  <button
+                    onClick={() => {
+                      setShowCamera(false)
+                      stopCamera()
+                    }}
+                    className="w-16 h-16 rounded-full bg-gray-700 shadow-2xl flex items-center justify-center transition-all active:scale-95 text-white"
+                    aria-label="Cancel"
+                  >
+                    <X className="w-8 h-8" />
+                  </button>
+                  <button
+                    onClick={capturePhoto}
+                    className="w-20 h-20 rounded-full bg-white shadow-2xl flex items-center justify-center transition-all active:scale-95"
+                    aria-label="Capture photo"
+                  >
+                    <div className="w-16 h-16 rounded-full border-4 border-blue-600"></div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Camera Not Started for Additional Photos */}
+            {!cameraActive && (
+              <div className="w-full h-[calc(100vh-80px)] bg-gray-900 flex flex-col items-center justify-center p-6">
+                <div className="text-center max-w-md">
+                  <div className="text-8xl mb-6">📸</div>
+                  <h2 className="text-3xl font-bold text-white mb-3">Add Another Photo</h2>
+                  <p className="text-gray-300 text-lg mb-4">
+                    {capturedImages.length} photo{capturedImages.length !== 1 ? 's' : ''} captured
+                  </p>
+                  <p className="text-gray-400 text-base mb-8">
+                    You can add up to {5 - capturedImages.length} more photo{5 - capturedImages.length !== 1 ? 's' : ''}
+                  </p>
+
+                  {/* Hidden file inputs for additional photos */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    ref={(input) => {
+                      if (input) (window as any).additionalCameraInputRef = input
+                    }}
+                  />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    ref={(input) => {
+                      if (input) (window as any).additionalGalleryInputRef = input
+                    }}
+                  />
+
+                  {/* Primary: Open Camera (mobile) */}
+                  <button
+                    onClick={() => (window as any).additionalCameraInputRef?.click()}
+                    className="w-full rounded-xl bg-blue-600 text-white font-bold px-8 py-5 text-lg hover:bg-blue-700 transition-colors shadow-lg mb-4"
+                  >
+                    <CameraIcon className="w-6 h-6 inline-block mr-2" />
+                    Open Camera
+                  </button>
+
+                  {/* Secondary: Choose from Gallery */}
+                  <button
+                    onClick={() => (window as any).additionalGalleryInputRef?.click()}
+                    className="w-full rounded-xl bg-gray-700 text-white font-semibold px-8 py-5 text-lg hover:bg-gray-600 transition-colors mb-4"
+                  >
+                    🖼️ Choose from Gallery
+                  </button>
+
+                  {/* Tertiary: WebRTC (desktop) */}
+                  <button
+                    onClick={startCamera}
+                    className="hidden md:block w-full rounded-xl bg-gray-800 text-gray-300 font-semibold px-8 py-5 text-lg hover:bg-gray-700 transition-colors border border-gray-600 mb-4"
+                  >
+                    Use Webcam (Desktop)
+                  </button>
+
+                  {/* Back to Preview */}
+                  <button
+                    onClick={() => setShowCamera(false)}
+                    className="w-full rounded-xl bg-gray-800 text-white font-semibold px-8 py-5 text-lg hover:bg-gray-700 transition-colors"
+                  >
+                    Back to Preview
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="w-full h-screen bg-black">
             {/* Photo Preview */}
-            <div className="relative w-full h-[60vh]">
+            <div className="relative w-full h-[50vh]">
               <img
-                src={capturedImage}
+                src={capturedImages[capturedImages.length - 1]}
                 alt="Captured meal"
                 className="w-full h-full object-cover"
               />
             </div>
 
-            {/* Meal Type Selector */}
+            {/* Meal Type Selector and Actions */}
             <div className="bg-gray-900 p-6 space-y-4">
               <h3 className="text-white font-semibold text-lg mb-3">Meal Type</h3>
               <div className="grid grid-cols-2 gap-3">
@@ -294,13 +444,59 @@ export default function CameraPage() {
                 ))}
               </div>
 
+              {/* Thumbnail Gallery */}
+              {capturedImages.length > 0 && (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-white font-semibold text-base">
+                      {capturedImages.length} Photo{capturedImages.length !== 1 ? 's' : ''}
+                    </h4>
+                  </div>
+                  <div className="flex gap-3 overflow-x-auto pb-2">
+                    {capturedImages.map((image, index) => (
+                      <div
+                        key={index}
+                        className="relative flex-shrink-0 group"
+                      >
+                        <img
+                          src={image}
+                          alt={`Photo ${index + 1}`}
+                          className="w-20 h-20 object-cover rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+                        />
+                        {/* Photo Number Badge */}
+                        <div className="absolute -top-2 -right-2 bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium shadow-lg">
+                          {index + 1}
+                        </div>
+                        {/* Remove Button */}
+                        <button
+                          onClick={() => removePhoto(index)}
+                          className="absolute -top-2 -left-2 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-700 transition-colors shadow-lg opacity-0 group-hover:opacity-100"
+                          aria-label={`Remove photo ${index + 1}`}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add More Photos Button */}
+              {capturedImages.length < 5 && (
+                <button
+                  onClick={addMorePhotos}
+                  disabled={uploading}
+                  className="w-full rounded-xl bg-gray-100 text-gray-700 font-semibold px-6 py-4 text-lg hover:bg-gray-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <CameraIcon className="w-5 h-5" />
+                  Add More Photos ({5 - capturedImages.length} left)
+                </button>
+              )}
+
               {/* Action Buttons */}
               <div className="flex gap-3 mt-6">
                 <button
-                  onClick={() => {
-                    setCapturedImage(null)
-                    setError(null)
-                  }}
+                  onClick={retakeAllPhotos}
                   disabled={uploading}
                   className="flex-1 rounded-xl bg-gray-800 text-white font-semibold px-6 py-4 text-lg hover:bg-gray-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
@@ -315,7 +511,7 @@ export default function CameraPage() {
                   {uploading ? (
                     <>
                       <span className="animate-spin">⏳</span>
-                      Analyzing...
+                      Uploading...
                     </>
                   ) : (
                     <>

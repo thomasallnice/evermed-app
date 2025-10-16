@@ -71,7 +71,7 @@ export async function GET(
       )
     }
 
-    // Query food entry by ID with RLS (personId filter)
+    // Query food entry by ID with RLS (personId filter) - MULTI-DISH VERSION
     const entry = await prisma.foodEntry.findFirst({
       where: {
         id: params.id,
@@ -80,13 +80,20 @@ export async function GET(
       include: {
         photos: {
           select: {
+            id: true,
             storagePath: true,
             analysisStatus: true,
+            analysisCompletedAt: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'asc', // Order dishes by upload order
           },
         },
         ingredients: {
           select: {
             id: true,
+            foodPhotoId: true, // Include photo link
             name: true,
             quantity: true,
             unit: true,
@@ -120,21 +127,86 @@ export async function GET(
       }
     )
 
-    // Generate public URL for the photo
+    // Build dishes array with ingredients grouped by photo
+    const dishes = entry.photos.map((photo: any, index: number) => {
+      const photoUrl = supabase.storage
+        .from('food-photos')
+        .getPublicUrl(photo.storagePath).data.publicUrl
+
+      // Get ingredients for this specific photo/dish
+      const dishIngredients = entry.ingredients
+        .filter((ing: any) => ing.foodPhotoId === photo.id)
+        .map((ing: any) => ({
+          id: ing.id,
+          name: ing.name,
+          quantity: ing.quantity,
+          unit: ing.unit,
+          calories: ing.calories,
+          carbsG: ing.carbsG,
+          proteinG: ing.proteinG,
+          fatG: ing.fatG,
+          fiberG: ing.fiberG,
+        }))
+
+      // Calculate dish totals
+      const dishCalories = dishIngredients.reduce((sum, ing) => sum + ing.calories, 0)
+      const dishCarbsG = dishIngredients.reduce((sum, ing) => sum + ing.carbsG, 0)
+      const dishProteinG = dishIngredients.reduce((sum, ing) => sum + ing.proteinG, 0)
+      const dishFatG = dishIngredients.reduce((sum, ing) => sum + ing.fatG, 0)
+      const dishFiberG = dishIngredients.reduce((sum, ing) => sum + ing.fiberG, 0)
+
+      return {
+        photoId: photo.id,
+        photoUrl,
+        dishNumber: index + 1,
+        analysisStatus: photo.analysisStatus,
+        analysisCompletedAt: photo.analysisCompletedAt?.toISOString() || null,
+        ingredients: dishIngredients,
+        totalCalories: dishCalories,
+        totalCarbsG: dishCarbsG,
+        totalProteinG: dishProteinG,
+        totalFatG: dishFatG,
+        totalFiberG: dishFiberG,
+      }
+    })
+
+    // Get ingredients not linked to any photo (manually added)
+    const manualIngredients = entry.ingredients
+      .filter((ing: any) => !ing.foodPhotoId)
+      .map((ing: any) => ({
+        id: ing.id,
+        name: ing.name,
+        quantity: ing.quantity,
+        unit: ing.unit,
+        calories: ing.calories,
+        carbsG: ing.carbsG,
+        proteinG: ing.proteinG,
+        fatG: ing.fatG,
+        fiberG: ing.fiberG,
+      }))
+
+    // Determine overall analysis status
+    const allCompleted = entry.photos.every((p: any) => p.analysisStatus === 'completed')
+    const anyFailed = entry.photos.some((p: any) => p.analysisStatus === 'failed')
+    const analysisStatus = anyFailed ? 'failed' : allCompleted ? 'completed' : 'pending'
+
+    // Legacy photoUrl for backward compatibility (first photo)
     const photoUrl = entry.photos[0]
       ? supabase.storage
           .from('food-photos')
           .getPublicUrl(entry.photos[0].storagePath).data.publicUrl
       : null
 
-    // Format response
+    // Format response with multi-dish structure
     return NextResponse.json({
       id: entry.id,
       mealType: entry.mealType,
       timestamp: entry.timestamp.toISOString(),
-      photoUrl,
-      analysisStatus: entry.photos[0]?.analysisStatus || 'pending',
-      ingredients: entry.ingredients.map((ing: any) => ({
+      photoUrl, // Legacy: first photo URL
+      analysisStatus, // Overall status
+      dishes, // NEW: Array of dishes with per-dish breakdown
+      manualIngredients, // NEW: Ingredients not linked to photos
+      ingredients: entry.ingredients.map((ing: any) => ({ // Legacy flat list
         id: ing.id,
         name: ing.name,
         quantity: ing.quantity,

@@ -1,7 +1,7 @@
 # EverMed Project State
 
 ## Last Updated
-2025-10-12
+2025-10-16
 
 ## Current Status
 ✅ **All Environments Deployed Successfully** (dev, staging, production)
@@ -10,11 +10,12 @@
 ✅ **PWA Features Complete** (offline support, installable)
 ✅ **Validation Commands with Test Accounts** - Automated validation ready
 ✅ **Tech Stack Analysis Complete** - Comprehensive 2025 optimization research completed
-🎯 **METABOLIC INSIGHTS: STAGING & PRODUCTION DEPLOYED** (2025-10-12)
-  - ✅ All 11 metabolic tables deployed to staging + production
-  - ✅ All 40 RLS policies applied (36 table + 4 storage)
-  - ✅ food-photos bucket created in staging + production (PUBLIC for OpenAI Vision API)
-  - ⏳ Admin authentication pending (Sprint 7 Day 2)
+🎯 **MVP FEATURES COMPLETE - BETA LAUNCH READY** (2025-10-16)
+  - ✅ Mock glucose predictions API implemented (baseline-v1.0 model)
+  - ✅ Daily insights generation with 7-day pattern detection
+  - ✅ Dashboard showing all insights (time in range, spikes, meal impact)
+  - ✅ Implementation roadmap created (4-week timeline to beta)
+  - 🔶 CGM integration next priority (3 weeks)
   - 🔶 LSTM model optional for beta launch
 🔍 **DECISION REQUIRED** - Tech stack migration: OpenAI GPT-5 vs Google Gemini 2.5 Flash
 
@@ -93,7 +94,7 @@ Feature Branch → dev → staging → main
 - Each environment has separate API keys and database credentials
 
 ## Current Phase
-**METABOLIC INSIGHTS FINALIZATION (Sprint 7-8: 2-3 weeks to production)**
+**MVP FEATURE COMPLETE - BETA PREPARATION (Week 1 of 4-week timeline)**
 
 ### Core Platform (Complete)
 - ✅ Core Features Complete
@@ -102,25 +103,29 @@ Feature Branch → dev → staging → main
 - ✅ All Environments Deployed: Production + Staging/Preview (2025-10-11)
 - ✅ IPv4/IPv6 Database Fix: Transaction Pooler implemented (2025-10-11)
 
-### Metabolic Insights (STAGING & PRODUCTION DEPLOYED - Sprint 7 Day 1 COMPLETE)
+### Metabolic Insights MVP (COMPLETE - 2025-10-16)
 - ✅ Database schema complete (11 tables in Prisma)
-- ✅ API endpoints implemented (10 endpoints)
+- ✅ API endpoints implemented (12 endpoints)
 - ✅ UI components built (7 pages, Material Design)
-- ✅ Food recognition working (OpenAI Vision + Gemini 2.5 Flash)
-- ✅ Dashboard displaying meals correctly in dev
+- ✅ Food recognition working (Google Gemini 2.5 Flash + Nutritionix)
+- ✅ Dashboard displaying meals + glucose timeline
+- ✅ **Mock glucose predictions API** (baseline-v1.0 model, 2-hour forecasts)
+- ✅ **Daily insights generation** (time in range, spikes, meal impact)
+- ✅ **7-day pattern detection** (trends, consistent meals, warnings)
+- ✅ Dashboard showing all insights (not just latest)
 - ✅ **STAGING DEPLOYED** (2025-10-12): 11 tables + 40 RLS policies + food-photos bucket
 - ✅ **PRODUCTION DEPLOYED** (2025-10-12): 11 tables + 40 RLS policies + food-photos bucket
-- ⏳ Admin authentication placeholder (Sprint 7 Day 2)
-- 🔶 LSTM model mock baseline (optional for beta)
+- 🔶 CGM integration (next priority, 3 weeks)
+- 🔶 LSTM model (optional for beta)
 
-### Next: Sprint 7 Day 2 - Admin Authentication & Validation
-1. ✅ Apply database migrations to staging (COMPLETE)
-2. ✅ Apply database migrations to production (COMPLETE)
-3. ✅ Create food-photos storage bucket in staging (COMPLETE)
-4. ✅ Create food-photos storage bucket in production (COMPLETE)
-5. ⏳ Implement admin authentication (role-based) - NEXT
-6. ⏳ Deploy code to Vercel staging and validate
-7. ⏳ Deploy code to Vercel production and validate
+### Next: Milestone 1 - CGM Integration (2-3 weeks)
+1. ✅ Research Dexcom Developer Portal requirements (COMPLETE - Oct 16)
+2. ✅ Configure DEXCOM environment variables (COMPLETE - Oct 16)
+3. ✅ Apply CGM database migration (COMPLETE - Oct 16)
+4. ✅ Build connection status UI in settings (COMPLETE - Oct 16)
+5. 🔶 Test OAuth flow with Dexcom sandbox (next priority)
+6. 🔶 Implement automatic background sync (2 days)
+7. 🔶 Deploy to staging and validate (1 day)
 
 ## Key Milestones Completed
 - [x] Document vault & RAG implementation

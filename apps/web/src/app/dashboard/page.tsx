@@ -18,6 +18,10 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   ReferenceArea,
+  Scatter,
+  ScatterChart,
+  ComposedChart,
+  Legend,
 } from 'recharts'
 
 /**
@@ -42,6 +46,7 @@ interface MealMarker {
   name: string
   type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
   photoUrl: string | null
+  photoUrls?: string[]
   analysisStatus: 'pending' | 'completed' | 'failed'
   calories: number
   carbs: number
@@ -70,8 +75,11 @@ export default function DashboardPage() {
   const [glucoseData, setGlucoseData] = useState<GlucoseReading[]>([])
   const [todayMeals, setTodayMeals] = useState<MealMarker[]>([])
 
+  // Timeline filters
+  const [timeRange, setTimeRange] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all')
+
   // Insights
-  const [latestInsight, setLatestInsight] = useState<DailyInsight | null>(null)
+  const [dailyInsights, setDailyInsights] = useState<DailyInsight[]>([])
 
   // Toast for meal completion
   const [showSuccessToast, setShowSuccessToast] = useState(false)
@@ -81,8 +89,23 @@ export default function DashboardPage() {
     checkAuthAndLoadData()
   }, [])
 
-  async function checkAuthAndLoadData() {
-    setLoading(true)
+  // Separate effect for polling that doesn't recreate interval
+  useEffect(() => {
+    const hasPending = todayMeals.some(meal => meal.analysisStatus === 'pending')
+
+    if (!hasPending) return // No polling needed
+
+    const pollInterval = setInterval(async () => {
+      await checkAuthAndLoadData(true) // Pass true to skip loading state
+    }, 5000) // Check every 5 seconds
+
+    return () => clearInterval(pollInterval)
+  }, [todayMeals.some(meal => meal.analysisStatus === 'pending')])
+
+  async function checkAuthAndLoadData(skipLoadingState = false) {
+    if (!skipLoadingState) {
+      setLoading(true)
+    }
     setError(null)
 
     try {
@@ -111,6 +134,20 @@ export default function DashboardPage() {
       const fetchedGlucose = timelineData.glucose || []
       const fetchedMeals = timelineData.meals || []
 
+      // Check if any meal just completed analysis
+      if (todayMeals.length > 0 && fetchedMeals.length > 0) {
+        const justCompleted = fetchedMeals.find((newMeal: MealMarker) => {
+          const oldMeal = todayMeals.find(m => m.id === newMeal.id)
+          return oldMeal?.analysisStatus === 'pending' && newMeal.analysisStatus === 'completed'
+        })
+
+        if (justCompleted) {
+          setCompletedMealName(justCompleted.name)
+          setShowSuccessToast(true)
+          setTimeout(() => setShowSuccessToast(false), 5000)
+        }
+      }
+
       setGlucoseData(fetchedGlucose)
       setTodayMeals(fetchedMeals)
 
@@ -130,30 +167,79 @@ export default function DashboardPage() {
         }
       }
 
-      // Fetch latest insight
+      // Fetch daily insights
       const insightsRes = await apiFetch(`/api/analytics/insights/daily?date=${today}`)
       if (insightsRes.ok) {
         const insightsData = await insightsRes.json()
         if (insightsData.insights && insightsData.insights.length > 0) {
-          setLatestInsight(insightsData.insights[0])
+          setDailyInsights(insightsData.insights)
+        } else {
+          setDailyInsights([])
         }
       }
     } catch (err: any) {
       console.error('Dashboard load error:', err)
       setError(err.message || 'Failed to load dashboard')
     } finally {
-      setLoading(false)
+      if (!skipLoadingState) {
+        setLoading(false)
+      }
     }
   }
 
-  // Transform glucose data for chart
-  const chartData = glucoseData.map((reading) => ({
-    time: new Date(reading.timestamp).toLocaleTimeString('en-US', {
+  // Filter data by time range
+  const filterByTimeRange = (timestamp: string) => {
+    const date = new Date(timestamp)
+    const hour = date.getHours()
+
+    switch (timeRange) {
+      case 'morning': // 6 AM - 12 PM
+        return hour >= 6 && hour < 12
+      case 'afternoon': // 12 PM - 6 PM
+        return hour >= 12 && hour < 18
+      case 'evening': // 6 PM - 12 AM
+        return hour >= 18 || hour < 6
+      case 'all':
+      default:
+        return true
+    }
+  }
+
+  // Filter glucose and meal data by selected time range
+  const filteredGlucoseData = glucoseData.filter(r => filterByTimeRange(r.timestamp))
+  const filteredMeals = todayMeals.filter(m => filterByTimeRange(m.timestamp))
+
+  // Merge glucose data and meal data into a single timeline
+  const allTimestamps = [
+    ...filteredGlucoseData.map(r => ({ timestamp: r.timestamp, type: 'glucose' as const, data: r })),
+    ...filteredMeals.map(m => ({ timestamp: m.timestamp, type: 'meal' as const, data: m }))
+  ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+
+  // Create unified chart data
+  const chartData = allTimestamps.map(item => {
+    const time = new Date(item.timestamp).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
-    }),
-    glucose: reading.value,
-  }))
+    })
+
+    if (item.type === 'glucose') {
+      return {
+        time,
+        glucose: item.data.value,
+      }
+    } else {
+      // For meals, we'll add them as scatter points
+      // Place them at a visible height on the chart (e.g., 200 mg/dL)
+      return {
+        time,
+        meal: 200, // Fixed height for visibility
+        mealType: item.data.type,
+        mealName: item.data.name,
+        calories: item.data.calories,
+        carbs: item.data.carbs,
+      }
+    }
+  })
 
   if (loading) {
     return (
@@ -222,29 +308,81 @@ export default function DashboardPage() {
             <span className="font-semibold text-gray-900 text-center">Log Meal</span>
           </a>
 
-          <button
-            onClick={() => alert('Manual glucose entry coming soon! For now, connect your CGM via Settings.')}
+          <a
+            href="/glucose/entry"
             className="flex flex-col items-center justify-center gap-3 bg-white rounded-2xl shadow-md p-6 hover:shadow-lg hover:border-green-300 border border-gray-200 transition-all min-h-[120px]"
           >
             <div className="w-14 h-14 rounded-full bg-green-600 text-white flex items-center justify-center shadow-md">
               <Plus className="w-7 h-7" />
             </div>
             <span className="font-semibold text-gray-900 text-center">Add Glucose</span>
-          </button>
+          </a>
         </div>
 
         {/* Today's Timeline */}
         <div className="bg-white rounded-2xl shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Today's Timeline</h2>
-          {glucoseData.length === 0 ? (
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Today's Timeline</h2>
+
+            {/* Time Range Filter */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setTimeRange('all')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                  timeRange === 'all'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                All Day
+              </button>
+              <button
+                onClick={() => setTimeRange('morning')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                  timeRange === 'morning'
+                    ? 'bg-orange-500 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                🌅 Morning
+              </button>
+              <button
+                onClick={() => setTimeRange('afternoon')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                  timeRange === 'afternoon'
+                    ? 'bg-amber-500 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                ☀️ Afternoon
+              </button>
+              <button
+                onClick={() => setTimeRange('evening')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all ${
+                  timeRange === 'evening'
+                    ? 'bg-purple-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                🌙 Evening
+              </button>
+            </div>
+          </div>
+
+          {filteredGlucoseData.length === 0 && filteredMeals.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-xl">
               <div className="text-5xl mb-3">📊</div>
-              <p className="text-gray-600 text-sm">No glucose readings today</p>
+              <p className="text-gray-600 text-sm">
+                {glucoseData.length === 0 && todayMeals.length === 0
+                  ? 'No data for today yet'
+                  : `No data for ${timeRange === 'all' ? 'today' : timeRange}`}
+              </p>
             </div>
           ) : (
-            <div className="w-full h-64">
+            <div className="w-full">
+              <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
+                <ComposedChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="time"
@@ -254,6 +392,7 @@ export default function DashboardPage() {
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '12px' }}
+                    domain={[0, 250]}
                     label={{
                       value: 'mg/dL',
                       angle: -90,
@@ -262,11 +401,41 @@ export default function DashboardPage() {
                     }}
                   />
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#fff',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '12px',
+                    content={({ active, payload }) => {
+                      if (!active || !payload || payload.length === 0) return null
+
+                      const data = payload[0].payload
+
+                      if (data.glucose !== undefined) {
+                        return (
+                          <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-lg">
+                            <p className="text-xs font-semibold text-gray-700">Glucose</p>
+                            <p className="text-sm font-bold text-blue-600">{data.glucose} mg/dL</p>
+                            <p className="text-xs text-gray-500">{data.time}</p>
+                          </div>
+                        )
+                      }
+
+                      if (data.meal !== undefined) {
+                        const mealEmojis = {
+                          breakfast: '🌅',
+                          lunch: '☀️',
+                          dinner: '🌙',
+                          snack: '🍎',
+                        }
+                        return (
+                          <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-lg">
+                            <p className="text-xs font-semibold text-gray-700">
+                              {mealEmojis[data.mealType as keyof typeof mealEmojis]} {data.mealType}
+                            </p>
+                            <p className="text-sm font-bold">{data.mealName}</p>
+                            <p className="text-xs text-gray-600">{data.calories} cal · {data.carbs}g carbs</p>
+                            <p className="text-xs text-gray-500">{data.time}</p>
+                          </div>
+                        )
+                      }
+
+                      return null
                     }}
                   />
                   <ReferenceArea
@@ -278,29 +447,7 @@ export default function DashboardPage() {
                   <ReferenceLine y={180} stroke="#ef4444" strokeDasharray="3 3" />
                   <ReferenceLine y={70} stroke="#f59e0b" strokeDasharray="3 3" />
 
-                  {/* Meal markers */}
-                  {todayMeals.map((meal) => {
-                    const mealTime = new Date(meal.timestamp).toLocaleTimeString('en-US', {
-                      hour: 'numeric',
-                      minute: '2-digit',
-                    })
-                    const mealColors = {
-                      breakfast: '#f97316',
-                      lunch: '#10b981',
-                      dinner: '#8b5cf6',
-                      snack: '#f59e0b',
-                    }
-                    return (
-                      <ReferenceLine
-                        key={meal.id}
-                        x={mealTime}
-                        stroke={mealColors[meal.type]}
-                        strokeWidth={2}
-                        strokeDasharray="5 5"
-                      />
-                    )
-                  })}
-
+                  {/* Glucose line */}
                   <Line
                     type="monotone"
                     dataKey="glucose"
@@ -308,9 +455,67 @@ export default function DashboardPage() {
                     strokeWidth={3}
                     dot={{ fill: '#2563eb', r: 4 }}
                     activeDot={{ r: 6 }}
+                    connectNulls
                   />
-                </LineChart>
+
+                  {/* Meal scatter points */}
+                  <Scatter
+                    dataKey="meal"
+                    fill="#8884d8"
+                    shape={(props: any) => {
+                      const { cx, cy, payload } = props
+                      if (!payload.mealType) return null
+
+                      const mealColors = {
+                        breakfast: '#f97316',
+                        lunch: '#10b981',
+                        dinner: '#8b5cf6',
+                        snack: '#f59e0b',
+                      }
+                      const mealEmojis = {
+                        breakfast: '🌅',
+                        lunch: '☀️',
+                        dinner: '🌙',
+                        snack: '🍎',
+                      }
+
+                      return (
+                        <g>
+                          {/* Vertical line from meal to bottom */}
+                          <line
+                            x1={cx}
+                            y1={cy}
+                            x2={cx}
+                            y2="100%"
+                            stroke={mealColors[payload.mealType as keyof typeof mealColors]}
+                            strokeWidth={2}
+                            strokeDasharray="5 5"
+                            opacity={0.5}
+                          />
+                          {/* Meal marker circle */}
+                          <circle
+                            cx={cx}
+                            cy={cy}
+                            r={12}
+                            fill={mealColors[payload.mealType as keyof typeof mealColors]}
+                            opacity={0.9}
+                          />
+                          {/* Emoji icon */}
+                          <text
+                            x={cx}
+                            y={cy + 5}
+                            textAnchor="middle"
+                            fontSize="14"
+                          >
+                            {mealEmojis[payload.mealType as keyof typeof mealEmojis]}
+                          </text>
+                        </g>
+                      )
+                    }}
+                  />
+                </ComposedChart>
               </ResponsiveContainer>
+              </div>
             </div>
           )}
         </div>
@@ -334,6 +539,7 @@ export default function DashboardPage() {
                   id={meal.id}
                   name={meal.name}
                   photoUrl={meal.photoUrl}
+                  photoUrls={meal.photoUrls}
                   mealType={meal.type}
                   timestamp={meal.timestamp}
                   calories={meal.calories}
@@ -347,21 +553,28 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Latest Insight */}
-        {latestInsight && (
+        {/* Daily Insights */}
+        {dailyInsights.length > 0 && (
           <div className="bg-white rounded-2xl shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Latest Insight</h2>
-            <InsightCard
-              type={latestInsight.type}
-              title={latestInsight.title}
-              description={latestInsight.description}
-            />
-            <a
-              href="/insights"
-              className="inline-block mt-4 text-sm font-medium text-blue-600 hover:text-blue-700"
-            >
-              View All Insights →
-            </a>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Today's Insights</h2>
+              <a
+                href="/insights"
+                className="text-sm font-medium text-blue-600 hover:text-blue-700"
+              >
+                View All →
+              </a>
+            </div>
+            <div className="space-y-3">
+              {dailyInsights.map((insight) => (
+                <InsightCard
+                  key={insight.id}
+                  type={insight.type}
+                  title={insight.title}
+                  description={insight.description}
+                />
+              ))}
+            </div>
           </div>
         )}
 

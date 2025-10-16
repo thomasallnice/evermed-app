@@ -15,7 +15,8 @@ import Link from 'next/link'
 interface MealCardProps {
   id: string
   name: string
-  photoUrl: string | null
+  photoUrl?: string | null
+  photoUrls?: string[]
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack'
   timestamp: string
   calories: number
@@ -30,6 +31,7 @@ export default function MealCard({
   id,
   name,
   photoUrl,
+  photoUrls,
   mealType,
   timestamp,
   calories,
@@ -48,20 +50,98 @@ export default function MealCard({
 
   const config = mealTypeConfig[mealType]
 
+  // Normalize photo URLs - use photoUrls if provided, otherwise fall back to single photoUrl
+  const allPhotos = photoUrls && photoUrls.length > 0
+    ? photoUrls
+    : (photoUrl ? [photoUrl] : [])
+
   return (
     <div className="group border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-blue-300 transition-all relative bg-white">
       <Link href={`/entry/${id}`} className="block">
-        {/* Square Image */}
+        {/* Square Image(s) */}
         <div className="relative aspect-square w-full bg-gray-100">
-          {photoUrl ? (
+          {allPhotos.length === 0 ? (
+            <div className="w-full h-full flex items-center justify-center text-6xl">
+              {config.emoji}
+            </div>
+          ) : allPhotos.length === 1 ? (
             <img
-              src={photoUrl}
+              src={allPhotos[0]}
               alt={name}
               className="w-full h-full object-cover"
             />
+          ) : allPhotos.length === 2 ? (
+            // 2 photos: side by side
+            <div className="flex h-full">
+              <div className="w-1/2 h-full relative overflow-hidden">
+                <img
+                  src={allPhotos[0]}
+                  alt={`${name} - Dish 1`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="w-1/2 h-full relative overflow-hidden border-l border-white">
+                <img
+                  src={allPhotos[1]}
+                  alt={`${name} - Dish 2`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          ) : allPhotos.length === 3 ? (
+            // 3 photos: one big on left, two stacked on right
+            <div className="flex h-full">
+              <div className="w-1/2 h-full relative overflow-hidden">
+                <img
+                  src={allPhotos[0]}
+                  alt={`${name} - Dish 1`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="w-1/2 h-full flex flex-col">
+                <div className="h-1/2 relative overflow-hidden border-l border-b border-white">
+                  <img
+                    src={allPhotos[1]}
+                    alt={`${name} - Dish 2`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="h-1/2 relative overflow-hidden border-l border-white">
+                  <img
+                    src={allPhotos[2]}
+                    alt={`${name} - Dish 3`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            </div>
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-6xl">
-              {config.emoji}
+            // 4+ photos: 2x2 grid (show first 4)
+            <div className="grid grid-cols-2 grid-rows-2 h-full">
+              {allPhotos.slice(0, 4).map((photo, index) => (
+                <div
+                  key={index}
+                  className={`relative overflow-hidden ${
+                    index === 1 ? 'border-l border-white' : ''
+                  } ${index >= 2 ? 'border-t border-white' : ''} ${
+                    index === 3 ? 'border-l border-white' : ''
+                  }`}
+                >
+                  <img
+                    src={photo}
+                    alt={`${name} - Dish ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Show "+N" overlay on the 4th image if there are more */}
+                  {index === 3 && allPhotos.length > 4 && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <span className="text-white text-2xl font-bold">
+                        +{allPhotos.length - 4}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
 

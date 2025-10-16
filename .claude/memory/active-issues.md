@@ -142,6 +142,41 @@ rules: {
 
 ## Resolved Recently
 
+### ✅ CRITICAL: PgBouncer Cache Issue with Manual Schema Changes (2025-10-16)
+**Was**:
+- Food upload endpoint failing with "The column `food_ingredients.food_photo_id` does not exist" error
+- Column verified to exist in database via psql
+- Prisma Client correctly generated with foodPhotoId field
+- Error persisted despite multiple cache clears and Prisma client regenerations
+
+**Root Cause**:
+- DATABASE_URL used PgBouncer connection pooler (port 6543) with `pgbouncer=true`
+- Manual schema change (ALTER TABLE to add column) bypassed PgBouncer's schema cache
+- Prisma's runtime schema validation checked against stale PgBouncer cache
+- PgBouncer cached old schema without food_photo_id column
+
+**Fix**:
+- Changed DATABASE_URL from pooler (port 6543) to direct connection (port 5432)
+- Removed `pgbouncer=true` parameter
+- Restarted Next.js dev server to pick up new connection string
+- Food upload endpoint now works correctly
+
+**Lesson Learned**:
+- ALWAYS use direct connection (port 5432) for schema changes and development
+- Only use pooler connection (port 6543) for production/high-concurrency scenarios
+- When manually applying schema changes, PgBouncer cache must be invalidated OR use direct connection
+- Prisma migrate deploy should use direct connection to avoid cache issues
+
+**Files Changed**:
+- `/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/apps/web/.env.local` - Updated DATABASE_URL
+- `/Users/Tom/Arbeiten/Arbeiten/2025_EverMed/apps/web/src/app/api/metabolic/food/route.ts` - Removed ingredients from create include
+
+**Duration**: 3 hours debugging, 5 minutes to fix once root cause identified
+
+**Related**: Migration `20251015000001_add_multi_dish_support` applied manually to `wukrnqifpgjwbqxpockm` database
+
+---
+
 ### ✅ BLOCKER: Metabolic Insights Full Deployment Complete (Staging + Production) (2025-10-12)
 **Was**:
 - Database migrations NOT applied to staging/production (11 tables missing)
