@@ -49,13 +49,13 @@ export function Glucose6MonthChart({ data }: Glucose6MonthChartProps) {
   }))
 
   return (
-    <div className="w-full h-64 sm:h-80 lg:h-96">
+    <div className="w-full h-64 sm:h-80 lg:h-96 bg-[#f5f5f7] rounded-2xl p-4">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={chartData} barCategoryGap="20%" margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="#e5e5ea"
-            strokeOpacity={0.5}
+            stroke="#d1d1d6"
+            strokeOpacity={0.6}
             vertical={false}
             horizontal={true}
           />
@@ -88,9 +88,9 @@ export function Glucose6MonthChart({ data }: Glucose6MonthChartProps) {
               return [value, name]
             }}
           />
-          <Bar dataKey="max" fill="#ef4444" radius={[8, 8, 0, 0]}>
+          <Bar dataKey="max" fill="#2563eb" radius={[8, 8, 0, 0]}>
             {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill="#ef4444" />
+              <Cell key={`cell-${index}`} fill="#2563eb" />
             ))}
           </Bar>
         </BarChart>

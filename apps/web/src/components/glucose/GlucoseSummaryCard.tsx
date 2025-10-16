@@ -15,17 +15,17 @@ export function GlucoseSummaryCard({ timeRange, min, max, avg, dateRange }: Gluc
   const getLabel = () => {
     switch (timeRange) {
       case 'day':
-        return 'DURCHSCHNITT/TAG'
+        return 'AVERAGE/DAY'
       case 'week':
-        return 'WOCHENDURCHSCHNITT'
+        return 'WEEKLY AVERAGE'
       case 'month':
-        return 'DURCHSCHNITT/MONAT'
+        return 'MONTHLY AVERAGE'
       case '6month':
-        return 'BEREICH'
+        return 'RANGE'
       case 'year':
-        return 'BEREICH'
+        return 'RANGE'
       default:
-        return 'BEREICH'
+        return 'RANGE'
     }
   }
 
@@ -61,7 +61,7 @@ export function GlucoseSummaryCard({ timeRange, min, max, avg, dateRange }: Gluc
       <div
         className={`rounded-full px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between ${
           isDayAverage
-            ? 'bg-red-500 text-white'
+            ? 'bg-blue-600 text-white'
             : 'bg-gray-100 text-gray-900'
         }`}
       >

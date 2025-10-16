@@ -47,13 +47,13 @@ export function GlucoseMonthChart({ data }: GlucoseMonthChartProps) {
   chartData.sort((a, b) => a.day - b.day)
 
   return (
-    <div className="w-full h-64 sm:h-80 lg:h-96">
+    <div className="w-full h-64 sm:h-80 lg:h-96 bg-[#f5f5f7] rounded-2xl p-4">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="#e5e5ea"
-            strokeOpacity={0.5}
+            stroke="#d1d1d6"
+            strokeOpacity={0.6}
             vertical={true}
             horizontal={true}
           />
@@ -83,9 +83,9 @@ export function GlucoseMonthChart({ data }: GlucoseMonthChartProps) {
           <Line
             type="monotone"
             dataKey="glucose"
-            stroke="#ef4444"
+            stroke="#2563eb"
             strokeWidth={1.5}
-            dot={{ fill: '#ef4444', r: 2.5 }}
+            dot={{ fill: '#2563eb', r: 2.5 }}
             activeDot={{ r: 4 }}
           />
         </LineChart>

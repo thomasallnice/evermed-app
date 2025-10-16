@@ -56,19 +56,19 @@ export function GlucoseYearChart({ data }: GlucoseYearChartProps) {
     .sort((a, b) => a.monthIndex - b.monthIndex)
 
   return (
-    <div className="w-full h-64 sm:h-80 lg:h-96">
+    <div className="w-full h-64 sm:h-80 lg:h-96 bg-[#f5f5f7] rounded-2xl p-4">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={chartData} barCategoryGap="15%" margin={{ top: 10, right: 10, bottom: 20, left: 0 }}>
           <defs>
             <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#ef4444" stopOpacity={1} />
-              <stop offset="95%" stopColor="#f87171" stopOpacity={1} />
+              <stop offset="5%" stopColor="#2563eb" stopOpacity={1} />
+              <stop offset="95%" stopColor="#3b82f6" stopOpacity={1} />
             </linearGradient>
           </defs>
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="#e5e5ea"
-            strokeOpacity={0.5}
+            stroke="#d1d1d6"
+            strokeOpacity={0.6}
             vertical={false}
             horizontal={true}
           />
