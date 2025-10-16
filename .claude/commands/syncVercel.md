@@ -6,7 +6,7 @@ Execute the Vercel environment variable sync script to safely sync .env files to
 
 This command runs `scripts/sync-vercel-env.sh`, which:
 
-1. Reads environment variables from local .env files (.env.local, .env.staging, .env.production)
+1. Reads environment variables from .env files (.env.staging, .env.production)
 2. Syncs them to Vercel using the Vercel CLI (`vercel env add`)
 3. **CRITICAL**: Uses `printf` instead of `echo` to avoid newline corruption
 4. Removes old variables before adding new ones (prevents conflicts)
@@ -14,6 +14,8 @@ This command runs `scripts/sync-vercel-env.sh`, which:
 6. Handles quoted values correctly
 7. Shows progress and reports sync statistics
 8. Optionally verifies synced variables
+
+**Note**: `.env.local` is intentionally excluded as it contains local development settings only.
 
 ## Important: echo vs printf
 
@@ -52,13 +54,14 @@ Or run the script directly:
 The script will ask:
 
 1. **Which environments to sync?**
-   - `1` - Development (.env.local)
-   - `2` - Preview/Staging (.env.staging or .env.preview)
-   - `3` - Production (.env.production)
-   - `4` - All environments
+   - `1` - Preview/Staging (.env.staging or .env.preview)
+   - `2` - Production (.env.production)
+   - `3` - Both (Staging + Production)
 
 2. **Verify synced variables?** (optional)
    - Shows the values stored in Vercel to confirm they're correct
+
+**Note**: Development/local environment (.env.local) is intentionally excluded from syncing.
 
 ## Example Output
 
@@ -71,22 +74,13 @@ The script will ask:
 ╚══════════════════════════════════════════════════════════════╝
 
 Which environments would you like to sync?
-1) Development (.env.local)
-2) Preview/Staging (.env.staging or .env.preview)
-3) Production (.env.production)
-4) All environments
+1) Preview/Staging (.env.staging or .env.preview)
+2) Production (.env.production)
+3) Both (Staging + Production)
 
-Enter choice (1-4): 4
+Note: .env.local is excluded (local development only)
 
-📁 Syncing .env.local → development
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✓ DATABASE_URL
-  ✓ NEXT_PUBLIC_SUPABASE_URL
-  ✓ NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ✓ SUPABASE_SERVICE_ROLE_KEY
-  ✓ ENCRYPTION_KEY
-  ✓ OPENAI_API_KEY
-✅ 6 variables synced from .env.local
+Enter choice (1-3): 3
 
 📁 Syncing .env.staging → preview
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

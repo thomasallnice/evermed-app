@@ -97,18 +97,16 @@ sync_environment() {
 
 # Ask user which environments to sync
 echo -e "${YELLOW}Which environments would you like to sync?${NC}"
-echo "1) Development (.env.local)"
-echo "2) Preview/Staging (.env.staging or .env.preview)"
-echo "3) Production (.env.production)"
-echo "4) All environments"
+echo "1) Preview/Staging (.env.staging or .env.preview)"
+echo "2) Production (.env.production)"
+echo "3) Both (Staging + Production)"
 echo ""
-read -p "Enter choice (1-4): " choice
+echo -e "${BLUE}Note: .env.local is excluded (local development only)${NC}"
+echo ""
+read -p "Enter choice (1-3): " choice
 
 case $choice in
   1)
-    sync_environment ".env.local" "development"
-    ;;
-  2)
     if [ -f ".env.staging" ]; then
       sync_environment ".env.staging" "preview"
     elif [ -f ".env.preview" ]; then
@@ -118,12 +116,10 @@ case $choice in
       exit 1
     fi
     ;;
-  3)
+  2)
     sync_environment ".env.production" "production"
     ;;
-  4)
-    sync_environment ".env.local" "development"
-
+  3)
     if [ -f ".env.staging" ]; then
       sync_environment ".env.staging" "preview"
     elif [ -f ".env.preview" ]; then
@@ -161,21 +157,14 @@ if [[ "$verify" =~ ^[Yy]$ ]]; then
 
   case $choice in
     1)
-      echo -e "${BLUE}Development:${NC}"
-      vercel env ls development
-      ;;
-    2)
       echo -e "${BLUE}Preview/Staging:${NC}"
       vercel env ls preview
       ;;
-    3)
+    2)
       echo -e "${BLUE}Production:${NC}"
       vercel env ls production
       ;;
-    4)
-      echo -e "${BLUE}Development:${NC}"
-      vercel env ls development
-      echo ""
+    3)
       echo -e "${BLUE}Preview/Staging:${NC}"
       vercel env ls preview
       echo ""
