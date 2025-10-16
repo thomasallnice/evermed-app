@@ -1,13 +1,13 @@
 'use client'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { Home, Camera, History, TrendingUp } from 'lucide-react'
+import { Home, Camera, History, LineChart } from 'lucide-react'
 
 /**
  * BottomNav - GlucoLens bottom navigation with center camera FAB
  *
  * Design principles:
- * - 4 tabs: Dashboard, Camera (FAB), History, Insights
+ * - 4 tabs: Dashboard, Camera (FAB), History, Timeline
  * - 44x44px minimum touch targets (thumb-friendly)
  * - Camera button is prominent FAB (Floating Action Button)
  * - Active state with blue color
@@ -67,18 +67,18 @@ export default function BottomNav() {
             <Camera className="w-7 h-7" strokeWidth={2.5} />
           </Link>
 
-          {/* Insights */}
+          {/* Timeline */}
           <Link
-            href="/insights"
+            href="/metabolic/dashboard"
             className={`flex flex-col items-center justify-center gap-1 w-16 h-16 rounded-lg transition-all ${
-              isActive('/insights')
+              isActive('/metabolic')
                 ? 'text-blue-600'
                 : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
             }`}
-            aria-label="Insights"
+            aria-label="Timeline"
           >
-            <TrendingUp className="w-6 h-6" strokeWidth={isActive('/insights') ? 2.5 : 2} />
-            <span className="text-xs font-medium">Insights</span>
+            <LineChart className="w-6 h-6" strokeWidth={isActive('/metabolic') ? 2.5 : 2} />
+            <span className="text-xs font-medium">Timeline</span>
           </Link>
 
           {/* Spacer for camera button */}

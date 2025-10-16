@@ -7,7 +7,7 @@ import GlucoseRing from '@/components/glucose/GlucoseRing'
 import InsightCard from '@/components/glucose/InsightCard'
 import MealCard from '@/components/glucose/MealCard'
 import BottomNav from '@/components/BottomNav'
-import { Camera, Plus, Check, X } from 'lucide-react'
+import { Camera, Plus, Check, X, Settings } from 'lucide-react'
 import {
   LineChart,
   Line,
@@ -258,8 +258,19 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
         <div className="container py-4">
-          <h1 className="text-2xl font-bold text-gray-900">GlucoLens</h1>
-          <p className="text-sm text-gray-600">Track, learn, optimize</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">GlucoLens</h1>
+              <p className="text-sm text-gray-600">Track, learn, optimize</p>
+            </div>
+            <a
+              href="/settings/health-connections"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Settings"
+            >
+              <Settings className="w-6 h-6 text-gray-600" />
+            </a>
+          </div>
         </div>
       </div>
 

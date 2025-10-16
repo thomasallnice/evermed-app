@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api-client'
-import { Check, X } from 'lucide-react'
+import { Check, X, Settings } from 'lucide-react'
 import { GlucoseTimeline } from '@/components/glucose/GlucoseTimeline'
+import BottomNav from '@/components/BottomNav'
 
 // Types
 interface GlucoseReading {
@@ -238,23 +239,39 @@ export default function MetabolicDashboardPage() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container py-6 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">Metabolic Insights</h1>
-          <div className="flex items-center gap-2">
-            <label htmlFor="date-selector" className="text-sm font-medium text-gray-700">
-              Date:
-            </label>
-            <input
-              id="date-selector"
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+    <div className="min-h-screen bg-gray-50 pb-24">
+      {/* Header with Settings */}
+      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
+        <div className="container py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Timeline</h1>
+              <p className="text-sm text-gray-600">Apple Health-inspired glucose view</p>
+            </div>
+            <a
+              href="/settings/health-connections"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Settings"
+            >
+              <Settings className="w-6 h-6 text-gray-600" />
+            </a>
           </div>
+        </div>
+      </div>
+
+      <div className="container py-6 space-y-6">
+        {/* Date Selector */}
+        <div className="flex items-center gap-2">
+          <label htmlFor="date-selector" className="text-sm font-medium text-gray-700">
+            Date:
+          </label>
+          <input
+            id="date-selector"
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
         </div>
 
         {/* Error State */}
@@ -665,6 +682,8 @@ export default function MetabolicDashboardPage() {
           </button>
         </div>
       )}
+
+      <BottomNav />
     </div>
   )
 }
