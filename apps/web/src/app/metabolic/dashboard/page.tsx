@@ -241,7 +241,7 @@ export default function MetabolicDashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header with Settings */}
-      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
+      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
         <div className="container py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -259,7 +259,7 @@ export default function MetabolicDashboardPage() {
         </div>
       </div>
 
-      <div className="container py-6 space-y-6">
+      <div className="container pt-6 pb-6 space-y-6">
         {/* Date Selector */}
         <div className="flex items-center gap-2">
           <label htmlFor="date-selector" className="text-sm font-medium text-gray-700">
@@ -648,16 +648,6 @@ export default function MetabolicDashboardPage() {
           </p>
         </div>
       </div>
-
-      {/* Floating Action Button - Log Meal - BIGGER FOR MOBILE */}
-      <a
-        href="/metabolic/camera"
-        className="fixed bottom-6 right-6 inline-flex items-center justify-center gap-2 rounded-full bg-blue-600 text-white font-semibold px-6 sm:px-8 py-5 min-h-[64px] min-w-[64px] hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl z-50"
-        aria-label="Log Meal"
-      >
-        <span className="text-3xl">📸</span>
-        <span className="hidden sm:inline text-lg">Log Meal</span>
-      </a>
 
       {/* Success Toast */}
       {showSuccessToast && (
