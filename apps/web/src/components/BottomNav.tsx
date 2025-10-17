@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Home, Camera, History, LineChart } from 'lucide-react'
 
 /**
- * BottomNav - GlucoLens bottom navigation with center camera FAB
+ * BottomNav - Carbly bottom navigation with center camera FAB
  *
  * Design principles:
  * - 4 tabs: Dashboard, Camera (FAB), History, Timeline

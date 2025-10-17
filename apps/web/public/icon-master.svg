@@ -1,0 +1,36 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with subtle gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="curveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:0.8" />
+      <stop offset="50%" style="stop-color:#93c5fd;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:0.8" />
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background (iOS style) -->
+  <rect width="1024" height="1024" rx="226" fill="url(#bgGradient)"/>
+
+  <!-- Stylized "C" letterform -->
+  <path d="M 680 320 Q 680 220, 580 220 L 420 220 Q 320 220, 320 320 L 320 704 Q 320 804, 420 804 L 580 804 Q 680 804, 680 704 L 680 620 L 580 620 L 580 704 Q 580 724, 560 724 L 440 724 Q 420 724, 420 704 L 420 320 Q 420 300, 440 300 L 560 300 Q 580 300, 580 320 L 580 400 L 680 400 L 680 320 Z"
+        fill="white"
+        opacity="0.95"/>
+
+  <!-- Glucose curve overlay (smooth wave through the C) -->
+  <path d="M 350 450 Q 400 380, 450 420 T 550 460 T 650 400"
+        stroke="url(#curveGradient)"
+        stroke-width="20"
+        fill="none"
+        stroke-linecap="round"
+        opacity="0.9"/>
+
+  <!-- Data points on the curve -->
+  <circle cx="350" cy="450" r="14" fill="#93c5fd" opacity="0.9"/>
+  <circle cx="450" cy="420" r="14" fill="#93c5fd" opacity="0.9"/>
+  <circle cx="550" cy="460" r="14" fill="#93c5fd" opacity="0.9"/>
+  <circle cx="650" cy="400" r="14" fill="#93c5fd" opacity="0.9"/>
+</svg>

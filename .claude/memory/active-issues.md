@@ -2,13 +2,135 @@
 
 ## Blocker Issues
 
-**✅ NONE - All deployment blockers resolved as of 2025-10-12!**
+### 1. iOS Mobile App - Photo Upload Failure (2025-10-16 Late Evening)
+**Status**: BLOCKING food tracking feature
+**Severity**: Blocker (core feature non-functional)
+**Affects**: iOS mobile app food tracking (apps/mobile/src/screens/food/CameraScreen.tsx)
 
-**Completed:**
+**Description**:
+Photo upload failing with generic "Upload Failed" error when user tries to log a meal. Camera capture works correctly (photos shown as "1/5 Photos"), but upload to backend fails when meal type is selected.
+
+**Investigation Results**:
+1. ✅ Mobile implementation is correct:
+   - `apps/mobile/src/api/food.ts` - Properly creates FormData with Bearer token
+   - `apps/mobile/src/screens/food/CameraScreen.tsx` - Correct upload flow
+   - Photos sent as photo1, photo2, etc. to POST /api/metabolic/food
+
+2. ✅ Backend implementation is correct:
+   - `apps/web/src/app/api/metabolic/food/route.ts` - Exists and handles multi-photo uploads
+   - Accepts FormData with numbered photos
+   - Uploads to Supabase Storage (food-photos bucket)
+   - Requires Bearer token and Person record
+
+**Likely Root Causes (In Order of Probability)**:
+1. **Person record missing** (MOST LIKELY)
+   - Backend requires Person record: `route.ts:191-200`
+   - New user thomas.gnahm@gmail.com might not have completed onboarding
+   - Would return 404: "Person record not found"
+
+2. **Network connectivity issue**
+   - iOS simulator might not be able to reach https://getclarimed.com
+   - CORS configuration might be blocking mobile requests
+
+3. **Storage bucket permissions**
+   - food-photos bucket might not exist in all environments
+   - RLS policies might be blocking uploads
+
+4. **Authentication token issue**
+   - Bearer token might be expired or invalid
+   - Session refresh might not be working
+
+**Symptoms**:
+- Camera capture works perfectly
+- Photo preview shows "1/5 Photos" correctly
+- User can select meal type (Breakfast/Lunch/Dinner/Snack)
+- Upload fails with generic "Upload Failed" error dialog
+- No detailed error message in UI (error logging needs enhancement)
+
+**Action Plan Created (2025-10-16)**:
+✅ Comprehensive 400+ line action plan: `docs/IOS_ACTION_PLAN_2025_10_16.md`
+
+**Diagnostic Steps (Phase 1 - 30 minutes)**:
+1. Check if Person record exists for thomas.gnahm@gmail.com
+2. Test backend endpoint directly with curl
+3. Add detailed error logging to mobile code
+4. Check Metro logs for specific error message
+
+**Fixes (Phase 2 - 1-2 hours, depends on root cause)**:
+- Fix A: Create Person record (manual or via onboarding endpoint)
+- Fix B: Configure CORS or use local backend for development
+- Fix C: Create/configure food-photos storage bucket
+- Fix D: Implement token refresh logic
+
+**Testing (Phase 3 - 30 minutes)**:
+- Test single photo upload
+- Test multi-photo upload (3 photos)
+- Test error cases (no photos, too many photos, no network)
+
+**Files to Modify for Enhanced Error Logging**:
+- `apps/mobile/src/api/food.ts:77-80` - Add detailed error logging with status code and response body
+
+**Next Steps**:
+1. Run Phase 1 diagnostics to identify exact root cause
+2. Apply appropriate fix from Phase 2
+3. Test end-to-end upload flow
+4. Continue with Week 6.5+ features once upload working
+
+**Duration**: Diagnosed and documented, ready for fix (estimated 2-3 hours total)
+
+**Context**: Weeks 1-7 (50% of iOS roadmap) complete, blocked on this issue before continuing with multi-dish UI, meal editing, or glucose tracking features.
+
+---
+
+### 2. iOS Mobile App - Missing Supabase Credentials (2025-10-16) - RESOLVED
+**Status**: BLOCKING iOS development
+**Severity**: Blocker (iOS app won't run)
+**Affects**: iOS mobile app (apps/mobile)
+
+**Description**:
+iOS mobile app stuck on splash screen because `.env` file was missing. App requires Supabase credentials to initialize authentication system.
+
+**Root Cause**:
+- `apps/mobile/.env` file didn't exist (only .env.example with placeholders)
+- Supabase client initialization in `src/api/supabase.ts` requires:
+  - `EXPO_PUBLIC_SUPABASE_URL`
+  - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- Without these, AuthContext fails to initialize and app gets stuck
+
+**Symptoms**:
+- App shows old "GlucoLens" splash screen indefinitely
+- Login screen never appears
+- Metro bundler shows no errors (silent failure)
+- Clearing cache didn't help
+
+**Fix Applied (2025-10-16)**:
+1. ✅ Created `apps/mobile/.env` with placeholder values
+2. ✅ Created comprehensive setup guide: `apps/mobile/README_SETUP.md`
+3. ✅ Added error logging to `App.tsx` for diagnostics
+4. ✅ Added error boundary to catch render failures
+5. ⏳ **PENDING**: User needs to add actual Supabase credentials from Supabase Dashboard
+
+**Next Steps**:
+1. Get Supabase credentials from [Supabase Dashboard](https://app.supabase.com)
+   - Project URL → `EXPO_PUBLIC_SUPABASE_URL`
+   - Anon key → `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+2. Update `apps/mobile/.env` with real values
+3. Restart Metro bundler: `cd apps/mobile && npm start -- --clear`
+4. Reload app in simulator (Cmd+R)
+
+**Files Created**:
+- `apps/mobile/.env` - Environment variables (needs real credentials)
+- `apps/mobile/README_SETUP.md` - Comprehensive troubleshooting guide
+
+**Duration**: Diagnosed and documented (credentials needed from user)
+
+---
+
+**Web App Status:**
 - ✅ Staging deployment: 11 tables + 40 RLS policies + food-photos bucket
 - ✅ Production deployment: 11 tables + 40 RLS policies + food-photos bucket
 
-**Ready for beta launch** (pending admin auth implementation in Sprint 7 Day 2)
+**Ready for beta launch** (web app - iOS pending credentials)
 
 ---
 

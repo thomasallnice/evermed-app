@@ -1,0 +1,47 @@
+{
+  "cli": {
+    "version": ">= 7.8.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "resourceClass": "m-medium"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://wukrnqifpgjwbqxpockm.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1a3JucWlmcGdqd2JxeHBvY2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwNzE0OTIsImV4cCI6MjA3MDY0NzQ5Mn0.fQvTlVO4xqcPXjKM1D-lTbmEpmeO1fv5S2rLBLoPgdI",
+        "EXPO_PUBLIC_API_URL": "https://app.getcarbly.app"
+      },
+      "ios": {
+        "simulator": false,
+        "resourceClass": "m-medium"
+      }
+    },
+    "production": {
+      "node": "20.19.4",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://wukrnqifpgjwbqxpockm.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1a3JucWlmcGdqd2JxeHBvY2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwNzE0OTIsImV4cCI6MjA3MDY0NzQ5Mn0.fQvTlVO4xqcPXjKM1D-lTbmEpmeO1fv5S2rLBLoPgdI",
+        "EXPO_PUBLIC_API_URL": "https://app.getcarbly.app"
+      },
+      "ios": {
+        "image": "latest",
+        "resourceClass": "m-medium"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "thomas.gnahm@gmail.com",
+        "ascAppId": "6754119933",
+        "appleTeamId": "YY2MH7J868"
+      }
+    }
+  }
+}

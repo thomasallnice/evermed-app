@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { getSupabase } from '@/lib/supabase/client'
 
 /**
- * Nav - GlucoLens top navigation (legacy routes + dev tools)
+ * Nav - Carbly top navigation (legacy routes + dev tools)
  *
  * Note: Primary navigation is now BottomNav for app pages.
  * This Nav is shown for legacy routes (vault, upload, chat, etc.)
@@ -32,7 +32,7 @@ export default function Nav() {
         <div className="font-bold text-xl">
           <a href="/" className="flex items-center gap-2 text-blue-600 hover:text-blue-700">
             <span className="text-2xl">📊</span>
-            GlucoLens
+            Carbly
           </a>
         </div>
         {/* Desktop nav */}

@@ -25,7 +25,7 @@ import {
 } from 'recharts'
 
 /**
- * GlucoLens Dashboard - Main app screen
+ * Carbly Dashboard - Main app screen
  *
  * Features:
  * - Current glucose display (large glucose ring)
@@ -260,7 +260,7 @@ export default function DashboardPage() {
         <div className="container py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">GlucoLens</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Carbly</h1>
               <p className="text-sm text-gray-600">Track, learn, optimize</p>
             </div>
             <a
@@ -593,7 +593,7 @@ export default function DashboardPage() {
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
           <h3 className="font-semibold text-amber-900 mb-2 text-sm">Medical Disclaimer</h3>
           <p className="text-xs text-amber-800 leading-relaxed">
-            GlucoLens provides educational insights only and is not a substitute for professional
+            Carbly provides educational insights only and is not a substitute for professional
             medical advice, diagnosis, or treatment. Predictions are informational and should not
             be used for dosing, diagnosis, or triage decisions. Always consult your healthcare
             provider.

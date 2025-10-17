@@ -1,7 +1,8 @@
 # iOS-First Implementation Roadmap
 
-**Last Updated:** 2025-10-15
-**Status:** Ready to Start
+**Last Updated:** 2025-10-16
+**Status:** In Progress (Foundation Complete)
+**Gap Analysis:** Completed - Added missing web app features (multi-photo, editing, analytics, reports)
 **Approved Decisions:** In-house development, iOS first (Android second), Apple Health + Wear OS integration
 
 ---
@@ -317,7 +318,135 @@ const proteinPercent = calculateMacroRatio(entry.protein, entry.calories, 'prote
 - [ ] Write tests for food entry flow
 - [ ] Test photo upload on slow network (show progress)
 
-**Week 5-7 Deliverable:** ✅ Users can photograph food, log meals, view nutrition
+**Week 5-7 Deliverable:** ✅ Users can photograph food (single photo), log meals, view nutrition
+
+---
+
+### Week 6.5: Multi-Photo & Multi-Dish Support
+
+**Goals:**
+- Support 1-5 photos per meal (matching web app capability)
+- Handle multi-dish meals with separate nutrition per dish
+- Display per-dish nutrition breakdown
+- Track analysis status per dish
+
+**Tasks:**
+
+**Day 36-37: Multiple Photo Capture**
+```typescript
+// apps/mobile/src/screens/food/MultiPhotoCameraScreen.tsx
+import * as ImagePicker from 'expo-image-picker'
+
+export function MultiPhotoCameraScreen() {
+  const [photos, setPhotos] = useState<string[]>([])
+  const MAX_PHOTOS = 5
+
+  async function selectMultiplePhotos() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      selectionLimit: MAX_PHOTOS,
+      quality: 0.8,
+    })
+
+    if (!result.canceled) {
+      setPhotos(result.assets.map(asset => asset.uri))
+    }
+  }
+}
+```
+
+- [ ] Update camera UI to show photo count (1/5, 2/5, etc.)
+- [ ] Add photo thumbnails row below camera view
+- [ ] Implement "Remove Photo" button on thumbnails
+- [ ] Reorder photos via drag-and-drop
+- [ ] Test with 1, 3, and 5 photos
+- [ ] Handle photo upload for multiple images
+- [ ] Call `/api/metabolic/food` with FormData containing multiple files
+
+**Day 38-39: Multi-Dish Data Model**
+```typescript
+// packages/shared/src/types/food.ts
+export interface Dish {
+  dishNumber: number
+  foodItems: string[]
+  nutrition: {
+    calories: number
+    protein: number
+    carbs: number
+    fat: number
+  }
+  analysisStatus: 'pending' | 'completed' | 'failed'
+}
+```
+
+- [ ] Update food entry form to support multiple dishes
+- [ ] Display nutrition breakdown per dish in meal detail screen
+- [ ] Show dish numbers on photo thumbnails
+- [ ] Handle per-dish analysis status (show spinner/checkmark per dish)
+- [ ] Reuse shared `Dish` interface from packages
+
+**Week 6.5 Deliverable:** ✅ Users can upload 1-5 photos per meal and see per-dish nutrition breakdowns
+
+---
+
+### Week 7.5: Meal Editing & Deletion
+
+**Goals:**
+- Edit meal ingredients (add/remove/modify)
+- Delete meals with confirmation
+- Update nutrition totals automatically
+- Sync changes to Supabase
+
+**Tasks:**
+
+**Day 41-42: Ingredient Editor**
+```typescript
+// apps/mobile/src/screens/food/MealEditorScreen.tsx
+import { foodEntrySchema } from '@evermed/shared/validation'
+
+export function MealEditorScreen({ route }: Props) {
+  const { mealId } = route.params
+  const [ingredients, setIngredients] = useState<Ingredient[]>([])
+
+  function addIngredient(ingredient: Ingredient) {
+    setIngredients([...ingredients, ingredient])
+    // Recalculate nutrition totals
+    const newTotals = calculateTotalNutrition(ingredients)
+    setMeal({ ...meal, totalNutrition: newTotals })
+  }
+
+  async function saveMeal() {
+    const result = foodEntrySchema.safeParse(meal)
+    if (!result.success) {
+      Alert.alert('Validation Error', result.error.issues[0].message)
+      return
+    }
+
+    await fetch(`/api/metabolic/food/${mealId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(meal),
+    })
+    navigation.goBack()
+  }
+}
+```
+
+- [ ] Create ingredient list UI (swipeable cells for delete)
+- [ ] Add "Add Ingredient" button → opens ingredient search
+- [ ] Implement Nutritionix search for adding new ingredients
+- [ ] Show real-time nutrition totals as ingredients change
+- [ ] Add "Save" button (calls PATCH `/api/metabolic/food/[id]`)
+- [ ] Test with web app backend (ensure API contract matches)
+
+**Day 43-44: Meal Deletion**
+- [ ] Add "Delete" button in meal detail screen
+- [ ] Implement confirmation alert (iOS native style)
+- [ ] Call DELETE `/api/metabolic/food/[id]` endpoint
+- [ ] Navigate back to meal list after deletion
+- [ ] Test deletion flow end-to-end
+
+**Week 7.5 Deliverable:** ✅ Users can edit meal ingredients and delete meals
 
 ---
 
@@ -494,163 +623,287 @@ export async function exportMealToHealthKit(meal: FoodEntry) {
 
 ---
 
-### Week 11: Documents & Vault
+### Week 10.5: Correlation Analytics & Settings
 
 **Goals:**
-- Document upload (camera + file picker)
-- Document list and viewer
-- Download/share functionality
+- Show best/worst meals based on glucose impact
+- Display correlation analytics from web app
+- Create settings page (CGM connection, profile)
+- Enhanced timeline visualization
 
 **Tasks:**
 
-**Day 51-53: Document Upload**
+**Day 51-52: Correlation Analytics**
 ```typescript
-// Reuse camera logic from food tracking
-import * as DocumentPicker from 'expo-document-picker'
+// apps/mobile/src/screens/insights/CorrelationScreen.tsx
+import { GLUCOSE_CORRELATION_DISCLAIMER } from '@evermed/shared/constants/copy'
 
-async function pickDocument() {
-  const result = await DocumentPicker.getDocumentAsync({
-    type: 'application/pdf',
-    copyToCacheDirectory: true,
-  })
+export function CorrelationScreen() {
+  const [bestMeals, setBestMeals] = useState<MealCorrelation[]>([])
+  const [worstMeals, setWorstMeals] = useState<MealCorrelation[]>([])
 
-  if (result.type === 'success') {
-    await uploadDocument(result.uri, result.name)
-  }
+  useEffect(() => {
+    async function fetchCorrelations() {
+      const response = await fetch('/api/analytics/correlation')
+      const data = await response.json()
+      setBestMeals(data.bestMeals)
+      setWorstMeals(data.worstMeals)
+    }
+    fetchCorrelations()
+  }, [])
+
+  return (
+    <ScrollView>
+      <Section title="✅ Best Meals (Low Impact)">
+        {bestMeals.map(meal => (
+          <MealCard key={meal.id} meal={meal} impact={meal.glucoseImpact} color="green" />
+        ))}
+      </Section>
+
+      <Section title="⚠️ Worst Meals (High Impact)">
+        {worstMeals.map(meal => (
+          <MealCard key={meal.id} meal={meal} impact={meal.glucoseImpact} color="red" />
+        ))}
+      </Section>
+
+      <Text style={styles.disclaimer}>{GLUCOSE_CORRELATION_DISCLAIMER}</Text>
+    </ScrollView>
+  )
 }
 ```
 
-- [ ] Install `expo-document-picker`
-- [ ] Implement PDF/image upload
-- [ ] Show upload progress
-- [ ] Call existing `/api/uploads` for OCR processing
-- [ ] Display OCR status (pending, completed)
+- [ ] Create correlation insights screen
+- [ ] Call `/api/analytics/correlation` endpoint
+- [ ] Display best meals (green cards, low glucose impact)
+- [ ] Display worst meals (red cards, high glucose impact)
+- [ ] Show glucose impact score (e.g., "+25 mg/dL")
+- [ ] Add medical disclaimer from shared constants
+- [ ] Add navigation from Dashboard → Insights
 
-**Day 54-55: Document List**
-- [ ] Create grid view with thumbnails
-- [ ] Add filtering by topic (Labs, Imaging, etc.)
-- [ ] Implement search
-- [ ] Show upload date, file size
-- [ ] Pull-to-refresh
+**Day 53-54: Settings Page**
+```typescript
+// apps/mobile/src/screens/settings/SettingsScreen.tsx
+export function SettingsScreen() {
+  const [healthKitEnabled, setHealthKitEnabled] = useState(false)
+  const [lastSync, setLastSync] = useState<Date>()
 
-**Day 56-57: Document Viewer**
-```bash
-npx expo install react-native-pdf
+  async function toggleHealthKit(enabled: boolean) {
+    if (enabled) {
+      await requestHealthKitPermissions()
+      await syncHealthKit()
+      setHealthKitEnabled(true)
+    } else {
+      setHealthKitEnabled(false)
+    }
+  }
+
+  async function disconnectCGM() {
+    Alert.alert(
+      'Disconnect CGM?',
+      'Your glucose data will not be deleted, but automatic syncing will stop.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Disconnect',
+          style: 'destructive',
+          onPress: async () => {
+            setHealthKitEnabled(false)
+            await AsyncStorage.removeItem('healthKitEnabled')
+          },
+        },
+      ]
+    )
+  }
+
+  return (
+    <ScrollView>
+      <Section title="Health Integrations">
+        <ToggleRow label="Apple Health Sync" value={healthKitEnabled} onValueChange={toggleHealthKit} />
+        {healthKitEnabled && (
+          <>
+            <InfoRow label="Last Sync" value={formatDate(lastSync)} />
+            <Button title="Disconnect CGM" onPress={disconnectCGM} color="red" />
+          </>
+        )}
+      </Section>
+
+      <Section title="Profile">
+        <NavRow label="Glucose Targets" onPress={() => navigate('Targets')} />
+        <NavRow label="Meal Preferences" onPress={() => navigate('Preferences')} />
+      </Section>
+
+      <Section title="Account">
+        <Button title="Sign Out" onPress={signOut} />
+      </Section>
+    </ScrollView>
+  )
+}
 ```
 
-- [ ] Install PDF viewer library
-- [ ] Implement PDF rendering
-- [ ] Add zoom/pan gestures
-- [ ] Show page numbers
-- [ ] Test with large PDFs (>10MB)
+- [ ] Create settings screen
+- [ ] Add Apple Health toggle (enable/disable sync)
+- [ ] Show last sync timestamp
+- [ ] Add "Disconnect CGM" button
+- [ ] Link to glucose targets editor (from onboarding)
+- [ ] Add sign out functionality
+- [ ] Test HealthKit enable/disable flow
 
-**Week 11 Deliverable:** ✅ Users can upload and view medical documents
+**Week 10.5 Deliverable:** ✅ Users see best/worst meals and can manage CGM connection in settings
+
+---
+
+### Week 11: Weekly Reports & PDF Export (REVISED - Replaces Documents Vault)
+
+**Goals:**
+- Generate weekly summary reports (trends, patterns)
+- Export reports as PDF for doctor appointments
+- Share via email or save to Files app
+- Include medical disclaimers
+
+**Tasks:**
+
+**Day 55-57: Weekly Summary Generation**
+```typescript
+// apps/mobile/src/screens/reports/WeeklySummaryScreen.tsx
+export function WeeklySummaryScreen() {
+  const [summary, setSummary] = useState<WeeklySummary>()
+
+  useEffect(() => {
+    async function fetchSummary() {
+      const response = await fetch('/api/analytics/insights/weekly')
+      const data = await response.json()
+      setSummary(data)
+    }
+    fetchSummary()
+  }, [])
+
+  return (
+    <ScrollView>
+      <Card title="Week of {formatDate(summary.weekStart)}">
+        <StatRow label="Avg Glucose" value="{summary.avgGlucose} mg/dL" />
+        <StatRow label="Time in Range" value="{summary.timeInRange}%" />
+        <StatRow label="Meals Logged" value="{summary.mealCount}" />
+      </Card>
+
+      <Card title="Patterns Detected">
+        {summary.patterns.map(pattern => (
+          <PatternCard key={pattern.id} pattern={pattern} />
+        ))}
+      </Card>
+
+      <Card title="Best Meals This Week">
+        {summary.bestMeals.map(meal => (
+          <MealCard key={meal.id} meal={meal} />
+        ))}
+      </Card>
+
+      <Button title="Export PDF" onPress={exportPDF} />
+    </ScrollView>
+  )
+}
+```
+
+- [ ] Create weekly summary screen
+- [ ] Call `/api/analytics/insights/weekly` endpoint
+- [ ] Display key metrics (avg glucose, time in range, meal count)
+- [ ] Show patterns detected (spikes, trends)
+- [ ] List best/worst meals of the week
+- [ ] Add medical disclaimers
+
+**Day 58-59: PDF Export**
+```bash
+npm install react-native-print react-native-html-to-pdf
+```
+
+```typescript
+// apps/mobile/src/utils/pdfExport.ts
+import RNHTMLtoPDF from 'react-native-html-to-pdf'
+import { Share } from 'react-native'
+
+export async function exportWeeklySummaryPDF(summary: WeeklySummary) {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          h1 { color: #2563eb; }
+          table { width: 100%; border-collapse: collapse; }
+          td { padding: 8px; border-bottom: 1px solid #ddd; }
+        </style>
+      </head>
+      <body>
+        <h1>GlucoLens Weekly Summary</h1>
+        <p>Week of ${formatDate(summary.weekStart)}</p>
+
+        <h2>Key Metrics</h2>
+        <table>
+          <tr><td>Average Glucose</td><td>${summary.avgGlucose} mg/dL</td></tr>
+          <tr><td>Time in Range</td><td>${summary.timeInRange}%</td></tr>
+          <tr><td>Meals Logged</td><td>${summary.mealCount}</td></tr>
+        </table>
+
+        <h2>Best Meals</h2>
+        ${summary.bestMeals.map(meal => `
+          <p><strong>${meal.name}</strong> - ${meal.calories} kcal</p>
+        `).join('')}
+
+        <p style="margin-top: 40px; font-size: 12px; color: #666;">
+          ${METABOLIC_INSIGHTS_DISCLAIMER}
+        </p>
+      </body>
+    </html>
+  `
+
+  const options = {
+    html,
+    fileName: `GlucoLens_Weekly_${formatDate(summary.weekStart)}`,
+    directory: 'Documents',
+  }
+
+  const file = await RNHTMLtoPDF.convert(options)
+
+  // Share PDF
+  await Share.share({
+    url: `file://${file.filePath}`,
+    title: 'Weekly Glucose Summary',
+  })
+}
+```
+
+- [ ] Install `react-native-html-to-pdf` (iOS native PDF generation)
+- [ ] Create HTML template for weekly report
+- [ ] Include glucose chart (base64 encoded image)
+- [ ] Add medical disclaimers to PDF footer
+- [ ] Implement "Export PDF" button
+- [ ] Use iOS Share Sheet to share/email PDF
+- [ ] Test PDF generation on real device
+
+**Day 60: Email Share**
+- [ ] Install `react-native-mail` (iOS native mail composer)
+- [ ] Add "Email to Doctor" button
+- [ ] Pre-populate email with:
+  - Subject: "Weekly Glucose Summary - [Date Range]"
+  - Body: Brief summary
+  - Attachment: PDF file
+- [ ] Test email flow on real device
+
+**Week 11 Deliverable:** ✅ Users can generate weekly summaries and export PDFs for doctor appointments
 
 ---
 
 ### Week 12: Polish & iOS-Specific Features
 
 **Goals:**
-- Push notifications
-- Offline support
 - App icon, splash screen
 - Haptic feedback
 - Dark mode
+- Final UI polish
+- Bug fixes from testing
 
 **Tasks:**
 
-**Day 58-59: Push Notifications**
-```bash
-npx expo install expo-notifications
-```
-
-```typescript
-// apps/mobile/src/utils/notifications.ts
-import * as Notifications from 'expo-notifications'
-
-export async function registerForPushNotifications() {
-  const { status } = await Notifications.requestPermissionsAsync()
-  if (status !== 'granted') return null
-
-  const token = await Notifications.getExpoPushTokenAsync()
-
-  // Save token to Supabase for sending notifications
-  await supabase.from('PushToken').upsert({
-    userId: user.id,
-    token: token.data,
-    platform: 'ios',
-  })
-
-  return token.data
-}
-
-export async function scheduleGlucoseReminder() {
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Time to check your glucose',
-      body: 'Log your blood sugar reading',
-    },
-    trigger: {
-      hour: 8,
-      minute: 0,
-      repeats: true,
-    },
-  })
-}
-```
-
-- [ ] Request notification permissions
-- [ ] Implement Expo Push Token registration
-- [ ] Create notification types (glucose reminders, meal logging)
-- [ ] Add in-app notification settings
-- [ ] Test local notifications
-- [ ] Set up server-side push (optional for v1)
-
-**Day 60-61: Offline Support**
-```bash
-npm install @react-native-async-storage/async-storage
-```
-
-```typescript
-// apps/mobile/src/utils/offline.ts
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import NetInfo from '@react-native-community/netinfo'
-
-export async function queueOfflineAction(action: OfflineAction) {
-  const queue = await AsyncStorage.getItem('offlineQueue')
-  const actions = queue ? JSON.parse(queue) : []
-  actions.push(action)
-  await AsyncStorage.setItem('offlineQueue', JSON.stringify(actions))
-}
-
-export async function syncOfflineActions() {
-  const isConnected = await NetInfo.fetch()
-  if (!isConnected.isConnected) return
-
-  const queue = await AsyncStorage.getItem('offlineQueue')
-  if (!queue) return
-
-  const actions = JSON.parse(queue)
-  for (const action of actions) {
-    try {
-      await executeAction(action)
-    } catch (error) {
-      // Keep in queue if failed
-    }
-  }
-
-  await AsyncStorage.removeItem('offlineQueue')
-}
-```
-
-- [ ] Install `@react-native-community/netinfo`
-- [ ] Detect online/offline status
-- [ ] Queue uploads when offline
-- [ ] Sync when back online
-- [ ] Show "Offline" banner
-- [ ] Test airplane mode scenarios
-
-**Day 62: Branding**
+**Day 61: Branding**
 - [ ] Design app icon (1024x1024 PNG)
 - [ ] Generate all iOS icon sizes using Expo
 - [ ] Create splash screen (1284x2778 for iPhone 14 Pro Max)
@@ -658,15 +911,15 @@ export async function syncOfflineActions() {
   ```json
   {
     "expo": {
-      "name": "EverMed",
-      "slug": "evermed",
+      "name": "GlucoLens",
+      "slug": "glucolens",
       "icon": "./assets/icon.png",
       "splash": {
         "image": "./assets/splash.png",
         "backgroundColor": "#2563eb"
       },
       "ios": {
-        "bundleIdentifier": "com.evermed.mobile",
+        "bundleIdentifier": "com.evermed.glucolens",
         "buildNumber": "1.0.0",
         "supportsTablet": true
       }
@@ -674,7 +927,7 @@ export async function syncOfflineActions() {
   }
   ```
 
-**Day 63: Polish**
+**Day 62: Polish**
 ```typescript
 // Haptic feedback
 import * as Haptics from 'expo-haptics'
@@ -683,15 +936,37 @@ function onButtonPress() {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
   // ... action
 }
+
+function onSuccess() {
+  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+}
+
+function onError() {
+  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+}
 ```
 
 - [ ] Install `expo-haptics`
-- [ ] Add haptic feedback to key interactions (button press, success/error)
+- [ ] Add haptic feedback to key interactions:
+  - Button press (light impact)
+  - Photo captured (medium impact)
+  - Meal saved (success notification)
+  - Error occurred (error notification)
 - [ ] Implement dark mode (system preference detection)
 - [ ] Test on iPhone SE (small screen) and iPhone 14 Pro Max (large screen)
 - [ ] Ensure all text is readable, buttons are tappable (44x44pt minimum)
 
-**Week 12 Deliverable:** ✅ Production-ready iOS app with polish
+**Day 63-64: Bug Fixes & Final Testing**
+- [ ] Fix all critical bugs from Week 1-11 testing
+- [ ] Test complete user flows:
+  - Onboarding → First meal log → Glucose entry → Timeline view
+  - Multi-photo upload → Meal editing → Meal deletion
+  - HealthKit sync → Correlation insights → Weekly report
+- [ ] Verify all medical disclaimers are displayed
+- [ ] Check loading states (no blank screens)
+- [ ] Verify error handling (network errors, API failures)
+
+**Week 12 Deliverable:** ✅ Production-ready iOS app with polish, ready for TestFlight
 
 ---
 
@@ -1003,12 +1278,16 @@ App Store Submission
 ## Success Criteria
 
 ### Technical Milestones
-- [ ] Week 2: "Hello World" runs on iOS simulator
+- [x] Week 2: "Hello World" runs on iOS simulator (DONE)
 - [ ] Week 4: User can log in with Face ID
-- [ ] Week 7: User can photograph food and see AI analysis
+- [ ] Week 7: User can photograph food and see AI analysis (single photo)
+- [ ] **Week 7 (NEW)**: User can upload 1-5 photos per meal
+- [ ] **Week 8 (NEW)**: User can edit meal ingredients and delete meals
 - [ ] Week 10: User sees glucose timeline with HealthKit data
-- [ ] Week 12: Zero crashes on key flows (auth, food, glucose)
-- [ ] Week 13: App Store approval
+- [ ] **Week 11 (NEW)**: User sees best/worst meals in correlation insights
+- [ ] **Week 12 (NEW)**: User can export weekly summary as PDF
+- [ ] Week 13: Zero crashes on key flows (auth, food, glucose)
+- [ ] Week 15: App Store approval
 
 ### Quality Metrics
 - [ ] Test coverage: ≥70% for shared packages

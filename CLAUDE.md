@@ -88,11 +88,72 @@ npx vitest run tests/unit/auth.spec.ts
 
 ## Architecture
 
-### Monorepo Structure
+### Mobile-First Structure ⭐
+
+**IMPORTANT: Carbly is a mobile-first glucose tracking application.**
+
+```
+2025_Carbly/
+├── mobile/            # PRIMARY: iOS/Android Expo app ⭐
+│   ├── src/
+│   │   ├── api/           # API client (calls backend)
+│   │   ├── components/    # Reusable UI components
+│   │   ├── contexts/      # React contexts (auth, etc.)
+│   │   ├── navigation/    # React Navigation setup
+│   │   ├── screens/       # App screens
+│   │   ├── types/         # TypeScript types
+│   │   └── utils/         # Utility functions
+│   ├── assets/            # Icons, splash screens
+│   ├── app.config.js      # Expo app configuration
+│   ├── eas.json          # EAS Build profiles
+│   ├── package.json       # Independent dependencies
+│   └── README.md
+├── docs/              # Single Source of Truth (PM, product specs)
+├── db/                # Shared database schema (Supabase)
+│   ├── schema.prisma
+│   └── migrations/
+├── apps/web/          # SECONDARY: Web companion (admin panel)
+│   └── ...            # Next.js 14 App Router
+└── ...
+```
+
+**Development Commands:**
+
+```bash
+# Mobile development (PRIMARY FOCUS)
+cd /Users/Tom/Arbeiten/Arbeiten/2025_Carbly/mobile
+npm install --legacy-peer-deps
+npm start                    # Start Expo dev server
+npx eas-cli build --platform ios --profile production
+npx eas-cli submit --platform ios --latest
+
+# Web development (SECONDARY)
+cd /Users/Tom/Arbeiten/Arbeiten/2025_Carbly
+npm run dev                  # Start Next.js dev server
+npm run build                # Build web app
+```
+
+**Why Mobile-First:**
+- Glucose tracking requires real-time mobile access
+- Photo-first food logging (camera is mobile)
+- CGM integration (Apple Health, Google Fit)
+- Push notifications for glucose alerts
+- On-the-go meal logging
+
+**Web App Role:**
+- Admin panel for data analysis
+- Desktop data export (PDF reports)
+- Optional companion for viewing trends
+
+**No Monorepo Workspace:**
+- Mobile and web have independent `package.json` files
+- No workspace configuration to avoid dependency conflicts
+- Each platform installs its own dependencies
+- Shared backend via Supabase API calls
+
+### Legacy Monorepo Structure (Web Only)
 - **apps/web**: Next.js 14 App Router web app with API routes
-- **apps/workers**: OCR/extraction background jobs (Cloud Run)
 - **packages/config**: Shared ESLint, Prettier, TSConfig
-- **packages/types**, **packages/ui**: Shared types and UI components
 - **db**: Prisma schema and migrations (PostgreSQL/Supabase)
 - **docs**: Product specs, refit plans, ground truth
 - **tests**: Vitest unit tests and fixtures (non-PHI)
