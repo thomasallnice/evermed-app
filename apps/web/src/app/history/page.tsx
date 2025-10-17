@@ -8,7 +8,7 @@ import MealCard from '@/components/glucose/MealCard'
 import { Calendar as CalendarIcon, List, Search } from 'lucide-react'
 
 /**
- * GlucoLens History Page - Calendar and list view of meals
+ * Carbly History Page - Calendar and list view of meals
  *
  * Features:
  * - Calendar view with color-coded days (green/amber/red)

@@ -374,6 +374,7 @@ export async function POST(request: NextRequest) {
         totalProteinG: 0,
         totalFatG: 0,
         totalFiberG: 0,
+        disclaimer: "AI-generated food analysis is an estimate and may not be fully accurate. Nutrition information is for general informational purposes only and should not be used for medical treatment, insulin dosing, or diagnosis. Always consult your healthcare provider for medical advice.",
       },
       { status: 201 }
     )
@@ -564,6 +565,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       entries: formattedEntries,
       total,
+      disclaimer: "AI-generated food analysis is an estimate and may not be fully accurate. Nutrition information is for general informational purposes only and should not be used for medical treatment, insulin dosing, or diagnosis. Always consult your healthcare provider for medical advice.",
     })
   } catch (error) {
     console.error('Food list error:', error)

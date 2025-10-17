@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
           timestamp: reading.timestamp.toISOString(),
           createdAt: reading.createdAt.toISOString(),
         },
+        disclaimer: "This glucose reading is for informational purposes only. It is not medical advice and should not be used for insulin dosing, diagnosis, or treatment decisions. Always consult your healthcare provider for medical guidance.",
       },
       { status: 201 }
     )
@@ -243,6 +244,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       readings: formattedReadings,
       total,
+      disclaimer: "This glucose data is for informational purposes only. It is not medical advice and should not be used for insulin dosing, diagnosis, or treatment decisions. Always consult your healthcare provider for medical guidance.",
     })
   } catch (error: any) {
     console.error('[GLUCOSE LIST] Error:', error)

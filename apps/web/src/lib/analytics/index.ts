@@ -5,6 +5,7 @@ export * from "./types";
 export * from "./glucose-correlation";
 export * from "./timeline-queries";
 export * from "./daily-insights";
+export * from "./weekly-insights";
 
 // Re-export medical disclaimers for convenience
 export {

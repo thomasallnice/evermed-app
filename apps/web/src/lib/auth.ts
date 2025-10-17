@@ -5,11 +5,36 @@ import type { NextRequest } from 'next/server';
 const DEV_BYPASS_HEADER = 'x-user-id';
 
 export async function requireUserId(req: NextRequest): Promise<string> {
+  // Dev bypass for testing
   const headerUser = req.headers.get(DEV_BYPASS_HEADER);
   if (headerUser && process.env.NODE_ENV !== 'production') {
     return headerUser;
   }
 
+  // Check for Bearer token (mobile apps)
+  const authHeader = req.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+
+    // Use Supabase client to verify token
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
+
+    if (error || !user?.id) {
+      throw new Error('unauthorized');
+    }
+    return user.id;
+  }
+
+  // Fall back to cookie-based auth (web browsers)
   const cookieStore = cookies(); // Next.js 14: cookies() is synchronous
 
   const supabase = createServerClient(

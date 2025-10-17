@@ -185,6 +185,7 @@ export async function POST(req: NextRequest) {
         skipped: skippedCount,
         total: glucoseRecords.length,
         errors: errors.length > 0 ? errors.slice(0, 5) : undefined, // Return first 5 errors
+        disclaimer: "Imported glucose data is for informational purposes only. It is not medical advice and should not be used for insulin dosing, diagnosis, or treatment decisions. Always consult your healthcare provider for medical guidance.",
       },
       { status: 200 }
     );

@@ -6,7 +6,7 @@ import BottomNav from '@/components/BottomNav'
 import { ArrowLeft, Camera as CameraIcon, RotateCcw, X } from 'lucide-react'
 
 /**
- * GlucoLens Camera Page - Photo-first food logging
+ * Carbly Camera Page - Photo-first food logging
  *
  * Design principles:
  * - Full-screen camera view

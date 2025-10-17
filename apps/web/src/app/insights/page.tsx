@@ -8,7 +8,7 @@ import InsightCard from '@/components/glucose/InsightCard'
 import { TrendingUp, TrendingDown, Activity, Award } from 'lucide-react'
 
 /**
- * GlucoLens Insights Page - Analytics and patterns
+ * Carbly Insights Page - Analytics and patterns
  *
  * Features:
  * - Daily summary stats

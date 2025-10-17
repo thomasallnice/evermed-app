@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireUserId } from '@/lib/auth';
+import { GLUCOSE_CORRELATION_DISCLAIMER } from '@/lib/copy';
 
 // Force dynamic rendering (no static optimization)
 export const dynamic = 'force-dynamic';
@@ -48,6 +49,7 @@ export async function GET(req: NextRequest) {
         bestMeals: [],
         worstMeals: [],
         message: 'Metabolic insights not yet available. Database migrations pending.',
+        disclaimer: GLUCOSE_CORRELATION_DISCLAIMER,
       },
       { status: 200 }
     );

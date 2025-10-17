@@ -308,7 +308,7 @@ function HealthConnectionsContent() {
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
           <h3 className="font-semibold text-amber-900 mb-2 text-sm">Medical Disclaimer</h3>
           <p className="text-xs text-amber-800 leading-relaxed">
-            GlucoLens provides educational insights only and is not a substitute for professional
+            Carbly provides educational insights only and is not a substitute for professional
             medical advice, diagnosis, or treatment. Glucose data should not be used for insulin
             dosing, diagnosis, or treatment decisions. Always consult your healthcare provider.
           </p>

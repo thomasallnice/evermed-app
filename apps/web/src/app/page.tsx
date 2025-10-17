@@ -29,7 +29,7 @@ export default function HomePage() {
       } = await supabase.auth.getUser()
 
       if (user) {
-        // Redirect logged-in users to new GlucoLens dashboard
+        // Redirect logged-in users to new Carbly dashboard
         router.push('/dashboard')
       } else {
         setLoading(false)
@@ -275,7 +275,7 @@ export default function HomePage() {
       {/* Medical Disclaimer */}
       <section className="max-w-6xl mx-auto px-6 py-8 text-center">
         <p className="text-xs text-gray-500 leading-relaxed">
-          GlucoLens provides educational insights only and is not a substitute for professional medical advice,
+          Carbly provides educational insights only and is not a substitute for professional medical advice,
           diagnosis, or treatment. Predictions are informational and should not be used for dosing, diagnosis,
           or triage decisions. Always consult your healthcare provider.
         </p>

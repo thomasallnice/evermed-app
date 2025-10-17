@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { requireUserId } from '@/lib/auth';
 import { generateDailyInsights, detectGlucosePatterns } from '@/lib/analytics/daily-insights';
+import { METABOLIC_INSIGHTS_DISCLAIMER } from '@/lib/copy';
 
 const prisma = new PrismaClient();
 
@@ -209,6 +210,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         insights,
+        disclaimer: METABOLIC_INSIGHTS_DISCLAIMER,
       },
       { status: 200 }
     );

@@ -208,6 +208,7 @@ export async function GET(req: NextRequest) {
       {
         glucose,
         meals,
+        disclaimer: "This glucose and meal data is for informational purposes only. It is not medical advice and should not be used for insulin dosing, diagnosis, or treatment decisions. Individual responses vary. Always consult your healthcare provider for medical guidance.",
       },
       { status: 200 }
     );
