@@ -1,7 +1,7 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "apps/web/.next",
-  "installCommand": "npm ci",
+  "installCommand": "npm install --force",
   "headers": [
     {
       "source": "/api/(.*)",
