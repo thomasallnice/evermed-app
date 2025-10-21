@@ -5,6 +5,7 @@ import React from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { View, Text, StyleSheet } from 'react-native'
 import Constants from 'expo-constants'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { AuthProvider } from './src/contexts/AuthContext'
 import { RootNavigator } from './src/navigation/RootNavigator'
 
@@ -39,10 +40,12 @@ export default function App() {
 
   try {
     return (
-      <AuthProvider>
-        <RootNavigator />
-        <StatusBar style="auto" />
-      </AuthProvider>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <RootNavigator />
+          <StatusBar style="auto" />
+        </AuthProvider>
+      </SafeAreaProvider>
     )
   } catch (err: any) {
     console.error('App render error:', err)
