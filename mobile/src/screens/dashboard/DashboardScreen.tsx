@@ -114,6 +114,31 @@ export function DashboardScreen() {
 
     const values = sampledData.map(r => r.value)
 
+    // Find meal markers within the glucose data timeframe
+    const mealMarkers = foodData
+      .filter(meal => {
+        const mealTime = new Date(meal.timestamp).getTime()
+        const firstDataPoint = new Date(sampledData[0].timestamp).getTime()
+        const lastDataPoint = new Date(sampledData[sampledData.length - 1].timestamp).getTime()
+        return mealTime >= firstDataPoint && mealTime <= lastDataPoint
+      })
+      .map(meal => {
+        const mealTime = new Date(meal.timestamp).getTime()
+        // Find the closest data point index
+        let closestIndex = 0
+        let minDiff = Math.abs(new Date(sampledData[0].timestamp).getTime() - mealTime)
+
+        sampledData.forEach((point, index) => {
+          const diff = Math.abs(new Date(point.timestamp).getTime() - mealTime)
+          if (diff < minDiff) {
+            minDiff = diff
+            closestIndex = index
+          }
+        })
+
+        return { index: closestIndex, meal }
+      })
+
     return (
       <View style={styles.chartContainer}>
         <LineChart
@@ -155,7 +180,59 @@ export function DashboardScreen() {
           withVerticalLines={false}
           withHorizontalLines={true}
           fromZero={false}
+          decorator={() => {
+            return mealMarkers.map(({ index, meal }, markerIndex) => {
+              // Calculate position based on chart dimensions
+              const chartWidth = Dimensions.get('window').width - 32
+              const chartHeight = 220
+              const paddingHorizontal = 45
+              const paddingTop = 16
+              const dataPoints = values.length
+
+              // Calculate x position
+              const x = paddingHorizontal + (index * (chartWidth - paddingHorizontal * 2) / (dataPoints - 1))
+
+              // Place marker above the chart
+              const y = paddingTop - 20
+
+              return (
+                <View
+                  key={`meal-${markerIndex}`}
+                  style={{
+                    position: 'absolute',
+                    left: x - 12,
+                    top: y,
+                    width: 24,
+                    height: 24,
+                    backgroundColor: '#f97316',
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 2,
+                    borderColor: '#fff',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 2,
+                    elevation: 3,
+                  }}
+                >
+                  <Text style={{ fontSize: 12 }}>{getMealEmoji(meal.mealType)}</Text>
+                </View>
+              )
+            })
+          }}
         />
+
+        {/* Meal legend */}
+        {mealMarkers.length > 0 && (
+          <View style={styles.mealLegend}>
+            <View style={styles.mealLegendItem}>
+              <View style={styles.mealLegendDot} />
+              <Text style={styles.mealLegendText}>Meal events</Text>
+            </View>
+          </View>
+        )}
 
         {/* Target range indicator */}
         <View style={styles.targetRangeInfo}>
@@ -396,5 +473,29 @@ const styles = StyleSheet.create({
   mealStat: {
     fontSize: 14,
     color: '#6b7280',
+  },
+  mealLegend: {
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mealLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  mealLegendDot: {
+    width: 12,
+    height: 12,
+    backgroundColor: '#f97316',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#fff',
+  },
+  mealLegendText: {
+    fontSize: 12,
+    color: '#6b7280',
+    fontWeight: '500',
   },
 })

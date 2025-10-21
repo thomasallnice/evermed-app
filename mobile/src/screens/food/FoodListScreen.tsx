@@ -179,13 +179,6 @@ export function FoodListScreen({ navigation }: any) {
           </View>
         }
       />
-
-      <TouchableOpacity
-        style={[styles.fab, { bottom: insets.bottom + 24 }]}
-        onPress={() => navigation.navigate('Camera')}
-      >
-        <Text style={styles.fabText}>📸</Text>
-      </TouchableOpacity>
     </View>
   )
 }
