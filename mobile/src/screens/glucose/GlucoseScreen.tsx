@@ -227,7 +227,22 @@ export function GlucoseScreen() {
 
       {/* HealthKit Sync Status Banner (if connected) */}
       {healthKitAvailable && connectionStatus.isConnected && (
-        <View style={styles.healthKitBanner}>
+        <TouchableOpacity
+          style={styles.healthKitBanner}
+          onPress={async () => {
+            try {
+              setIsRefreshing(true)
+              await HealthKit.performBackgroundSync()
+              await Promise.all([loadReadings(), checkHealthKitStatus()])
+              Alert.alert('Sync Complete', 'Your Apple Health data has been refreshed.')
+            } catch (error: any) {
+              Alert.alert('Sync Failed', error.message || 'Failed to sync with Apple Health')
+            } finally {
+              setIsRefreshing(false)
+            }
+          }}
+          disabled={isRefreshing}
+        >
           <View style={styles.healthKitBannerHeader}>
             <Text style={styles.healthKitBannerTitle}>Apple Health Connected</Text>
             <View style={styles.healthKitSyncBadge}>
@@ -240,7 +255,12 @@ export function GlucoseScreen() {
               ? formatTimestamp(connectionStatus.lastSync.toISOString())
               : 'Never'}
           </Text>
-        </View>
+          <View style={styles.resyncButton}>
+            <Text style={styles.resyncButtonText}>
+              {isRefreshing ? 'Syncing...' : 'Tap to re-sync'}
+            </Text>
+          </View>
+        </TouchableOpacity>
       )}
 
       {/* Manual Entry Form */}
@@ -678,5 +698,18 @@ const styles = StyleSheet.create({
   healthKitBannerText: {
     fontSize: 12,
     color: '#047857',
+  },
+  resyncButton: {
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#10b981',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  resyncButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#fff',
   },
 })

@@ -64,6 +64,10 @@ export async function updateHealthProfile(profile: Partial<HealthProfile>): Prom
     throw new Error('Session expired. Please sign in again.')
   }
 
+  console.log('[ProfileAPI] Updating profile with:', JSON.stringify(profile, null, 2))
+  console.log('[ProfileAPI] API URL:', API_BASE_URL)
+  console.log('[ProfileAPI] Has token:', !!session.access_token)
+
   const response = await fetch(`${API_BASE_URL}/api/profile`, {
     method: 'POST',
     headers: {
@@ -73,11 +77,23 @@ export async function updateHealthProfile(profile: Partial<HealthProfile>): Prom
     body: JSON.stringify(profile),
   })
 
+  console.log('[ProfileAPI] Response status:', response.status)
+
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error.error || `Failed to update profile: ${response.status}`)
+    const errorText = await response.text()
+    console.error('[ProfileAPI] Error response:', errorText)
+
+    let error
+    try {
+      error = JSON.parse(errorText)
+    } catch (e) {
+      error = { error: errorText }
+    }
+
+    throw new Error(error.error || `Failed to update profile: ${response.status} - ${errorText}`)
   }
 
   const data = await response.json()
+  console.log('[ProfileAPI] Success:', JSON.stringify(data, null, 2))
   return data.profile
 }

@@ -204,6 +204,8 @@ export function ProfileScreen() {
       const customAllergies = customAllergy.split(',').map(s => s.trim()).filter(Boolean)
       updatedProfile.allergies = [...selectedAllergies, ...customAllergies]
 
+      console.log('[PROFILE] Saving profile:', JSON.stringify(updatedProfile, null, 2))
+
       await ProfileAPI.updateHealthProfile(updatedProfile)
 
       // Reload profile to get computed BMI
@@ -212,7 +214,15 @@ export function ProfileScreen() {
       Alert.alert('Success', 'Health profile updated successfully')
     } catch (error: any) {
       console.error('[PROFILE] Failed to save health profile:', error)
-      Alert.alert('Error', error.message || 'Failed to save profile. Please try again.')
+      console.error('[PROFILE] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        cause: error.cause,
+      })
+      Alert.alert(
+        'Error Saving Profile',
+        `${error.message || 'Failed to save profile. Please try again.'}\n\nPlease check the console for details.`
+      )
     } finally {
       setIsSavingProfile(false)
     }
