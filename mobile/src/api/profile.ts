@@ -1,7 +1,7 @@
 // Profile API client
 // Handles fetching and updating user health profile data
 
-import { supabase } from '../lib/supabase'
+import { supabase } from './supabase'
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://app.getcarbly.app'
 
