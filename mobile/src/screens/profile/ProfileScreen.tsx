@@ -11,10 +11,12 @@ import {
   Alert,
   ActivityIndicator,
   Linking,
+  TextInput,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuth } from '../../contexts/AuthContext'
 import * as HealthKit from '../../api/healthkit'
+import * as ProfileAPI from '../../api/profile'
 
 export function ProfileScreen() {
   const insets = useSafeAreaInsets()
@@ -31,10 +33,18 @@ export function ProfileScreen() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [isLoadingStatus, setIsLoadingStatus] = useState(true)
 
-  // Check HealthKit availability on mount
+  // Health Profile state
+  const [profile, setProfile] = useState<ProfileAPI.HealthProfile>({})
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
+  const [selectedSex, setSelectedSex] = useState<string | null>(null)
+  const [customSex, setCustomSex] = useState('')
+
+  // Check HealthKit availability and load profile on mount
   useEffect(() => {
     checkHealthKitAvailability()
     loadConnectionStatus()
+    loadHealthProfile()
   }, [])
 
   const checkHealthKitAvailability = async () => {
@@ -56,6 +66,59 @@ export function ProfileScreen() {
       console.error('[PROFILE] Failed to load connection status:', error)
     } finally {
       setIsLoadingStatus(false)
+    }
+  }
+
+  const loadHealthProfile = async () => {
+    try {
+      setIsLoadingProfile(true)
+      const data = await ProfileAPI.getHealthProfile()
+      setProfile(data)
+
+      // Initialize sex selection state
+      if (data.sexAtBirth) {
+        const sexValue = data.sexAtBirth
+        if (['Male', 'Female', 'Other'].includes(sexValue)) {
+          setSelectedSex(sexValue)
+        } else {
+          setSelectedSex('Custom')
+          setCustomSex(sexValue)
+        }
+      }
+    } catch (error) {
+      console.error('[PROFILE] Failed to load health profile:', error)
+    } finally {
+      setIsLoadingProfile(false)
+    }
+  }
+
+  const saveHealthProfile = async () => {
+    try {
+      setIsSavingProfile(true)
+
+      // Build profile object
+      const updatedProfile: Partial<ProfileAPI.HealthProfile> = {
+        ...profile,
+      }
+
+      // Update sex from selection state
+      if (selectedSex === 'Custom') {
+        updatedProfile.sexAtBirth = customSex || undefined
+      } else if (selectedSex) {
+        updatedProfile.sexAtBirth = selectedSex
+      }
+
+      await ProfileAPI.updateHealthProfile(updatedProfile)
+
+      // Reload profile to get computed BMI
+      await loadHealthProfile()
+
+      Alert.alert('Success', 'Health profile updated successfully')
+    } catch (error: any) {
+      console.error('[PROFILE] Failed to save health profile:', error)
+      Alert.alert('Error', error.message || 'Failed to save profile. Please try again.')
+    } finally {
+      setIsSavingProfile(false)
     }
   }
 
@@ -277,6 +340,199 @@ export function ProfileScreen() {
         </View>
       )}
 
+      {/* Personal Info */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Personal Info</Text>
+        <View style={styles.card}>
+          <View style={styles.inputRow}>
+            <View style={styles.inputHalf}>
+              <Text style={styles.label}>First Name</Text>
+              <TextInput
+                style={styles.input}
+                value={profile.givenName || ''}
+                onChangeText={(text) => setProfile({ ...profile, givenName: text })}
+                placeholder="John"
+                editable={!isSavingProfile}
+              />
+            </View>
+            <View style={styles.inputHalf}>
+              <Text style={styles.label}>Last Name</Text>
+              <TextInput
+                style={styles.input}
+                value={profile.familyName || ''}
+                onChangeText={(text) => setProfile({ ...profile, familyName: text })}
+                placeholder="Doe"
+                editable={!isSavingProfile}
+              />
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Health Profile */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Health Profile</Text>
+        <View style={styles.card}>
+          {isLoadingProfile ? (
+            <ActivityIndicator color="#2563eb" />
+          ) : (
+            <>
+              {/* Sex */}
+              <Text style={styles.label}>Sex</Text>
+              <View style={styles.chipContainer}>
+                {['Male', 'Female', 'Other', 'Custom'].map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.chip,
+                      selectedSex === option && styles.chipSelected,
+                    ]}
+                    onPress={() => {
+                      setSelectedSex(option)
+                      if (option !== 'Custom') {
+                        setCustomSex('')
+                      }
+                    }}
+                    disabled={isSavingProfile}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        selectedSex === option && styles.chipTextSelected,
+                      ]}
+                    >
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {selectedSex === 'Custom' && (
+                <TextInput
+                  style={[styles.input, { marginTop: 8 }]}
+                  value={customSex}
+                  onChangeText={setCustomSex}
+                  placeholder="Please specify"
+                  editable={!isSavingProfile}
+                />
+              )}
+
+              {/* Age, Height, Weight */}
+              <View style={styles.inputRow}>
+                <View style={styles.inputThird}>
+                  <Text style={styles.label}>Age</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={profile.age?.toString() || ''}
+                    onChangeText={(text) =>
+                      setProfile({ ...profile, age: text ? Number(text) : undefined })
+                    }
+                    placeholder="25"
+                    keyboardType="number-pad"
+                    editable={!isSavingProfile}
+                  />
+                </View>
+                <View style={styles.inputThird}>
+                  <Text style={styles.label}>Height (cm)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={profile.heightCm?.toString() || ''}
+                    onChangeText={(text) =>
+                      setProfile({ ...profile, heightCm: text ? Number(text) : undefined })
+                    }
+                    placeholder="170"
+                    keyboardType="number-pad"
+                    editable={!isSavingProfile}
+                  />
+                </View>
+                <View style={styles.inputThird}>
+                  <Text style={styles.label}>Weight (kg)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={profile.weightKg?.toString() || ''}
+                    onChangeText={(text) =>
+                      setProfile({ ...profile, weightKg: text ? Number(text) : undefined })
+                    }
+                    placeholder="70"
+                    keyboardType="number-pad"
+                    editable={!isSavingProfile}
+                  />
+                </View>
+              </View>
+
+              {/* BMI Display */}
+              {profile.bmi && (
+                <View style={styles.bmiContainer}>
+                  <Text style={styles.bmiLabel}>BMI: </Text>
+                  <Text style={styles.bmiValue}>{profile.bmi.toFixed(1)}</Text>
+                </View>
+              )}
+
+              {/* Diet */}
+              <Text style={styles.label}>Diet (comma-separated)</Text>
+              <TextInput
+                style={styles.input}
+                value={profile.diet?.join(', ') || ''}
+                onChangeText={(text) =>
+                  setProfile({
+                    ...profile,
+                    diet: text.split(',').map((s) => s.trim()).filter(Boolean),
+                  })
+                }
+                placeholder="vegetarian, gluten-free"
+                editable={!isSavingProfile}
+              />
+
+              {/* Behaviors */}
+              <Text style={styles.label}>Behaviors (comma-separated)</Text>
+              <TextInput
+                style={styles.input}
+                value={profile.behaviors?.join(', ') || ''}
+                onChangeText={(text) =>
+                  setProfile({
+                    ...profile,
+                    behaviors: text.split(',').map((s) => s.trim()).filter(Boolean),
+                  })
+                }
+                placeholder="exercise, meditation"
+                editable={!isSavingProfile}
+              />
+
+              {/* Allergies */}
+              <Text style={styles.label}>Allergies (comma-separated)</Text>
+              <TextInput
+                style={styles.input}
+                value={profile.allergies?.join(', ') || ''}
+                onChangeText={(text) =>
+                  setProfile({
+                    ...profile,
+                    allergies: text.split(',').map((s) => s.trim()).filter(Boolean),
+                  })
+                }
+                placeholder="peanuts, shellfish"
+                editable={!isSavingProfile}
+              />
+
+              {/* Save Button */}
+              <TouchableOpacity
+                style={[styles.saveButton, isSavingProfile && styles.saveButtonDisabled]}
+                onPress={saveHealthProfile}
+                disabled={isSavingProfile}
+              >
+                {isSavingProfile ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Save Profile</Text>
+                )}
+              </TouchableOpacity>
+
+              <Text style={styles.helperText}>
+                Your profile helps the AI tailor responses. You can update it anytime.
+              </Text>
+            </>
+          )}
+        </View>
+      </View>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
@@ -483,5 +739,116 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9ca3af',
     textAlign: 'center',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  input: {
+    backgroundColor: '#f9fafb',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#111827',
+  },
+  inputRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  inputHalf: {
+    flex: 1,
+  },
+  inputThird: {
+    flex: 1,
+  },
+  chipContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#f3f4f6',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  chipSelected: {
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
+  },
+  chipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  chipTextSelected: {
+    color: '#fff',
+  },
+  bmiContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eff6ff',
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  bmiLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e40af',
+  },
+  bmiValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2563eb',
+  },
+  saveButton: {
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 12,
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#9ca3af',
+    shadowOpacity: 0,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#9ca3af',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 })
