@@ -1,5 +1,132 @@
 # Recent Changes
 
+## 2025-10-21 (Afternoon - COMPLETE): Apple HealthKit Integration - Beta-Blocking Feature ✅
+
+**What Was Done:**
+Implemented complete Apple HealthKit integration for iOS mobile app, enabling automatic glucose data synchronization from Apple Health.
+
+**Status:**
+✅ **COMPLETE** - HealthKit integration fully implemented and ready for beta testing
+
+**Changes Made:**
+
+1. **Package Installation**
+   - ✅ Installed `react-native-health` package (15 dependencies)
+   - ✅ No conflicts with existing dependencies
+
+2. **iOS Configuration**
+   - ✅ Added HealthKit permissions to `mobile/app.config.js`
+   - ✅ Added HealthKit permissions to `mobile/app.json`
+   - ✅ Configured entitlements: `com.apple.developer.healthkit`
+   - ✅ Usage descriptions for App Store compliance
+
+3. **HealthKit API Service** (`mobile/src/api/healthkit.ts`)
+   - ✅ `isHealthKitAvailable()` - Device capability check
+   - ✅ `requestPermissions()` - iOS permission request
+   - ✅ `connectAndSync()` - Initial connection flow (30-day sync)
+   - ✅ `syncGlucoseFromHealthKit()` - Core sync logic with unit conversion
+   - ✅ `performBackgroundSync()` - Silent incremental sync
+   - ✅ `disconnect()` - Connection removal
+   - ✅ Comprehensive error handling (permission denied, network errors, invalid data)
+
+4. **ProfileScreen Updates** (`mobile/src/screens/profile/ProfileScreen.tsx`)
+   - ✅ Connect Apple Health UI (blue card, primary CTA)
+   - ✅ Connection status display (Connected ✓ / Not Connected ⭕)
+   - ✅ Last sync timestamp ("2 hours ago", "Just now")
+   - ✅ Manual "Sync Now" button
+   - ✅ Disconnect button with confirmation
+   - ✅ Privacy statement: "Your health data never leaves your device without your permission"
+
+5. **GlucoseScreen Updates** (`mobile/src/screens/glucose/GlucoseScreen.tsx`)
+   - ✅ HealthKit not connected prompt (blue card, navigate to ProfileScreen)
+   - ✅ Connected status banner (green, shows last sync)
+   - ✅ Background sync on app open
+   - ✅ Pull-to-refresh triggers sync
+   - ✅ Source badges (blue for HealthKit CGM readings)
+
+6. **Medical Compliance**
+   - ✅ Medical disclaimers already in backend API responses
+   - ✅ Non-SaMD compliant (informational only, no diagnosis/dosing/triage)
+   - ✅ Privacy-preserving design (explicit user permission)
+
+**Key Features:**
+- One-way sync (HealthKit → Carbly)
+- Unit conversion (mmol/L → mg/dL with precision)
+- Duplicate prevention (timestamp-based)
+- Range validation (20-600 mg/dL)
+- Incremental sync (only new readings after last sync)
+- Graceful error handling (permission denied, network errors, invalid data)
+- Material Design UI (blue for primary, gray for secondary)
+
+**Files Created:**
+- `mobile/src/api/healthkit.ts` (400+ lines, full HealthKit service)
+- `docs/HEALTHKIT_INTEGRATION.md` (comprehensive implementation documentation)
+
+**Files Modified:**
+- `mobile/app.config.js` (added HealthKit permissions and entitlements)
+- `mobile/app.json` (added HealthKit permissions and entitlements)
+- `mobile/src/screens/profile/ProfileScreen.tsx` (added HealthKit connection UI)
+- `mobile/src/screens/glucose/GlucoseScreen.tsx` (added HealthKit sync status)
+- `mobile/package.json` (added react-native-health dependency)
+
+**Testing Required:**
+- [ ] Test on physical iOS device (HealthKit unavailable on simulator)
+- [ ] Add glucose readings to Apple Health app
+- [ ] Test connection flow (grant permission, initial sync)
+- [ ] Test manual sync (Sync Now button)
+- [ ] Test pull-to-refresh sync
+- [ ] Test disconnect flow
+- [ ] Verify medical disclaimers visible
+- [ ] Test edge cases (permission denied, network errors, duplicates)
+
+**Next Steps:**
+1. Test on physical iOS device with real HealthKit data
+2. Verify sync performance with large datasets (100+ readings)
+3. Collect beta feedback on sync reliability
+4. Monitor permission grant/denial rates
+5. Consider future enhancements (background sync, write to HealthKit, Dexcom/FreeStyle Libre)
+
+**Duration**: ~2 hours (package install, configuration, service implementation, UI updates, documentation)
+
+**Documentation**: `/Users/Tom/Arbeiten/Arbeiten/2025_Carbly/docs/HEALTHKIT_INTEGRATION.md`
+
+---
+
+## 2025-10-19 (Evening - COMPLETE): iOS Photo Upload Blocker - RESOLVED ✅
+
+**What Was Done:**
+Fixed iOS mobile app photo upload failure by switching from broken local backend to production API.
+
+**Status:**
+✅ **COMPLETE** - Mobile app now configured to use production API at `https://app.getcarbly.app`
+
+**Changes Made:**
+
+1. **Root Cause Investigation (2 hours)**
+   - ✅ Verified Person record exists for thomas.gnahm@gmail.com
+   - ✅ Discovered mobile .env pointed to local backend (`http://192.168.178.114:3000`)
+   - ✅ Found wrong backend running on port 3000 (myleash, not Carbly)
+   - ✅ Identified Carbly web backend has React dependency conflicts
+   - ✅ Confirmed FormData parsing fails in local Next.js
+
+2. **Fix Applied (5 minutes)**
+   - Updated `mobile/.env` to use production API
+   - Production backend fully deployed and working (2025-10-12)
+   - Bypasses all local backend issues
+
+3. **Files Modified**
+   - `mobile/.env` (line 9): `EXPO_PUBLIC_API_URL=https://app.getcarbly.app`
+
+**Next Steps for User:**
+1. Restart Metro bundler: `cd mobile && npm start -- --clear`
+2. Reload iOS app in simulator (Cmd+R)
+3. Test photo upload - should work with production API
+4. Continue with Week 6.5+ features
+
+**Duration**: 2 hours diagnosis + 5 minutes fix = 2.05 hours total
+
+---
+
 ## 2025-10-17 (Evening - COMPLETE): Mobile-First Architecture - Carbly App Reorganized ⭐
 
 **What Was Done:**

@@ -88,6 +88,8 @@ export async function uploadFoodPhotos(
       statusText: response.statusText,
       url: `${API_BASE_URL}/api/metabolic/food`,
       body: errorText,
+      userId: session.user.id,
+      tokenExpiry: new Date(session.expires_at! * 1000).toISOString(),
     })
 
     // Try to parse as JSON
@@ -98,13 +100,18 @@ export async function uploadFoodPhotos(
 
       // Log specific error details
       if (response.status === 404) {
-        console.error('[FOOD UPLOAD] 404 Error - Possible causes:')
-        console.error('  1. Person record missing for user')
-        console.error('  2. API endpoint not found')
-        console.error('  3. Network connectivity issue')
+        console.error('[FOOD UPLOAD] 404 Error - Person record missing for user')
+        console.error('  User ID:', session.user.id)
+        console.error('  Need to create Person record via onboarding')
+        errorMessage = 'Please complete your profile setup first'
       } else if (response.status === 401) {
         console.error('[FOOD UPLOAD] 401 Error - Authentication failed')
-        console.error('  Session might be expired or invalid')
+        console.error('  User ID:', session.user.id)
+        console.error('  Token expires:', new Date(session.expires_at! * 1000).toISOString())
+        console.error('  Possible causes:')
+        console.error('    1. Production backend uses different Supabase project')
+        console.error('    2. Token validation failed')
+        errorMessage = 'Authentication failed. Please sign out and sign in again.'
       } else if (response.status === 500) {
         console.error('[FOOD UPLOAD] 500 Error - Server error')
         console.error('  Check backend logs for details')
@@ -184,6 +191,75 @@ export async function getFoodEntry(id: string): Promise<FoodEntry> {
 
   if (!response.ok) {
     throw new Error(`Failed to fetch food entry: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Update food entry (meal type and/or ingredients)
+ */
+export async function updateFoodEntry(
+  id: string,
+  updates: {
+    mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+    ingredients?: Array<{
+      id?: string // If provided, update existing; if not, create new
+      name: string
+      quantity: number
+      unit: string
+      calories: number
+      carbsG: number
+      proteinG: number
+      fatG: number
+      fiberG: number
+    }>
+  }
+): Promise<FoodEntry> {
+  // Refresh session to get fresh token
+  const {
+    data: { session },
+    error: refreshError,
+  } = await supabase.auth.refreshSession()
+
+  if (refreshError || !session) {
+    throw new Error('Session expired. Please sign in again.')
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/metabolic/food/${id}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updates),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('[FOOD UPDATE] Update failed:', {
+      status: response.status,
+      statusText: response.statusText,
+      body: errorText,
+    })
+
+    let errorMessage = `Update failed: ${response.status}`
+    try {
+      const error = JSON.parse(errorText)
+      errorMessage = error.error || errorMessage
+
+      if (response.status === 404) {
+        errorMessage = 'Meal not found'
+      } else if (response.status === 401) {
+        errorMessage = 'Authentication failed. Please sign in again.'
+      } else if (response.status === 400) {
+        errorMessage = error.error || 'Invalid update data'
+      }
+    } catch {
+      errorMessage = errorText || errorMessage
+    }
+
+    throw new Error(errorMessage)
   }
 
   return response.json()

@@ -7,11 +7,12 @@ import Constants from 'expo-constants'
 
 // DIAGNOSTIC LOGGING - Log all environment variables to help debug TestFlight crashes
 console.log('=== SUPABASE INITIALIZATION START ===')
-console.log('Build: 1.0.6 (HARDCODED VALUES + deleted app.json)')
+console.log('Build: 1.0.16 (Defensive Constants checking + hardcoded fallbacks)')
 console.log('Configuration check:')
 
 // Read from Constants.expoConfig.extra (defined in app.config.js)
-const extra = Constants.expoConfig?.extra || {}
+// Fallback to hardcoded values for Xcode builds (where config might not be embedded)
+const extra = (Constants && Constants.expoConfig && Constants.expoConfig.extra) ? Constants.expoConfig.extra : {}
 
 console.log('- extra.supabaseUrl exists:', !!extra.supabaseUrl)
 console.log('- extra.supabaseAnonKey exists:', !!extra.supabaseAnonKey)
@@ -27,21 +28,13 @@ if (extra.apiUrl) {
   console.log('- API URL:', extra.apiUrl)
 }
 
-const supabaseUrl = extra.supabaseUrl
-const supabaseAnonKey = extra.supabaseAnonKey
+// Use hardcoded fallbacks for Xcode/TestFlight builds where Constants.expoConfig might be undefined
+// These fallbacks ensure the app ALWAYS has valid configuration, even if Constants.expoConfig is undefined
+const supabaseUrl = extra.supabaseUrl || 'https://wukrnqifpgjwbqxpockm.supabase.co'
+const supabaseAnonKey = extra.supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1a3JucWlmcGdqd2JxeHBvY2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwNzE0OTIsImV4cCI6MjA3MDY0NzQ5Mn0.fQvTlVO4xqcPXjKM1D-lTbmEpmeO1fv5S2rLBLoPgdI'
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('=== CRITICAL ERROR: Missing Supabase configuration ===')
-  console.error('This will cause the app to crash.')
-  console.error('URL present:', !!supabaseUrl)
-  console.error('Key present:', !!supabaseAnonKey)
-  console.error('All extra keys:', Object.keys(extra))
-  console.error('Constants.expoConfig:', Constants.expoConfig)
-
-  throw new Error(
-    'Missing Supabase configuration in Constants.expoConfig.extra. Check app.config.js and eas.json'
-  )
-}
+console.log('Using Supabase URL:', supabaseUrl)
+console.log('Using Anon Key (first 20 chars):', supabaseAnonKey.substring(0, 20))
 
 console.log('Creating Supabase client...')
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -57,4 +50,4 @@ console.log('=== SUPABASE INITIALIZATION COMPLETE ===')
 console.log('Supabase client created successfully!')
 
 // Export API URL for food.ts
-export const API_URL = extra.apiUrl || 'http://192.168.178.114:3000'
+export const API_URL = extra.apiUrl || 'https://app.getcarbly.app'

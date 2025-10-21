@@ -1,49 +1,77 @@
-// ABSOLUTE MINIMAL TEST - NO DEPENDENCIES
-// Testing with just core React Native
+// Main App Component
+// Entry point for EverMed mobile app
 
 import React from 'react'
+import { StatusBar } from 'expo-status-bar'
 import { View, Text, StyleSheet } from 'react-native'
+import Constants from 'expo-constants'
+import { AuthProvider } from './src/contexts/AuthContext'
+import { RootNavigator } from './src/navigation/RootNavigator'
 
-console.log('=== ABSOLUTE MINIMAL APP ===')
-console.log('No Sentry, No StatusBar, Just React Native core')
+// DIAGNOSTIC: Log app start immediately
+console.log('=== APP.TSX LOADING ===')
+console.log('React Native app is starting...')
+console.log('Build: 1.0.6 (HARDCODED + no app.json)')
 
 export default function App() {
-  console.log('=== APP RENDERING ===')
+  // Add error boundary to catch issues
+  const [error, setError] = React.useState<string | null>(null)
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>🎉 IT WORKS!</Text>
-      <Text style={styles.text}>Hello from Carbly</Text>
-      <Text style={styles.text}>Minimal React Native app</Text>
-    </View>
-  )
+  React.useEffect(() => {
+    console.log('=== APP MOUNTED ===')
+    console.log('App.tsx useEffect running')
+    console.log('Configuration at runtime:')
+    const extra = Constants.expoConfig?.extra || {}
+    console.log('- extra.supabaseUrl:', extra.supabaseUrl ? 'present' : 'MISSING')
+    console.log('- extra.supabaseAnonKey:', extra.supabaseAnonKey ? 'present' : 'MISSING')
+    console.log('- extra.apiUrl:', extra.apiUrl || 'MISSING')
+    console.log('- All extra keys:', Object.keys(extra))
+  }, [])
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorTitle}>App Error</Text>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    )
+  }
+
+  try {
+    return (
+      <AuthProvider>
+        <RootNavigator />
+        <StatusBar style="auto" />
+      </AuthProvider>
+    )
+  } catch (err: any) {
+    console.error('App render error:', err)
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorTitle}>Render Error</Text>
+        <Text style={styles.errorText}>{err?.message || String(err)}</Text>
+      </View>
+    )
+  }
 }
 
 const styles = StyleSheet.create({
-  container: {
+  errorContainer: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
+    backgroundColor: '#fee2e2',
   },
-  title: {
-    fontSize: 32,
+  errorTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    color: '#991b1b',
+    marginBottom: 16,
   },
-  subtitle: {
-    fontSize: 18,
-    color: '#666',
-    marginBottom: 10,
-  },
-  text: {
+  errorText: {
     fontSize: 14,
+    color: '#7f1d1d',
     textAlign: 'center',
-    marginVertical: 5,
-  },
-  buttonContainer: {
-    marginTop: 30,
-    width: '80%',
   },
 })

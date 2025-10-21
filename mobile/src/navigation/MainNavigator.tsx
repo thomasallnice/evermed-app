@@ -55,6 +55,7 @@ export function MainNavigator() {
           paddingBottom: 8,
           paddingTop: 8,
           height: 60,
+          position: 'absolute', // Make sure tab bar respects safe area
         },
       }}
     >

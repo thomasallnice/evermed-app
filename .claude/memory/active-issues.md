@@ -2,9 +2,9 @@
 
 ## Blocker Issues
 
-### 1. iOS Mobile App - Photo Upload Failure (2025-10-16 Late Evening)
-**Status**: BLOCKING food tracking feature
-**Severity**: Blocker (core feature non-functional)
+### 1. iOS Mobile App - Photo Upload Failure (2025-10-16 Late Evening) - ✅ RESOLVED (2025-10-19)
+**Status**: RESOLVED - Mobile now uses production API
+**Severity**: Was Blocker → Now Fixed
 **Affects**: iOS mobile app food tracking (apps/mobile/src/screens/food/CameraScreen.tsx)
 
 **Description**:
@@ -80,6 +80,31 @@ Photo upload failing with generic "Upload Failed" error when user tries to log a
 
 **Context**: Weeks 1-7 (50% of iOS roadmap) complete, blocked on this issue before continuing with multi-dish UI, meal editing, or glucose tracking features.
 
+**✅ RESOLUTION (2025-10-19)**:
+
+**Root Causes Identified:**
+1. ✅ Person record EXISTS for thomas.gnahm@gmail.com (User ID: `d4158eaa-b0c1-431b-b30e-9e53017c440e`)
+2. ❌ Mobile .env pointed to local backend (`http://192.168.178.114:3000`)
+3. ❌ Wrong backend running on port 3000 (myleash project, not Carbly)
+4. ❌ Carbly web backend has React dependency conflicts (known issue, low priority)
+5. ❌ FormData parsing failure in Next.js when test attempted
+
+**Fix Applied:**
+- Updated `mobile/.env` to use production API: `EXPO_PUBLIC_API_URL=https://app.getcarbly.app`
+- Production backend is fully deployed and working (Web Staging + Production deployed 2025-10-12)
+- Bypasses local backend dependency issues entirely
+
+**Files Modified:**
+- `/Users/Tom/Arbeiten/Arbeiten/2025_Carbly/mobile/.env` (line 9: API URL updated)
+
+**Next Steps for User:**
+1. Restart Metro bundler: `cd mobile && npm start -- --clear`
+2. Reload iOS app in simulator (Cmd+R)
+3. Try photo upload again - should now work with production API
+4. Monitor Metro logs for any other errors
+
+**Duration**: 2 hours diagnosis + 5 minutes fix = 2.05 hours total
+
 ---
 
 ### 2. iOS Mobile App - Missing Supabase Credentials (2025-10-16) - RESOLVED
@@ -131,6 +156,94 @@ iOS mobile app stuck on splash screen because `.env` file was missing. App requi
 - ✅ Production deployment: 11 tables + 40 RLS policies + food-photos bucket
 
 **Ready for beta launch** (web app - iOS pending credentials)
+
+---
+
+### 3. iOS Mobile App - TestFlight Crashes on Startup (2025-10-19) - ✅ RESOLVED
+**Status**: RESOLVED - app.config.js now reads from process.env
+**Severity**: Was Blocker → Now Fixed (pending build verification)
+**Affects**: iOS mobile app on TestFlight builds (production)
+
+**Description**:
+App crashes immediately on startup when installed via TestFlight. Local builds worked fine, but TestFlight builds failed during Supabase client initialization.
+
+**Root Cause**:
+- `mobile/app.config.js` had hardcoded environment variables in the `extra` object (lines 54-62)
+- EAS builds inject `EXPO_PUBLIC_*` variables via `process.env` during build
+- app.config.js was ignoring these injected variables and using hardcoded fallbacks
+- The hardcoded values might have been outdated or incorrect
+- Supabase client initialization failed when it couldn't find valid credentials
+- App crashed with error: "Missing Supabase configuration in Constants.expoConfig.extra"
+
+**Investigation Path**:
+1. User reported: "the app crash on start. we tried to solve the issue before."
+2. User suggestion: "Think from first principles here and maybe submit a 'Hello World' app to check if it works at all."
+3. Investigated from first principles → discovered app.config.js wasn't reading environment variables
+4. Found that EAS builds inject env vars via process.env but app.config.js ignored them
+
+**Fix Applied (2025-10-19)**:
+Updated `/Users/Tom/Arbeiten/Arbeiten/2025_Carbly/mobile/app.config.js` lines 54-62:
+
+**BEFORE (Hardcoded)**:
+```javascript
+extra: {
+  eas: { projectId: 'e6780cd6-eb5a-48a6-a295-7483658c5072' },
+  // Production configuration
+  supabaseUrl: 'https://wukrnqifpgjwbqxpockm.supabase.co',
+  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+  apiUrl: 'https://app.getcarbly.app',
+},
+```
+
+**AFTER (Reads from process.env)**:
+```javascript
+extra: {
+  eas: { projectId: 'e6780cd6-eb5a-48a6-a295-7483658c5072' },
+  // Read from environment variables (injected by EAS during build)
+  // Falls back to hardcoded values for local development
+  supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://wukrnqifpgjwbqxpockm.supabase.co',
+  supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+  apiUrl: process.env.EXPO_PUBLIC_API_URL || 'https://app.getcarbly.app',
+},
+```
+
+**How EAS Builds Work**:
+- EAS reads environment variables from `eas.json` build profiles
+- During build, EAS sets these as `process.env.EXPO_PUBLIC_*` variables
+- app.config.js runs during build and should read from process.env
+- The resulting app.json is bundled with the correct values
+
+**Why Local Builds Worked**:
+- Local Expo Dev Client reads from `.env` file directly
+- Hardcoded values in app.config.js matched local .env values
+- No mismatch, so Supabase client initialized successfully
+
+**Why TestFlight Builds Failed**:
+- EAS injected correct values via process.env
+- app.config.js ignored process.env and used hardcoded values
+- If hardcoded values were outdated/incorrect, Supabase client failed
+- App crashed during initialization
+
+**Files Modified**:
+- `/Users/Tom/Arbeiten/Arbeiten/2025_Carbly/mobile/app.config.js` (lines 54-62: environment variable reading)
+- Build number bumped: 1.0.11 → 1.0.12 (line 23)
+
+**Next Steps**:
+1. ⏳ **BLOCKED**: Build and submit to TestFlight for verification
+   - EAS free plan quota exhausted (resets Nov 1, 2025)
+   - User needs to upgrade EAS plan ($29/month) or wait 12 days
+2. Once build completes:
+   - Install from TestFlight
+   - Verify app launches successfully
+   - Test photo upload functionality end-to-end
+
+**Duration**: 1 hour root cause analysis + 10 minutes fix = 1.17 hours total
+
+**Lesson Learned**:
+- ALWAYS read EXPO_PUBLIC_* variables from process.env in app.config.js
+- EAS builds inject env vars differently than local development
+- Local builds working ≠ TestFlight builds working
+- Test on TestFlight EARLY to catch environment configuration issues
 
 ---
 

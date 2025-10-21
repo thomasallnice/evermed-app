@@ -12,9 +12,11 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getFoodEntries, FoodEntry } from '../../api/food'
 
 export function FoodListScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets()
   const [entries, setEntries] = useState<FoodEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -163,7 +165,7 @@ export function FoodListScreen({ navigation }: any) {
         data={entries}
         renderItem={renderMealCard}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 100 }]}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
         }
@@ -179,7 +181,7 @@ export function FoodListScreen({ navigation }: any) {
       />
 
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { bottom: insets.bottom + 24 }]}
         onPress={() => navigation.navigate('Camera')}
       >
         <Text style={styles.fabText}>📸</Text>
@@ -206,7 +208,6 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: 16,
-    paddingBottom: 100,
   },
   card: {
     backgroundColor: '#fff',
