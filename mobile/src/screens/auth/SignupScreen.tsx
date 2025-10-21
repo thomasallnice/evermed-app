@@ -43,11 +43,8 @@ export function SignupScreen({ navigation }: any) {
     setIsLoading(true)
     try {
       await signUp(email, password)
-      Alert.alert(
-        'Success',
-        'Account created! Please check your email to verify your account.',
-        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-      )
+      // Navigate to onboarding to complete profile
+      navigation.navigate('Onboarding')
     } catch (error: any) {
       Alert.alert('Signup Failed', error.message || 'Unable to create account')
     } finally {
