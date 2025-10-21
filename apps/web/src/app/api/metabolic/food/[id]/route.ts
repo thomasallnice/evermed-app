@@ -510,11 +510,25 @@ export async function PATCH(
       }
     )
 
-    const photoUrl = updatedEntry.photos[0]
-      ? supabase.storage
-          .from('food-photos')
-          .getPublicUrl(updatedEntry.photos[0].storagePath).data.publicUrl
-      : null
+    // Generate URLs for all photos
+    const photoUrls = updatedEntry.photos.map((photo: any) =>
+      supabase.storage.from('food-photos').getPublicUrl(photo.storagePath).data.publicUrl
+    )
+
+    // Calculate overall analysis status
+    let overallStatus: 'pending' | 'completed' | 'failed' = 'completed'
+    if (updatedEntry.photos.length === 0) {
+      overallStatus = 'pending'
+    } else {
+      const photoStatuses = updatedEntry.photos.map((p: any) => p.analysisStatus)
+      if (photoStatuses.includes('failed')) {
+        overallStatus = 'failed'
+      } else if (photoStatuses.includes('pending')) {
+        overallStatus = 'pending'
+      } else if (photoStatuses.every((s: string) => s === 'completed')) {
+        overallStatus = 'completed'
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -522,8 +536,9 @@ export async function PATCH(
         id: updatedEntry.id,
         mealType: updatedEntry.mealType,
         timestamp: updatedEntry.timestamp.toISOString(),
-        photoUrl,
-        analysisStatus: updatedEntry.photos[0]?.analysisStatus || 'pending',
+        photoUrl: photoUrls[0] || null, // Legacy field
+        photoUrls, // New field with all photos
+        analysisStatus: overallStatus,
         ingredients: updatedEntry.ingredients,
         totalCalories: updatedEntry.totalCalories,
         totalCarbsG: updatedEntry.totalCarbsG,

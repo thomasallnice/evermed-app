@@ -560,16 +560,40 @@ export async function GET(request: NextRequest) {
 
     // Format response
     const formattedEntries = entries.map((entry: any) => {
-      const photoUrl = entry.photos[0]
-        ? supabase.storage.from('food-photos').getPublicUrl(entry.photos[0].storagePath).data.publicUrl
-        : null
+      // Generate URLs for all photos
+      const photoUrls = entry.photos.map((photo: any) =>
+        supabase.storage.from('food-photos').getPublicUrl(photo.storagePath).data.publicUrl
+      )
+
+      // Calculate overall meal status based on ALL photos
+      let overallStatus: 'pending' | 'completed' | 'failed' = 'completed'
+
+      if (entry.photos.length === 0) {
+        overallStatus = 'pending'
+      } else {
+        const photoStatuses = entry.photos.map((p: any) => p.analysisStatus)
+
+        // If ANY photo failed → entire meal is failed
+        if (photoStatuses.includes('failed')) {
+          overallStatus = 'failed'
+        }
+        // If ANY photo still pending → entire meal is pending
+        else if (photoStatuses.includes('pending')) {
+          overallStatus = 'pending'
+        }
+        // If ALL photos completed → meal is completed
+        else if (photoStatuses.every((s: string) => s === 'completed')) {
+          overallStatus = 'completed'
+        }
+      }
 
       return {
         id: entry.id,
         mealType: entry.mealType,
         timestamp: entry.timestamp.toISOString(),
-        photoUrl,
-        analysisStatus: entry.photos[0]?.analysisStatus || 'pending',
+        photoUrl: photoUrls[0] || null, // Legacy field for backward compatibility
+        photoUrls, // New field with all photo URLs
+        analysisStatus: overallStatus,
         ingredients: entry.ingredients.map((ing: any) => ({
           name: ing.name,
           quantity: ing.quantity,
