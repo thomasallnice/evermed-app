@@ -12,11 +12,51 @@ import {
   ActivityIndicator,
   Linking,
   TextInput,
+  Platform,
 } from 'react-native'
+import DateTimePicker from '@react-native-community/datetimepicker'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAuth } from '../../contexts/AuthContext'
 import * as HealthKit from '../../api/healthkit'
 import * as ProfileAPI from '../../api/profile'
+
+// Predefined choice options
+const DIET_OPTIONS = [
+  'Vegetarian',
+  'Vegan',
+  'Pescatarian',
+  'Keto',
+  'Paleo',
+  'Gluten-Free',
+  'Dairy-Free',
+  'Low-Carb',
+  'Mediterranean',
+  'Halal',
+  'Kosher',
+]
+
+const BEHAVIOR_OPTIONS = [
+  'Regular Exercise',
+  'Sedentary Lifestyle',
+  'Athlete',
+  'Intermittent Fasting',
+  'Stress Management',
+  'Good Sleep',
+  'Meditation',
+  'Yoga',
+]
+
+const ALLERGY_OPTIONS = [
+  'Peanuts',
+  'Tree Nuts',
+  'Dairy',
+  'Eggs',
+  'Soy',
+  'Wheat/Gluten',
+  'Shellfish',
+  'Fish',
+  'Sesame',
+]
 
 export function ProfileScreen() {
   const insets = useSafeAreaInsets()
@@ -39,6 +79,18 @@ export function ProfileScreen() {
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [selectedSex, setSelectedSex] = useState<string | null>(null)
   const [customSex, setCustomSex] = useState('')
+
+  // Birthday picker state
+  const [birthday, setBirthday] = useState<Date>(new Date())
+  const [showBirthdayPicker, setShowBirthdayPicker] = useState(false)
+
+  // Choice chips state
+  const [selectedDiets, setSelectedDiets] = useState<string[]>([])
+  const [selectedBehaviors, setSelectedBehaviors] = useState<string[]>([])
+  const [selectedAllergies, setSelectedAllergies] = useState<string[]>([])
+  const [customDiet, setCustomDiet] = useState('')
+  const [customBehavior, setCustomBehavior] = useState('')
+  const [customAllergy, setCustomAllergy] = useState('')
 
   // Check HealthKit availability and load profile on mount
   useEffect(() => {
@@ -85,6 +137,35 @@ export function ProfileScreen() {
           setCustomSex(sexValue)
         }
       }
+
+      // Initialize birthday from birthYear
+      if (data.birthYear) {
+        setBirthday(new Date(data.birthYear, 0, 1))
+      }
+
+      // Initialize diet choices
+      if (data.diet && data.diet.length > 0) {
+        const knownDiets = data.diet.filter(d => DIET_OPTIONS.includes(d))
+        const customDiets = data.diet.filter(d => !DIET_OPTIONS.includes(d))
+        setSelectedDiets(knownDiets)
+        setCustomDiet(customDiets.join(', '))
+      }
+
+      // Initialize behavior choices
+      if (data.behaviors && data.behaviors.length > 0) {
+        const knownBehaviors = data.behaviors.filter(b => BEHAVIOR_OPTIONS.includes(b))
+        const customBehaviors = data.behaviors.filter(b => !BEHAVIOR_OPTIONS.includes(b))
+        setSelectedBehaviors(knownBehaviors)
+        setCustomBehavior(customBehaviors.join(', '))
+      }
+
+      // Initialize allergy choices
+      if (data.allergies && data.allergies.length > 0) {
+        const knownAllergies = data.allergies.filter(a => ALLERGY_OPTIONS.includes(a))
+        const customAllergies = data.allergies.filter(a => !ALLERGY_OPTIONS.includes(a))
+        setSelectedAllergies(knownAllergies)
+        setCustomAllergy(customAllergies.join(', '))
+      }
     } catch (error) {
       console.error('[PROFILE] Failed to load health profile:', error)
     } finally {
@@ -107,6 +188,21 @@ export function ProfileScreen() {
       } else if (selectedSex) {
         updatedProfile.sexAtBirth = selectedSex
       }
+
+      // Update birthYear from birthday
+      updatedProfile.birthYear = birthday.getFullYear()
+
+      // Compile diet from selected chips + custom input
+      const customDiets = customDiet.split(',').map(s => s.trim()).filter(Boolean)
+      updatedProfile.diet = [...selectedDiets, ...customDiets]
+
+      // Compile behaviors from selected chips + custom input
+      const customBehaviors = customBehavior.split(',').map(s => s.trim()).filter(Boolean)
+      updatedProfile.behaviors = [...selectedBehaviors, ...customBehaviors]
+
+      // Compile allergies from selected chips + custom input
+      const customAllergies = customAllergy.split(',').map(s => s.trim()).filter(Boolean)
+      updatedProfile.allergies = [...selectedAllergies, ...customAllergies]
 
       await ProfileAPI.updateHealthProfile(updatedProfile)
 
@@ -255,6 +351,25 @@ export function ProfileScreen() {
         },
       },
     ])
+  }
+
+  // Helper functions for choice chip toggling
+  const toggleDiet = (diet: string) => {
+    setSelectedDiets(prev =>
+      prev.includes(diet) ? prev.filter(d => d !== diet) : [...prev, diet]
+    )
+  }
+
+  const toggleBehavior = (behavior: string) => {
+    setSelectedBehaviors(prev =>
+      prev.includes(behavior) ? prev.filter(b => b !== behavior) : [...prev, behavior]
+    )
+  }
+
+  const toggleAllergy = (allergy: string) => {
+    setSelectedAllergies(prev =>
+      prev.includes(allergy) ? prev.filter(a => a !== allergy) : [...prev, allergy]
+    )
   }
 
   return (
@@ -416,22 +531,35 @@ export function ProfileScreen() {
                 />
               )}
 
-              {/* Age, Height, Weight */}
-              <View style={styles.inputRow}>
-                <View style={styles.inputThird}>
-                  <Text style={styles.label}>Age</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={profile.age?.toString() || ''}
-                    onChangeText={(text) =>
-                      setProfile({ ...profile, age: text ? Number(text) : undefined })
+              {/* Birthday */}
+              <Text style={styles.label}>Birthday</Text>
+              <TouchableOpacity
+                style={styles.input}
+                onPress={() => setShowBirthdayPicker(true)}
+                disabled={isSavingProfile}
+              >
+                <Text style={styles.inputText}>
+                  {birthday.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </Text>
+              </TouchableOpacity>
+              {showBirthdayPicker && (
+                <DateTimePicker
+                  value={birthday}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={(event, selectedDate) => {
+                    setShowBirthdayPicker(Platform.OS === 'ios')
+                    if (selectedDate) {
+                      setBirthday(selectedDate)
                     }
-                    placeholder="25"
-                    keyboardType="number-pad"
-                    editable={!isSavingProfile}
-                  />
-                </View>
-                <View style={styles.inputThird}>
+                  }}
+                  maximumDate={new Date()}
+                />
+              )}
+
+              {/* Height, Weight */}
+              <View style={styles.inputRow}>
+                <View style={styles.inputHalf}>
                   <Text style={styles.label}>Height (cm)</Text>
                   <TextInput
                     style={styles.input}
@@ -444,7 +572,7 @@ export function ProfileScreen() {
                     editable={!isSavingProfile}
                   />
                 </View>
-                <View style={styles.inputThird}>
+                <View style={styles.inputHalf}>
                   <Text style={styles.label}>Weight (kg)</Text>
                   <TextInput
                     style={styles.input}
@@ -468,47 +596,98 @@ export function ProfileScreen() {
               )}
 
               {/* Diet */}
-              <Text style={styles.label}>Diet (comma-separated)</Text>
+              <Text style={styles.label}>Diet</Text>
+              <View style={styles.chipContainer}>
+                {DIET_OPTIONS.map((diet) => (
+                  <TouchableOpacity
+                    key={diet}
+                    style={[
+                      styles.chip,
+                      selectedDiets.includes(diet) && styles.chipSelected,
+                    ]}
+                    onPress={() => toggleDiet(diet)}
+                    disabled={isSavingProfile}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        selectedDiets.includes(diet) && styles.chipTextSelected,
+                      ]}
+                    >
+                      {diet}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
               <TextInput
-                style={styles.input}
-                value={profile.diet?.join(', ') || ''}
-                onChangeText={(text) =>
-                  setProfile({
-                    ...profile,
-                    diet: text.split(',').map((s) => s.trim()).filter(Boolean),
-                  })
-                }
-                placeholder="vegetarian, gluten-free"
+                style={[styles.input, { marginTop: 8 }]}
+                value={customDiet}
+                onChangeText={setCustomDiet}
+                placeholder="Other (comma-separated)"
                 editable={!isSavingProfile}
               />
 
               {/* Behaviors */}
-              <Text style={styles.label}>Behaviors (comma-separated)</Text>
+              <Text style={styles.label}>Behaviors</Text>
+              <View style={styles.chipContainer}>
+                {BEHAVIOR_OPTIONS.map((behavior) => (
+                  <TouchableOpacity
+                    key={behavior}
+                    style={[
+                      styles.chip,
+                      selectedBehaviors.includes(behavior) && styles.chipSelected,
+                    ]}
+                    onPress={() => toggleBehavior(behavior)}
+                    disabled={isSavingProfile}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        selectedBehaviors.includes(behavior) && styles.chipTextSelected,
+                      ]}
+                    >
+                      {behavior}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
               <TextInput
-                style={styles.input}
-                value={profile.behaviors?.join(', ') || ''}
-                onChangeText={(text) =>
-                  setProfile({
-                    ...profile,
-                    behaviors: text.split(',').map((s) => s.trim()).filter(Boolean),
-                  })
-                }
-                placeholder="exercise, meditation"
+                style={[styles.input, { marginTop: 8 }]}
+                value={customBehavior}
+                onChangeText={setCustomBehavior}
+                placeholder="Other (comma-separated)"
                 editable={!isSavingProfile}
               />
 
               {/* Allergies */}
-              <Text style={styles.label}>Allergies (comma-separated)</Text>
+              <Text style={styles.label}>Allergies</Text>
+              <View style={styles.chipContainer}>
+                {ALLERGY_OPTIONS.map((allergy) => (
+                  <TouchableOpacity
+                    key={allergy}
+                    style={[
+                      styles.chip,
+                      selectedAllergies.includes(allergy) && styles.chipSelected,
+                    ]}
+                    onPress={() => toggleAllergy(allergy)}
+                    disabled={isSavingProfile}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        selectedAllergies.includes(allergy) && styles.chipTextSelected,
+                      ]}
+                    >
+                      {allergy}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
               <TextInput
-                style={styles.input}
-                value={profile.allergies?.join(', ') || ''}
-                onChangeText={(text) =>
-                  setProfile({
-                    ...profile,
-                    allergies: text.split(',').map((s) => s.trim()).filter(Boolean),
-                  })
-                }
-                placeholder="peanuts, shellfish"
+                style={[styles.input, { marginTop: 8 }]}
+                value={customAllergy}
+                onChangeText={setCustomAllergy}
+                placeholder="Other (comma-separated)"
                 editable={!isSavingProfile}
               />
 
@@ -764,6 +943,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    fontSize: 16,
+    color: '#111827',
+  },
+  inputText: {
     fontSize: 16,
     color: '#111827',
   },
