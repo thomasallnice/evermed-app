@@ -20,7 +20,7 @@ module.exports = ({ config }) => {
       ios: {
         supportsTablet: true,
         bundleIdentifier: 'com.carbio.mobile',
-        buildNumber: '1.0.11',
+        buildNumber: '1.0.18',
         infoPlist: {
           NSCameraUsageDescription:
             'Carbly needs access to your camera to photograph your meals for food tracking',
@@ -28,7 +28,15 @@ module.exports = ({ config }) => {
             'Carbly needs access to your photo library to select meal photos',
           NSFaceIDUsageDescription:
             'Carbly uses Face ID to securely unlock the app',
+          NSHealthShareUsageDescription:
+            'Carbly needs access to your glucose data from Apple Health to provide personalized meal recommendations and track your glucose trends.',
+          NSHealthUpdateUsageDescription:
+            'Carbly can save your glucose readings to Apple Health.',
           ITSAppUsesNonExemptEncryption: false,
+        },
+        entitlements: {
+          'com.apple.developer.healthkit': true,
+          'com.apple.developer.healthkit.access': [],
         },
       },
       android: {
@@ -55,10 +63,11 @@ module.exports = ({ config }) => {
         eas: {
           projectId: 'e6780cd6-eb5a-48a6-a295-7483658c5072',
         },
-        // Production configuration
-        supabaseUrl: 'https://wukrnqifpgjwbqxpockm.supabase.co',
-        supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1a3JucWlmcGdqd2JxeHBvY2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwNzE0OTIsImV4cCI6MjA3MDY0NzQ5Mn0.fQvTlVO4xqcPXjKM1D-lTbmEpmeO1fv5S2rLBLoPgdI',
-        apiUrl: 'https://app.getcarbly.app',
+        // Read from environment variables (injected by EAS during build)
+        // Falls back to production values for Xcode builds
+        supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://nqlxlkhbriqztkzwbdif.supabase.co',
+        supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xbHhsa2hicmlxenRrendiZGlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwNzA1NzAsImV4cCI6MjA3MDY0NjU3MH0.eUzZ9o0yQbKQqMqy-yQZzO1dJCNsbMhR4YeXF_jEfO8',
+        apiUrl: process.env.EXPO_PUBLIC_API_URL || 'https://app.getcarbly.app',
       },
     },
   }

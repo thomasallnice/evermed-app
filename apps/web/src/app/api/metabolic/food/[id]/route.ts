@@ -190,12 +190,15 @@ export async function GET(
     const anyFailed = entry.photos.some((p: any) => p.analysisStatus === 'failed')
     const analysisStatus = anyFailed ? 'failed' : allCompleted ? 'completed' : 'pending'
 
+    // Generate public URLs for all photos
+    const photoUrls = entry.photos.map((photo: any) =>
+      supabase.storage
+        .from('food-photos')
+        .getPublicUrl(photo.storagePath).data.publicUrl
+    )
+
     // Legacy photoUrl for backward compatibility (first photo)
-    const photoUrl = entry.photos[0]
-      ? supabase.storage
-          .from('food-photos')
-          .getPublicUrl(entry.photos[0].storagePath).data.publicUrl
-      : null
+    const photoUrl = photoUrls[0] || null
 
     // Format response with multi-dish structure
     return NextResponse.json({
@@ -203,6 +206,7 @@ export async function GET(
       mealType: entry.mealType,
       timestamp: entry.timestamp.toISOString(),
       photoUrl, // Legacy: first photo URL
+      photoUrls, // NEW: Array of all photo URLs for mobile app
       analysisStatus, // Overall status
       dishes, // NEW: Array of dishes with per-dish breakdown
       manualIngredients, // NEW: Ingredients not linked to photos
