@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "workspaces": [
-    "apps/*",
+    "apps/web",
     "packages/*"
   ],
   "scripts": {
@@ -24,6 +24,7 @@
     "seed": "tsx db/seed.ts",
     "admin:add": "tsx scripts/add-admin-user.ts",
     "admin:list": "tsx scripts/list-admin-users.ts",
+    "check:supabase": "node scripts/check-supabase-config.mjs",
     "validate:migrations": "./scripts/validate-migrations.sh",
     "validate:schema": "tsx scripts/validate-schema-compatibility.ts",
     "validate:all": "npm run validate:migrations && npm run validate:schema",
@@ -44,6 +45,9 @@
     "bottleneck": "^2.19.5",
     "lucide-react": "^0.545.0",
     "p-retry": "^7.1.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-is": "^18.3.1",
     "zod": "^3.25.76"
   }
 }

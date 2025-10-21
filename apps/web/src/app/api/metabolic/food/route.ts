@@ -176,11 +176,18 @@ const GetFoodQuerySchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
+    // Log request details for debugging
+    console.log('[FOOD UPLOAD] POST request received')
+    console.log('[FOOD UPLOAD] Content-Type:', request.headers.get('content-type'))
+    console.log('[FOOD UPLOAD] Authorization:', request.headers.get('authorization') ? 'Present' : 'Missing')
+
     // Authenticate user using standardized helper
     let userId: string
     try {
       userId = await requireUserId(request)
-    } catch {
+      console.log('[FOOD UPLOAD] User authenticated:', userId)
+    } catch (error) {
+      console.error('[FOOD UPLOAD] Authentication failed:', error)
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -193,14 +200,28 @@ export async function POST(request: NextRequest) {
     })
 
     if (!person) {
+      console.error('[FOOD UPLOAD] Person record not found for user:', userId)
       return NextResponse.json(
         { error: 'Person record not found' },
         { status: 404 }
       )
     }
 
+    console.log('[FOOD UPLOAD] Person record found:', person.id)
+
     // Parse multipart form data
-    const formData = await request.formData()
+    console.log('[FOOD UPLOAD] Attempting to parse FormData...')
+    let formData
+    try {
+      formData = await request.formData()
+      console.log('[FOOD UPLOAD] FormData parsed successfully')
+    } catch (error) {
+      console.error('[FOOD UPLOAD] FormData parsing failed:', error)
+      return NextResponse.json(
+        { error: `Failed to parse FormData: ${error instanceof Error ? error.message : 'Unknown error'}` },
+        { status: 400 }
+      )
+    }
     const mealType = formData.get('mealType') as string | null
 
     // Collect all photos (support both single 'photo' and multiple 'photo1', 'photo2', etc.)
@@ -449,14 +470,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Parse query parameters
+    // Parse query parameters (filter out null values)
     const { searchParams } = new URL(request.url)
-    const queryParams = {
-      mealType: searchParams.get('mealType'),
-      startDate: searchParams.get('startDate'),
-      endDate: searchParams.get('endDate'),
-      limit: searchParams.get('limit') || '20',
-    }
+    const queryParams: Record<string, any> = {}
+
+    const rawMealType = searchParams.get('mealType')
+    const rawStartDate = searchParams.get('startDate')
+    const rawEndDate = searchParams.get('endDate')
+    const rawLimit = searchParams.get('limit')
+
+    if (rawMealType) queryParams.mealType = rawMealType
+    if (rawStartDate) queryParams.startDate = rawStartDate
+    if (rawEndDate) queryParams.endDate = rawEndDate
+    queryParams.limit = rawLimit || '20'
 
     // Validate query parameters
     const validatedParams = GetFoodQuerySchema.safeParse(queryParams)
