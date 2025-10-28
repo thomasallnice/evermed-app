@@ -1,4 +1,5 @@
 import { VertexAI } from '@google-cloud/vertexai'
+import { createClient } from '@supabase/supabase-js'
 
 // Re-use the same interfaces from food-analysis.ts
 export interface FoodIngredientData {
@@ -91,17 +92,55 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Fetch image from URL and convert to base64
+ * Fetch image from Supabase Storage and convert to base64
  * Required for Gemini API (does not support direct URLs like OpenAI)
+ * Uses service role for authentication to bypass RLS
  */
 async function fetchImageAsBase64(url: string): Promise<string> {
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error(`Failed to fetch image: ${response.statusText}`)
+  // Extract storage path from public URL
+  // URL format: https://{project}.supabase.co/storage/v1/object/public/food-photos/{path}
+  const match = url.match(/\/food-photos\/(.+)$/)
+  if (!match) {
+    throw new Error(`Invalid storage URL format: ${url}`)
   }
-  const arrayBuffer = await response.arrayBuffer()
+  const storagePath = match[1]
+
+  console.log('[Gemini] Downloading image from Supabase Storage')
+  console.log(`[Gemini] Storage path: ${storagePath}`)
+
+  // Create Supabase client with service role for authenticated access
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  )
+
+  // Download image with authentication
+  const { data, error } = await supabase.storage
+    .from('food-photos')
+    .download(storagePath)
+
+  if (error) {
+    console.error('[Gemini] Failed to download image from Supabase:', error)
+    throw new Error(`Failed to download image: ${error.message}`)
+  }
+
+  if (!data) {
+    throw new Error('No data returned from Supabase Storage')
+  }
+
+  // Convert Blob to base64
+  const arrayBuffer = await data.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
-  return buffer.toString('base64')
+  const base64 = buffer.toString('base64')
+
+  console.log(`[Gemini] ✓ Image downloaded successfully (${buffer.length} bytes)`)
+  return base64
 }
 
 /**
