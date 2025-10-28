@@ -9,6 +9,20 @@
   "splash": {
     "backgroundColor": "#2563eb"
   },
+  "plugins": [
+    [
+      "expo-notifications",
+      {
+        "icon": "./assets/icon.png",
+        "color": "#2563eb",
+        "sounds": ["./assets/notification.wav"]
+      }
+    ]
+  ],
+  "notification": {
+    "icon": "./assets/icon.png",
+    "color": "#2563eb"
+  },
   "ios": {
     "supportsTablet": true,
     "bundleIdentifier": "com.carbly.mobile",
@@ -52,6 +66,7 @@
     },
     "supabaseUrl": "https://nqlxlkhbriqztkzwbdif.supabase.co",
     "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xbHhsa2hicmlxenRrendiZGlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwNzA1NzAsImV4cCI6MjA3MDY0NjU3MH0.eUzZ9o0yQbKQqMqy-yQZzO1dJCNsbMhR4YeXF_jEfO8",
-    "apiUrl": "https://app.getcarbly.app"
+    "apiUrl": "https://app.getcarbly.app",
+    "googleVisionApiKey": "REPLACE_WITH_YOUR_GOOGLE_VISION_API_KEY"
   }
 }
