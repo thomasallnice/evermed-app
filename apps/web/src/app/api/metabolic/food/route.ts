@@ -365,36 +365,61 @@ export async function POST(request: NextRequest) {
 
     console.log(`[FOOD UPLOAD] FoodEntry created with ID: ${foodEntry.id}, ${uploadedPhotos.length} photo(s)`)
 
-    // Start analysis in background for ALL photos (multi-dish support)
+    // Analyze ALL photos synchronously (multi-dish support)
     const useGemini = process.env.USE_GEMINI_FOOD_ANALYSIS === 'true'
-    console.log(`[FOOD UPLOAD] Starting background analysis for ${uploadedPhotos.length} photo(s) (Provider: ${useGemini ? 'Gemini' : 'OpenAI'})`)
+    console.log(`[FOOD UPLOAD] Starting synchronous analysis for ${uploadedPhotos.length} photo(s) (Provider: ${useGemini ? 'Gemini' : 'OpenAI'})`)
 
-    // Fire-and-forget analysis for each photo separately (will complete after response is sent)
-    foodEntry.photos.forEach((photo, index) => {
-      analyzeSinglePhoto(
+    // CHANGED: Make analysis synchronous to avoid Vercel timeout issues
+    // Wait for all photo analyses to complete before returning response
+    const analysisPromises = foodEntry.photos.map((photo, index) => {
+      return analyzeSinglePhoto(
         foodEntry.id,
         photo.id,
         uploadedPhotos[index].publicUrl,
         useGemini,
         prisma
       ).catch(error => {
-        console.error(`[FOOD UPLOAD] Background analysis failed for photo ${photo.id}:`, error)
+        console.error(`[FOOD UPLOAD] Analysis failed for photo ${photo.id}:`, error)
+        return null // Return null on error, don't throw
       })
     })
 
+    // Wait for all analyses to complete
+    console.log(`[FOOD UPLOAD] Waiting for ${analysisPromises.length} photo analysis to complete...`)
+    const analysisResults = await Promise.all(analysisPromises)
+    console.log(`[FOOD UPLOAD] All photo analyses completed`)
+
+    // Fetch updated food entry with analysis results
+    const updatedFoodEntry = await prisma.foodEntry.findUnique({
+      where: { id: foodEntry.id },
+      include: {
+        photos: true,
+        ingredients: true,
+      },
+    })
+
+    if (!updatedFoodEntry) {
+      throw new Error('Failed to fetch updated food entry')
+    }
+
+    // Determine overall analysis status
+    const allCompleted = updatedFoodEntry.photos.every(p => p.analysisStatus === 'completed')
+    const anyFailed = updatedFoodEntry.photos.some(p => p.analysisStatus === 'failed')
+    const overallStatus = allCompleted ? 'completed' : anyFailed ? 'failed' : 'pending'
+
     return NextResponse.json(
       {
-        foodEntryId: foodEntry.id,
+        foodEntryId: updatedFoodEntry.id,
         photoUrls: uploadedPhotos.map(p => p.publicUrl),
-        mealType: foodEntry.mealType,
-        timestamp: foodEntry.timestamp.toISOString(),
-        analysisStatus: 'pending',
-        ingredients: [],
-        totalCalories: 0,
-        totalCarbsG: 0,
-        totalProteinG: 0,
-        totalFatG: 0,
-        totalFiberG: 0,
+        mealType: updatedFoodEntry.mealType,
+        timestamp: updatedFoodEntry.timestamp.toISOString(),
+        analysisStatus: overallStatus,
+        ingredients: updatedFoodEntry.ingredients || [],
+        totalCalories: updatedFoodEntry.totalCalories || 0,
+        totalCarbsG: updatedFoodEntry.totalCarbsG || 0,
+        totalProteinG: updatedFoodEntry.totalProteinG || 0,
+        totalFatG: updatedFoodEntry.totalFatG || 0,
+        totalFiberG: updatedFoodEntry.totalFiberG || 0,
         disclaimer: "AI-generated food analysis is an estimate and may not be fully accurate. Nutrition information is for general informational purposes only and should not be used for medical treatment, insulin dosing, or diagnosis. Always consult your healthcare provider for medical advice.",
       },
       { status: 201 }
