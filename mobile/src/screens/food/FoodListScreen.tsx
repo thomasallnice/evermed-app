@@ -1,7 +1,7 @@
 // Food List Screen
 // Shows list of logged meals
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
   View,
   Text,
@@ -11,9 +11,12 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
+  Alert,
+  Animated,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { getFoodEntries, FoodEntry } from '../../api/food'
+import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler'
+import { getFoodEntries, FoodEntry, deleteFoodEntry } from '../../api/food'
 
 export function FoodListScreen({ navigation }: any) {
   const insets = useSafeAreaInsets()
@@ -48,6 +51,58 @@ export function FoodListScreen({ navigation }: any) {
     loadEntries()
   }, [])
 
+  const handleDelete = (id: string) => {
+    Alert.alert(
+      'Delete Meal',
+      'Are you sure you want to delete this meal? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteFoodEntry(id)
+              setEntries(entries.filter(e => e.id !== id))
+            } catch (error: any) {
+              Alert.alert('Error', 'Failed to delete meal. Please try again.')
+            }
+          },
+        },
+      ]
+    )
+  }
+
+  const renderRightActions = (
+    progress: Animated.AnimatedInterpolation<number>,
+    dragX: Animated.AnimatedInterpolation<number>,
+    id: string
+  ) => {
+    const trans = dragX.interpolate({
+      inputRange: [-100, 0],
+      outputRange: [0, 100],
+      extrapolate: 'clamp',
+    })
+
+    return (
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={() => handleDelete(id)}
+      >
+        <Animated.View
+          style={[
+            styles.deleteButtonContent,
+            {
+              transform: [{ translateX: trans }],
+            },
+          ]}
+        >
+          <Text style={styles.deleteButtonText}>Delete</Text>
+        </Animated.View>
+      </TouchableOpacity>
+    )
+  }
+
   const getMealTypeEmoji = (mealType: string) => {
     switch (mealType) {
       case 'breakfast':
@@ -77,77 +132,86 @@ export function FoodListScreen({ navigation }: any) {
   }
 
   const renderMealCard = ({ item }: { item: FoodEntry }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => navigation.navigate('FoodDetail', { id: item.id })}
+    <Swipeable
+      renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item.id)}
+      overshootRight={false}
     >
-      <View style={styles.cardHeader}>
-        <View style={styles.cardHeaderLeft}>
-          <Text style={styles.mealEmoji}>{getMealTypeEmoji(item.mealType)}</Text>
-          <View>
-            <Text style={styles.mealType}>
-              {item.mealType.charAt(0).toUpperCase() + item.mealType.slice(1)}
-            </Text>
-            <Text style={styles.mealTime}>
-              {new Date(item.timestamp).toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-              })}
-            </Text>
-          </View>
-        </View>
-        <View
-          style={[
-            styles.statusBadge,
-            item.analysisStatus === 'pending' && styles.statusPending,
-            item.analysisStatus === 'completed' && styles.statusCompleted,
-            item.analysisStatus === 'failed' && styles.statusFailed,
-          ]}
-        >
-          <Text style={styles.statusText}>
-            {getAnalysisStatusText(item.analysisStatus)}
-          </Text>
-        </View>
-      </View>
-
-      {item.photoUrls && item.photoUrls.length > 0 && (
-        <View style={styles.photoContainer}>
-          <Image
-            source={{ uri: item.photoUrls[0] }}
-            style={styles.photo}
-            resizeMode="cover"
-          />
-          {item.photoUrls.length > 1 && (
-            <View style={styles.photoCount}>
-              <Text style={styles.photoCountText}>
-                +{item.photoUrls.length - 1} more
-              </Text>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate('FoodDetail', { id: item.id })}
+      >
+        <View style={styles.cardContent}>
+          {item.photoUrls && item.photoUrls.length > 0 ? (
+            <Image
+              source={{ uri: item.photoUrls[0] }}
+              style={styles.previewImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.previewPlaceholder}>
+              <Text style={styles.placeholderEmoji}>{getMealTypeEmoji(item.mealType)}</Text>
             </View>
           )}
-        </View>
-      )}
 
-      {item.analysisStatus === 'completed' && (
-        <View style={styles.nutritionSummary}>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{Math.round(item.totalCalories)}</Text>
-            <Text style={styles.nutritionLabel}>kcal</Text>
-          </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{Math.round(item.totalCarbsG)}g</Text>
-            <Text style={styles.nutritionLabel}>carbs</Text>
-          </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{Math.round(item.totalProteinG)}g</Text>
-            <Text style={styles.nutritionLabel}>protein</Text>
-          </View>
-          <View style={styles.nutritionItem}>
-            <Text style={styles.nutritionValue}>{Math.round(item.totalFatG)}g</Text>
-            <Text style={styles.nutritionLabel}>fat</Text>
+          <View style={styles.cardInfo}>
+            <View style={styles.cardHeader}>
+              <View>
+                <Text style={styles.mealType}>
+                  {item.mealType.charAt(0).toUpperCase() + item.mealType.slice(1)}
+                </Text>
+                <Text style={styles.mealTime}>
+                  {new Date(item.timestamp).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.statusBadge,
+                  item.analysisStatus === 'pending' && styles.statusPending,
+                  item.analysisStatus === 'completed' && styles.statusCompleted,
+                  item.analysisStatus === 'failed' && styles.statusFailed,
+                ]}
+              >
+                <Text style={styles.statusText}>
+                  {getAnalysisStatusText(item.analysisStatus)}
+                </Text>
+              </View>
+            </View>
+
+            {item.photoUrls && item.photoUrls.length > 1 && (
+              <View style={styles.photoCountBadge}>
+                <Text style={styles.photoCountBadgeText}>
+                  +{item.photoUrls.length - 1} photo{item.photoUrls.length - 1 > 1 ? 's' : ''}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
-      )}
-    </TouchableOpacity>
+
+        {item.analysisStatus === 'completed' && (
+          <View style={styles.nutritionSummary}>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.nutritionValue}>{Math.round(item.totalCalories)}</Text>
+              <Text style={styles.nutritionLabel}>kcal</Text>
+            </View>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.nutritionValue}>{Math.round(item.totalCarbsG)}g</Text>
+              <Text style={styles.nutritionLabel}>carbs</Text>
+            </View>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.nutritionValue}>{Math.round(item.totalProteinG)}g</Text>
+              <Text style={styles.nutritionLabel}>protein</Text>
+            </View>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.nutritionValue}>{Math.round(item.totalFatG)}g</Text>
+              <Text style={styles.nutritionLabel}>fat</Text>
+            </View>
+          </View>
+        )}
+      </TouchableOpacity>
+    </Swipeable>
   )
 
   if (isLoading) {
@@ -160,7 +224,7 @@ export function FoodListScreen({ navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
+    <GestureHandlerRootView style={styles.container}>
       <FlatList
         data={entries}
         renderItem={renderMealCard}
@@ -179,7 +243,7 @@ export function FoodListScreen({ navigation }: any) {
           </View>
         }
       />
-    </View>
+    </GestureHandlerRootView>
   )
 }
 
@@ -213,19 +277,36 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  cardContent: {
+    flexDirection: 'row',
+    padding: 12,
+    gap: 12,
+  },
+  previewImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    backgroundColor: '#f3f4f6',
+  },
+  previewPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderEmoji: {
+    fontSize: 48,
+  },
+  cardInfo: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-  },
-  cardHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  mealEmoji: {
-    fontSize: 32,
+    alignItems: 'flex-start',
   },
   mealType: {
     fontSize: 18,
@@ -238,9 +319,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   statusPending: {
     backgroundColor: '#fef3c7',
@@ -252,30 +333,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#fee2e2',
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: '#374151',
   },
-  photoContainer: {
-    position: 'relative',
+  photoCountBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginTop: 4,
   },
-  photo: {
-    width: '100%',
-    height: 200,
-  },
-  photoCount: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  photoCountText: {
+  photoCountBadgeText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#fff',
+    color: '#6b7280',
+    fontWeight: '500',
   },
   nutritionSummary: {
     flexDirection: 'row',
@@ -335,5 +408,22 @@ const styles = StyleSheet.create({
   },
   fabText: {
     fontSize: 28,
+  },
+  deleteButton: {
+    backgroundColor: '#ef4444',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    width: 100,
+    height: '100%',
+  },
+  deleteButtonContent: {
+    paddingHorizontal: 20,
+    height: '100%',
+    justifyContent: 'center',
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
   },
 })

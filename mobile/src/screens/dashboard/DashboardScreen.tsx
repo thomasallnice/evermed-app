@@ -1,9 +1,10 @@
 // Dashboard Screen
 // Main home screen showing glucose timeline and daily insights
 
-import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native'
+import React, { useEffect, useState, useCallback } from 'react'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator, Image } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { LineChart } from 'react-native-chart-kit'
 import { useAuth } from '../../contexts/AuthContext'
 import { getGlucoseReadings, type GlucoseReading } from '../../api/glucose'
@@ -13,6 +14,7 @@ type TimeRange = '24h' | '7d' | '30d'
 
 export function DashboardScreen() {
   const insets = useSafeAreaInsets()
+  const navigation = useNavigation()
   const { user } = useAuth()
 
   const [timeRange, setTimeRange] = useState<TimeRange>('24h')
@@ -25,6 +27,13 @@ export function DashboardScreen() {
   useEffect(() => {
     loadData()
   }, [timeRange])
+
+  // Refresh data when screen comes into focus (e.g., after deleting a meal)
+  useFocusEffect(
+    useCallback(() => {
+      loadData()
+    }, [timeRange])
+  )
 
   const loadData = async () => {
     setLoading(true)
@@ -76,6 +85,31 @@ export function DashboardScreen() {
     }
 
     if (error) {
+      // Check if error is related to onboarding/profile setup
+      const needsOnboarding = error.toLowerCase().includes('person') ||
+                             error.toLowerCase().includes('onboarding') ||
+                             error.toLowerCase().includes('profile') ||
+                             error.toLowerCase().includes('complete')
+
+      if (needsOnboarding) {
+        return (
+          <View style={styles.onboardingPrompt}>
+            <Text style={styles.onboardingEmoji}>👋</Text>
+            <Text style={styles.onboardingTitle}>Welcome to Carbly!</Text>
+            <Text style={styles.onboardingSubtitle}>
+              Let's get you set up with your glucose targets and meal preferences
+            </Text>
+            <TouchableOpacity
+              style={styles.onboardingButton}
+              onPress={() => navigation.navigate('Onboarding' as never)}
+            >
+              <Text style={styles.onboardingButtonText}>Complete Onboarding Now</Text>
+            </TouchableOpacity>
+          </View>
+        )
+      }
+
+      // Generic error with retry
       return (
         <View style={styles.chartContainer}>
           <Text style={styles.errorText}>⚠️ {error}</Text>
@@ -200,16 +234,14 @@ export function DashboardScreen() {
                   key={`meal-${markerIndex}`}
                   style={{
                     position: 'absolute',
-                    left: x - 12,
+                    left: x - 16,
                     top: y,
-                    width: 24,
-                    height: 24,
-                    backgroundColor: '#f97316',
-                    borderRadius: 12,
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    overflow: 'hidden',
                     borderWidth: 2,
-                    borderColor: '#fff',
+                    borderColor: '#f97316',
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 1 },
                     shadowOpacity: 0.2,
@@ -217,7 +249,23 @@ export function DashboardScreen() {
                     elevation: 3,
                   }}
                 >
-                  <Text style={{ fontSize: 12 }}>{getMealEmoji(meal.mealType)}</Text>
+                  {meal.photoUrls && meal.photoUrls.length > 0 ? (
+                    <Image
+                      source={{ uri: meal.photoUrls[0] }}
+                      style={{ width: 32, height: 32 }}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={{
+                      width: 32,
+                      height: 32,
+                      backgroundColor: '#f97316',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <Text style={{ fontSize: 12 }}>{getMealEmoji(meal.mealType)}</Text>
+                    </View>
+                  )}
                 </View>
               )
             })
@@ -288,13 +336,29 @@ export function DashboardScreen() {
           <Text style={styles.sectionTitle}>Recent Meals</Text>
           {foodData.slice(0, 5).map(meal => (
             <View key={meal.id} style={styles.mealCard}>
-              <View style={styles.mealHeader}>
-                <Text style={styles.mealType}>{getMealEmoji(meal.mealType)} {meal.mealType}</Text>
-                <Text style={styles.mealTime}>{formatTime(meal.timestamp)}</Text>
-              </View>
-              <View style={styles.mealStats}>
-                <Text style={styles.mealStat}>{meal.totalCarbsG}g carbs</Text>
-                <Text style={styles.mealStat}>{meal.totalCalories} cal</Text>
+              <View style={styles.mealCardContent}>
+                {meal.photoUrls && meal.photoUrls.length > 0 ? (
+                  <Image
+                    source={{ uri: meal.photoUrls[0] }}
+                    style={styles.mealPreviewImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.mealPreviewPlaceholder}>
+                    <Text style={styles.mealPlaceholderEmoji}>{getMealEmoji(meal.mealType)}</Text>
+                  </View>
+                )}
+
+                <View style={styles.mealInfo}>
+                  <View style={styles.mealHeader}>
+                    <Text style={styles.mealType}>{meal.mealType}</Text>
+                    <Text style={styles.mealTime}>{formatTime(meal.timestamp)}</Text>
+                  </View>
+                  <View style={styles.mealStats}>
+                    <Text style={styles.mealStat}>{Math.round(meal.totalCarbsG)}g carbs</Text>
+                    <Text style={styles.mealStat}>{Math.round(meal.totalCalories)} cal</Text>
+                  </View>
+                </View>
               </View>
             </View>
           ))}
@@ -440,7 +504,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   mealCard: {
-    padding: 16,
+    padding: 12,
     backgroundColor: '#fff',
     borderRadius: 12,
     marginBottom: 8,
@@ -450,11 +514,36 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
+  mealCardContent: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  mealPreviewImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: '#f3f4f6',
+  },
+  mealPreviewPlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mealPlaceholderEmoji: {
+    fontSize: 28,
+  },
+  mealInfo: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
   mealHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   mealType: {
     fontSize: 16,
@@ -497,5 +586,49 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6b7280',
     fontWeight: '500',
+  },
+  onboardingPrompt: {
+    marginHorizontal: 16,
+    marginBottom: 24,
+    padding: 32,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    alignItems: 'center',
+  },
+  onboardingEmoji: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  onboardingTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  onboardingSubtitle: {
+    fontSize: 16,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 24,
+  },
+  onboardingButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  onboardingButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
 })

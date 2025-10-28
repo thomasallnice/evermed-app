@@ -306,6 +306,48 @@ export function ProfileScreen() {
     }
   }
 
+  const handleImportAllData = async () => {
+    Alert.alert(
+      'Import All Glucose Data',
+      'This will import all glucose readings from Apple Health (last 1 year). Duplicates will be automatically skipped.\n\nThis may take a few minutes depending on how much data you have.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Import',
+          onPress: async () => {
+            try {
+              setIsSyncing(true)
+
+              const result = await HealthKit.syncAllHistoricalData()
+
+              if (!result) {
+                Alert.alert('Import Failed', 'Failed to import glucose data. Please try again.')
+                return
+              }
+
+              // Update status
+              await loadConnectionStatus()
+
+              // Show success message
+              Alert.alert(
+                'Import Complete',
+                `Successfully imported ${result.synced} glucose reading${result.synced !== 1 ? 's' : ''}.${
+                  result.skipped > 0 ? ` ${result.skipped} readings were skipped (duplicates or invalid).` : ''
+                }`,
+                [{ text: 'OK' }]
+              )
+            } catch (error: any) {
+              console.error('[PROFILE] Import failed:', error)
+              Alert.alert('Import Failed', error.message || 'Failed to import glucose data. Please try again.')
+            } finally {
+              setIsSyncing(false)
+            }
+          },
+        },
+      ]
+    )
+  }
+
   const handleDisconnect = () => {
     Alert.alert(
       'Disconnect Apple Health',
@@ -432,6 +474,18 @@ export function ProfileScreen() {
                       <ActivityIndicator color="#374151" size="small" />
                     ) : (
                       <Text style={styles.syncButtonText}>Sync Now</Text>
+                    )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.syncButton, isSyncing && styles.syncButtonDisabled]}
+                    onPress={handleImportAllData}
+                    disabled={isSyncing}
+                  >
+                    {isSyncing ? (
+                      <ActivityIndicator color="#374151" size="small" />
+                    ) : (
+                      <Text style={styles.syncButtonText}>Import All Data</Text>
                     )}
                   </TouchableOpacity>
 

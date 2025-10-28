@@ -73,6 +73,13 @@ model Person {
   metadata   Json? // Extensible: { metabolic_onboarding_completed: true, ... }
   createdAt  DateTime @default(now())
 
+  // Health profile fields
+  heightCm   Float?
+  weightKg   Float?
+  diet       String[] @default([])
+  behaviors  String[] @default([])
+  allergies  String[] @default([])
+
   // Metabolic Insights preferences
   cgmConnected     Boolean @default(false) @map("cgm_connected")
   targetGlucoseMin Float?  @map("target_glucose_min")

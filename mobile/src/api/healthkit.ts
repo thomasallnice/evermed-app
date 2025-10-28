@@ -13,11 +13,14 @@ const LAST_SYNC_KEY = '@carbly:healthkit_last_sync'
 const CONNECTION_STATUS_KEY = '@carbly:healthkit_connection_status'
 
 // HealthKit permissions - read glucose only
-const permissions: HealthKitPermissions = {
-  permissions: {
-    read: [AppleHealthKit.Constants.Permissions.BloodGlucose],
-    write: [], // We only read for now
-  },
+// Wrap in function to avoid accessing AppleHealthKit.Constants at import time
+function getPermissions(): HealthKitPermissions {
+  return {
+    permissions: {
+      read: [AppleHealthKit.Constants.Permissions.BloodGlucose],
+      write: [], // We only read for now
+    },
+  }
 }
 
 export interface SyncResult {
@@ -65,7 +68,7 @@ export async function requestPermissions(): Promise<boolean> {
   }
 
   return new Promise((resolve, reject) => {
-    AppleHealthKit.initHealthKit(permissions, (error) => {
+    AppleHealthKit.initHealthKit(getPermissions(), (error) => {
       if (error) {
         console.error('[HEALTHKIT] Permission request failed:', error)
         reject(new Error('Failed to request HealthKit permissions. Please try again.'))
@@ -193,6 +196,8 @@ export async function syncGlucoseFromHealthKit(
     // Process each sample
     for (const sample of samples) {
       try {
+        console.log(`[HEALTHKIT] Processing sample: value=${sample.value}, date=${sample.startDate}`)
+
         // HealthKit returns glucose in mg/dL by default
         // If the value is suspiciously low (< 20), it might be in mmol/L
         let valueInMgDl = sample.value
@@ -205,11 +210,13 @@ export async function syncGlucoseFromHealthKit(
         // Validate range (20-600 mg/dL is physiologically plausible)
         if (valueInMgDl < 20 || valueInMgDl > 600) {
           console.warn(
-            `[HEALTHKIT] Skipping invalid glucose value: ${valueInMgDl} mg/dL (original: ${sample.value})`
+            `[HEALTHKIT] SKIP REASON: Invalid value - ${valueInMgDl} mg/dL (original: ${sample.value})`
           )
           result.skipped++
           continue
         }
+
+        console.log(`[HEALTHKIT] Calling createGlucoseReading API: value=${valueInMgDl}, source=cgm, timestamp=${sample.startDate}`)
 
         // Create glucose reading via API
         // The backend will handle duplicate detection based on timestamp
@@ -221,10 +228,11 @@ export async function syncGlucoseFromHealthKit(
 
         result.synced++
         console.log(
-          `[HEALTHKIT] Synced reading: ${valueInMgDl} mg/dL at ${sample.startDate}`
+          `[HEALTHKIT] ✅ Synced reading: ${valueInMgDl} mg/dL at ${sample.startDate}`
         )
       } catch (error: any) {
-        console.error('[HEALTHKIT] Failed to sync individual reading:', error)
+        console.error('[HEALTHKIT] SKIP REASON: API error -', error.message)
+        console.error('[HEALTHKIT] Full error:', error)
         // Don't fail entire sync if one reading fails
         result.errors.push(error.message || 'Failed to sync reading')
         result.skipped++
@@ -272,6 +280,26 @@ function getBloodGlucoseSamples(startDate: Date, endDate: Date): Promise<HealthV
       resolve(results || [])
     })
   })
+}
+
+/**
+ * Sync all historical glucose data from HealthKit
+ * Useful for initial import or re-importing all data
+ */
+export async function syncAllHistoricalData(): Promise<SyncResult> {
+  const available = await isHealthKitAvailable()
+  if (!available) {
+    throw new Error('HealthKit is not available on this device')
+  }
+
+  // Sync from 1 year ago to now (or customize the range)
+  const endDate = new Date()
+  const startDate = new Date()
+  startDate.setFullYear(startDate.getFullYear() - 1) // Last 1 year
+
+  console.log('[HEALTHKIT] Starting full historical sync from last 1 year...')
+
+  return syncGlucoseData(startDate, endDate)
 }
 
 /**

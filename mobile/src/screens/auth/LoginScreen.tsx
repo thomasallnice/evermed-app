@@ -38,6 +38,24 @@ export function LoginScreen({ navigation }: any) {
     }
   }
 
+  const handleDemoLogin = async () => {
+    const demoEmail = 'demo@getcarbly.app'
+    const demoPassword = 'DemoPassword123!'
+
+    setEmail(demoEmail)
+    setPassword(demoPassword)
+    setIsLoading(true)
+
+    try {
+      await signIn(demoEmail, demoPassword)
+      // Navigation handled by AuthContext state change
+    } catch (error: any) {
+      Alert.alert('Demo Login Failed', error.message || 'Demo account not available. Please contact support.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -79,6 +97,14 @@ export function LoginScreen({ navigation }: any) {
             ) : (
               <Text style={styles.buttonText}>Sign In</Text>
             )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.demoButton, isLoading && styles.buttonDisabled]}
+            onPress={handleDemoLogin}
+            disabled={isLoading}
+          >
+            <Text style={styles.demoButtonText}>Try Demo Account</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -143,6 +169,20 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  demoButton: {
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#2563eb',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  demoButtonText: {
+    color: '#2563eb',
     fontSize: 16,
     fontWeight: '600',
   },

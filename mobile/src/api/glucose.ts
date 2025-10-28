@@ -181,3 +181,46 @@ export async function getGlucoseReadings(params?: {
 
   return response.json()
 }
+
+/**
+ * Delete a glucose reading
+ */
+export async function deleteGlucoseReading(id: string): Promise<void> {
+  // Refresh session to get fresh token
+  const {
+    data: { session },
+    error: refreshError,
+  } = await supabase.auth.refreshSession()
+
+  if (refreshError || !session) {
+    throw new Error('Session expired. Please sign in again.')
+  }
+
+  const url = `${API_BASE_URL}/api/metabolic/glucose/${id}`
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('[GLUCOSE DELETE] Failed:', {
+      status: response.status,
+      url,
+      body: errorText,
+    })
+
+    let errorMessage = `Failed to delete glucose reading: ${response.status}`
+    try {
+      const error = JSON.parse(errorText)
+      errorMessage = error.error || errorMessage
+    } catch {
+      errorMessage = errorText || errorMessage
+    }
+
+    throw new Error(errorMessage)
+  }
+}

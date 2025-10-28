@@ -1,0 +1,8 @@
+-- Add health profile fields to Person table
+
+ALTER TABLE "Person"
+  ADD COLUMN IF NOT EXISTS "heightCm" DOUBLE PRECISION,
+  ADD COLUMN IF NOT EXISTS "weightKg" DOUBLE PRECISION,
+  ADD COLUMN IF NOT EXISTS "diet" TEXT[] DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS "behaviors" TEXT[] DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS "allergies" TEXT[] DEFAULT '{}';

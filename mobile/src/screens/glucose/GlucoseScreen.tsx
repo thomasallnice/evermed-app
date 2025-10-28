@@ -12,10 +12,12 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Animated,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
-import { createGlucoseReading, getGlucoseReadings, GlucoseReading } from '../../api/glucose'
+import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler'
+import { createGlucoseReading, getGlucoseReadings, deleteGlucoseReading, GlucoseReading } from '../../api/glucose'
 import * as HealthKit from '../../api/healthkit'
 
 type GlucoseSource = 'fingerstick' | 'cgm' | 'lab'
@@ -163,6 +165,58 @@ export function GlucoseScreen() {
 
     // Older than 7 days - show date
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+
+  const handleDelete = (id: string) => {
+    Alert.alert(
+      'Delete Reading',
+      'Are you sure you want to delete this glucose reading? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteGlucoseReading(id)
+              setReadings(readings.filter(r => r.id !== id))
+            } catch (error: any) {
+              Alert.alert('Error', 'Failed to delete glucose reading. Please try again.')
+            }
+          },
+        },
+      ]
+    )
+  }
+
+  const renderRightActions = (
+    progress: Animated.AnimatedInterpolation<number>,
+    dragX: Animated.AnimatedInterpolation<number>,
+    id: string
+  ) => {
+    const trans = dragX.interpolate({
+      inputRange: [-100, 0],
+      outputRange: [0, 100],
+      extrapolate: 'clamp',
+    })
+
+    return (
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={() => handleDelete(id)}
+      >
+        <Animated.View
+          style={[
+            styles.deleteButtonContent,
+            {
+              transform: [{ translateX: trans }],
+            },
+          ]}
+        >
+          <Text style={styles.deleteButtonText}>Delete</Text>
+        </Animated.View>
+      </TouchableOpacity>
+    )
   }
 
   const getSourceBadgeStyle = (source: GlucoseSource) => {
@@ -385,23 +439,29 @@ export function GlucoseScreen() {
             </Text>
           </View>
         ) : (
-          <View style={styles.readingsList}>
+          <GestureHandlerRootView style={styles.readingsList}>
             {readings.map((reading) => (
-              <View key={reading.id} style={styles.readingCard}>
-                <View style={styles.readingHeader}>
-                  <Text style={styles.readingValue}>{reading.value} mg/dL</Text>
-                  <View style={[styles.sourceBadge, getSourceBadgeStyle(reading.source)]}>
-                    <Text style={styles.sourceBadgeText}>
-                      {getSourceLabel(reading.source)}
-                    </Text>
+              <Swipeable
+                key={reading.id}
+                renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, reading.id)}
+                overshootRight={false}
+              >
+                <View style={styles.readingCard}>
+                  <View style={styles.readingHeader}>
+                    <Text style={styles.readingValue}>{reading.value} mg/dL</Text>
+                    <View style={[styles.sourceBadge, getSourceBadgeStyle(reading.source)]}>
+                      <Text style={styles.sourceBadgeText}>
+                        {getSourceLabel(reading.source)}
+                      </Text>
+                    </View>
                   </View>
+                  <Text style={styles.readingTimestamp}>
+                    {formatTimestamp(reading.timestamp)}
+                  </Text>
                 </View>
-                <Text style={styles.readingTimestamp}>
-                  {formatTimestamp(reading.timestamp)}
-                </Text>
-              </View>
+              </Swipeable>
             ))}
-          </View>
+          </GestureHandlerRootView>
         )}
       </View>
 
@@ -711,5 +771,24 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#fff',
+  },
+  deleteButton: {
+    backgroundColor: '#ef4444',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    width: 100,
+    height: '100%',
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  deleteButtonContent: {
+    paddingHorizontal: 20,
+    height: '100%',
+    justifyContent: 'center',
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
   },
 })

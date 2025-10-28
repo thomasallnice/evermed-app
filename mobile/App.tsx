@@ -9,6 +9,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { AuthProvider } from './src/contexts/AuthContext'
 import { RootNavigator } from './src/navigation/RootNavigator'
 
+// Import HealthKit safely
+let HealthKit: any = null
+try {
+  HealthKit = require('./src/api/healthkit')
+} catch (error) {
+  console.log('[APP] HealthKit module not available:', error)
+}
+
 // DIAGNOSTIC: Log app start immediately
 console.log('=== APP.TSX LOADING ===')
 console.log('React Native app is starting...')
@@ -27,6 +35,47 @@ export default function App() {
     console.log('- extra.supabaseAnonKey:', extra.supabaseAnonKey ? 'present' : 'MISSING')
     console.log('- extra.apiUrl:', extra.apiUrl || 'MISSING')
     console.log('- All extra keys:', Object.keys(extra))
+
+    // Sync Apple Health on app launch if connected
+    // Delay to ensure app is fully initialized
+    const syncHealthKitOnLaunch = async () => {
+      try {
+        // Wait a bit to ensure all modules are loaded
+        await new Promise(resolve => setTimeout(resolve, 2000))
+
+        console.log('[APP LAUNCH] Checking HealthKit availability...')
+
+        // Check if HealthKit module exists
+        if (!HealthKit || typeof HealthKit.isHealthKitAvailable !== 'function') {
+          console.log('[APP LAUNCH] HealthKit module not loaded')
+          return
+        }
+
+        const isAvailable = await HealthKit.isHealthKitAvailable()
+
+        if (!isAvailable) {
+          console.log('[APP LAUNCH] HealthKit not available on this device')
+          return
+        }
+
+        console.log('[APP LAUNCH] HealthKit available, checking connection status...')
+        const status = await HealthKit.getConnectionStatus()
+
+        if (!status.isConnected) {
+          console.log('[APP LAUNCH] HealthKit not connected')
+          return
+        }
+
+        console.log('[APP LAUNCH] HealthKit connected, performing background sync...')
+        await HealthKit.performBackgroundSync()
+        console.log('[APP LAUNCH] HealthKit sync completed successfully')
+      } catch (error) {
+        console.error('[APP LAUNCH] HealthKit sync failed:', error)
+        // Silently fail - don't block app startup
+      }
+    }
+
+    syncHealthKitOnLaunch()
   }, [])
 
   if (error) {

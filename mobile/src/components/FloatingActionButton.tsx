@@ -12,9 +12,28 @@ export function FloatingActionButton() {
   const insets = useSafeAreaInsets()
 
   const handlePress = () => {
-    // Navigate to Camera screen
-    // @ts-ignore - navigation types
-    navigation.navigate('Food', { screen: 'Camera' })
+    console.log('[FAB] Button pressed, attempting navigation to Camera...')
+    try {
+      // Navigate to Camera screen within the Food stack
+      // The FAB gets navigation from RootStack, so we need to navigate through the hierarchy:
+      // RootStack -> Tabs (screen) -> Food (tab) -> Camera (stack screen)
+      // @ts-ignore - navigation types
+      const nav = navigation as any
+
+      // Navigate through the nested structure
+      nav.navigate('Tabs', {
+        screen: 'Food',
+        params: {
+          screen: 'Camera',
+        },
+      })
+
+      console.log('[FAB] Navigation called successfully')
+    } catch (error) {
+      console.error('[FAB] Navigation error:', error)
+      console.error('[FAB] Full error:', error)
+      alert(`Navigation error: ${error}`)
+    }
   }
 
   return (

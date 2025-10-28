@@ -52,6 +52,7 @@ export async function getHealthProfile(): Promise<HealthProfile> {
 
 /**
  * Update user's health profile
+ * Saves directly to Supabase Person table
  */
 export async function updateHealthProfile(profile: Partial<HealthProfile>): Promise<HealthProfile> {
   // Refresh session to get fresh token
@@ -65,35 +66,54 @@ export async function updateHealthProfile(profile: Partial<HealthProfile>): Prom
   }
 
   console.log('[ProfileAPI] Updating profile with:', JSON.stringify(profile, null, 2))
-  console.log('[ProfileAPI] API URL:', API_BASE_URL)
-  console.log('[ProfileAPI] Has token:', !!session.access_token)
+  console.log('[ProfileAPI] User ID:', session.user.id)
 
-  const response = await fetch(`${API_BASE_URL}/api/profile`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(profile),
-  })
-
-  console.log('[ProfileAPI] Response status:', response.status)
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    console.error('[ProfileAPI] Error response:', errorText)
-
-    let error
-    try {
-      error = JSON.parse(errorText)
-    } catch (e) {
-      error = { error: errorText }
-    }
-
-    throw new Error(error.error || `Failed to update profile: ${response.status} - ${errorText}`)
+  // Prepare the data for Supabase Person table
+  const personData = {
+    ownerId: session.user.id,
+    givenName: profile.givenName,
+    familyName: profile.familyName,
+    birthYear: profile.birthYear,
+    sexAtBirth: profile.sexAtBirth,
+    heightCm: profile.heightCm,
+    weightKg: profile.weightKg,
+    diet: profile.diet,
+    behaviors: profile.behaviors,
+    allergies: profile.allergies,
   }
 
-  const data = await response.json()
-  console.log('[ProfileAPI] Success:', JSON.stringify(data, null, 2))
-  return data.profile
+  // Try to update first (in case record exists)
+  const { data: updateData, error: updateError } = await supabase
+    .from('Person')
+    .update(personData)
+    .eq('ownerId', session.user.id)
+    .select()
+    .single()
+
+  // If update didn't find a record, create a new one
+  if (updateError && updateError.code === 'PGRST116') {
+    console.log('[ProfileAPI] No existing record, creating new Person record')
+
+    const { data: insertData, error: insertError } = await supabase
+      .from('Person')
+      .insert(personData)
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('[ProfileAPI] Failed to create Person:', insertError)
+      throw new Error(`Failed to create profile: ${insertError.message}`)
+    }
+
+    console.log('[ProfileAPI] Successfully created Person record')
+    return insertData
+  }
+
+  if (updateError) {
+    console.error('[ProfileAPI] Failed to update Person:', updateError)
+    throw new Error(`Failed to update profile: ${updateError.message}`)
+  }
+
+  console.log('[ProfileAPI] Successfully updated Person record')
+  return updateData
 }

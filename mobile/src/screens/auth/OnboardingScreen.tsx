@@ -116,11 +116,21 @@ export function OnboardingScreen({ navigation }: any) {
 
       await updateHealthProfile(profile)
 
-      // Navigate back to login to verify email and sign in
+      // Navigate back to main app
       Alert.alert(
         'Profile Complete!',
-        'Your profile has been set up. Please check your email to verify your account, then sign in to get started.',
-        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+        'Your profile has been set up successfully. You can now start tracking your glucose and meals!',
+        [{
+          text: 'Get Started',
+          onPress: () => {
+            // Try to go back, or navigate to Tabs if we can't go back
+            if (navigation.canGoBack()) {
+              navigation.goBack()
+            } else {
+              navigation.navigate('Tabs' as never)
+            }
+          }
+        }]
       )
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to save profile')
@@ -385,8 +395,17 @@ export function OnboardingScreen({ navigation }: any) {
               onPress={() => {
                 Alert.alert(
                   'Skip Onboarding',
-                  'You can complete your profile later in the app settings. Please check your email to verify your account.',
-                  [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+                  'You can complete your profile later in the Profile tab.',
+                  [{
+                    text: 'OK',
+                    onPress: () => {
+                      if (navigation.canGoBack()) {
+                        navigation.goBack()
+                      } else {
+                        navigation.navigate('Tabs' as never)
+                      }
+                    }
+                  }]
                 )
               }}
               style={styles.skipButton}

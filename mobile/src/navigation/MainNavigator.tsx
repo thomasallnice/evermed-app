@@ -13,10 +13,12 @@ import { FoodDetailScreen } from '../screens/food/FoodDetailScreen'
 import { CameraScreen } from '../screens/food/CameraScreen'
 import { GlucoseScreen } from '../screens/glucose/GlucoseScreen'
 import { ProfileScreen } from '../screens/profile/ProfileScreen'
+import { OnboardingScreen } from '../screens/auth/OnboardingScreen'
 import { FloatingActionButton } from '../components/FloatingActionButton'
 
 const Tab = createBottomTabNavigator()
 const FoodStack = createNativeStackNavigator()
+const RootStack = createNativeStackNavigator()
 
 // Food Stack Navigator (includes camera, list, detail)
 function FoodStackNavigator() {
@@ -41,7 +43,8 @@ function FoodStackNavigator() {
   )
 }
 
-export function MainNavigator() {
+// Tab Navigator (main app tabs)
+function TabNavigator() {
   const insets = useSafeAreaInsets()
 
   return (
@@ -128,6 +131,24 @@ export function MainNavigator() {
       {/* Global Floating Action Button */}
       <FloatingActionButton />
     </View>
+  )
+}
+
+// Main Navigator with modal screens
+export function MainNavigator() {
+  return (
+    <RootStack.Navigator screenOptions={{ headerShown: false }}>
+      <RootStack.Screen name="Tabs" component={TabNavigator} />
+      <RootStack.Screen
+        name="Onboarding"
+        component={OnboardingScreen}
+        options={{
+          presentation: 'modal',
+          headerShown: true,
+          title: 'Complete Setup',
+        }}
+      />
+    </RootStack.Navigator>
   )
 }
 
