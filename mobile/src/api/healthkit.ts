@@ -186,17 +186,26 @@ export async function syncGlucoseFromHealthKit(
 
   try {
     // Fetch glucose samples from HealthKit
+    console.log('[HEALTHKIT] Fetching samples from HealthKit API...')
     const samples = await getBloodGlucoseSamples(start, end)
-    console.log(`[HEALTHKIT] Found ${samples.length} glucose readings in HealthKit`)
+    console.log(`[HEALTHKIT] ✅ Found ${samples.length} glucose readings in Apple Health`)
 
     if (samples.length === 0) {
+      console.warn('[HEALTHKIT] ⚠️  No glucose data found in Apple Health')
+      console.warn('[HEALTHKIT] Possible reasons:')
+      console.warn('  1. No glucose readings in Apple Health app')
+      console.warn('  2. CGM app (Dexcom, etc) not sharing data with Apple Health')
+      console.warn('  3. Date range has no data')
+      console.warn(`  4. Date range used: ${start.toISOString()} to ${end.toISOString()}`)
       return result
     }
 
     // Process each sample
-    for (const sample of samples) {
+    console.log(`[HEALTHKIT] Processing ${samples.length} samples...`)
+    for (let i = 0; i < samples.length; i++) {
+      const sample = samples[i]
       try {
-        console.log(`[HEALTHKIT] Processing sample: value=${sample.value}, date=${sample.startDate}`)
+        console.log(`[HEALTHKIT] [${i + 1}/${samples.length}] Processing sample: value=${sample.value}, date=${sample.startDate}`)
 
         // HealthKit returns glucose in mg/dL by default
         // If the value is suspiciously low (< 20), it might be in mmol/L
@@ -204,19 +213,19 @@ export async function syncGlucoseFromHealthKit(
         if (sample.value < 20) {
           // Likely mmol/L, convert to mg/dL
           valueInMgDl = mmolToMgDl(sample.value)
-          console.log(`[HEALTHKIT] Converting ${sample.value} mmol/L to ${valueInMgDl} mg/dL`)
+          console.log(`[HEALTHKIT] [${i + 1}/${samples.length}] Converting ${sample.value} mmol/L to ${valueInMgDl} mg/dL`)
         }
 
         // Validate range (20-600 mg/dL is physiologically plausible)
         if (valueInMgDl < 20 || valueInMgDl > 600) {
           console.warn(
-            `[HEALTHKIT] SKIP REASON: Invalid value - ${valueInMgDl} mg/dL (original: ${sample.value})`
+            `[HEALTHKIT] [${i + 1}/${samples.length}] ❌ SKIP REASON: Invalid value - ${valueInMgDl} mg/dL (original: ${sample.value})`
           )
           result.skipped++
           continue
         }
 
-        console.log(`[HEALTHKIT] Calling createGlucoseReading API: value=${valueInMgDl}, source=cgm, timestamp=${sample.startDate}`)
+        console.log(`[HEALTHKIT] [${i + 1}/${samples.length}] Calling createGlucoseReading API: value=${valueInMgDl}, source=cgm, timestamp=${sample.startDate}`)
 
         // Create glucose reading via API
         // The backend will handle duplicate detection based on timestamp
@@ -228,11 +237,11 @@ export async function syncGlucoseFromHealthKit(
 
         result.synced++
         console.log(
-          `[HEALTHKIT] ✅ Synced reading: ${valueInMgDl} mg/dL at ${sample.startDate}`
+          `[HEALTHKIT] [${i + 1}/${samples.length}] ✅ Synced reading: ${valueInMgDl} mg/dL at ${sample.startDate}`
         )
       } catch (error: any) {
-        console.error('[HEALTHKIT] SKIP REASON: API error -', error.message)
-        console.error('[HEALTHKIT] Full error:', error)
+        console.error(`[HEALTHKIT] [${i + 1}/${samples.length}] ❌ SKIP REASON: API error -`, error.message)
+        console.error(`[HEALTHKIT] [${i + 1}/${samples.length}] Full error:`, error)
         // Don't fail entire sync if one reading fails
         result.errors.push(error.message || 'Failed to sync reading')
         result.skipped++
@@ -299,7 +308,7 @@ export async function syncAllHistoricalData(): Promise<SyncResult> {
 
   console.log('[HEALTHKIT] Starting full historical sync from last 1 year...')
 
-  return syncGlucoseData(startDate, endDate)
+  return syncGlucoseFromHealthKit(startDate, endDate)
 }
 
 /**
