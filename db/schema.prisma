@@ -306,17 +306,21 @@ model PersonalModel {
 }
 
 model MealTemplate {
-  id              String   @id @default(uuid())
-  personId        String   @map("person_id")
+  id              String    @id @default(uuid())
+  personId        String    @map("person_id")
   name            String
+  description     String? // Optional meal description ("2 eggs, toast, coffee")
   ingredients     Json
-  nutritionTotals Json     @map("nutrition_totals")
-  usageCount      Int      @default(0) @map("usage_count")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  nutritionTotals Json      @map("nutrition_totals")
+  usageCount      Int       @default(0) @map("usage_count")
+  lastUsedAt      DateTime? @map("last_used_at") // Track last usage separately from updatedAt
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   person Person @relation(fields: [personId], references: [id], onDelete: Cascade)
 
+  @@index([personId]) // Critical for query performance when listing user's templates
+  @@index([personId, lastUsedAt]) // For sorting by recent usage
   @@map("meal_templates")
 }
 
