@@ -27,6 +27,39 @@ export interface GetGlucoseReadingsResponse {
 }
 
 /**
+ * Get or refresh a valid Supabase session
+ * Retries up to 3 times if refresh fails
+ */
+async function getValidSession(retries = 3): Promise<any> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const {
+        data: { session },
+        error: refreshError,
+      } = await supabase.auth.refreshSession()
+
+      if (!refreshError && session) {
+        return session
+      }
+
+      console.warn(`[SESSION] Refresh attempt ${i + 1}/${retries} failed:`, refreshError)
+
+      // Wait before retry (exponential backoff)
+      if (i < retries - 1) {
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000))
+      }
+    } catch (error) {
+      console.error(`[SESSION] Refresh attempt ${i + 1}/${retries} threw error:`, error)
+      if (i === retries - 1) {
+        throw error
+      }
+    }
+  }
+
+  throw new Error('Session expired. Please sign out and sign in again.')
+}
+
+/**
  * Create a manual glucose reading
  * Validates 20-600 mg/dL range
  */
@@ -35,20 +68,10 @@ export async function createGlucoseReading(
   source: 'fingerstick' | 'cgm' | 'lab',
   timestamp?: string
 ): Promise<CreateGlucoseReadingResponse> {
-  // Refresh session to get fresh token
-  console.log('[GLUCOSE CREATE] Refreshing session...')
-  const {
-    data: { session },
-    error: refreshError,
-  } = await supabase.auth.refreshSession()
+  // Get valid session with retry logic
+  const session = await getValidSession()
 
-  if (refreshError || !session) {
-    console.error('[GLUCOSE CREATE] Session refresh failed:', refreshError)
-    throw new Error('Session expired. Please sign out and sign in again.')
-  }
-
-  console.log('[GLUCOSE CREATE] Session refreshed successfully')
-  console.log('[GLUCOSE CREATE] Token expires at:', new Date(session.expires_at! * 1000).toISOString())
+  console.log('[GLUCOSE CREATE] Session valid until:', new Date(session.expires_at! * 1000).toISOString())
 
   // Validate value range (20-600 mg/dL)
   if (value < 20 || value > 600) {
