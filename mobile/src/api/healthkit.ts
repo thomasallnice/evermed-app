@@ -225,14 +225,19 @@ export async function syncGlucoseFromHealthKit(
           continue
         }
 
-        console.log(`[HEALTHKIT] [${i + 1}/${samples.length}] Calling createGlucoseReading API: value=${valueInMgDl}, source=cgm, timestamp=${sample.startDate}`)
+        // Convert HealthKit date to ISO 8601 string
+        // HealthKit returns dates as strings like "2025-10-29" or "2025-10-29 10:30:00"
+        // Backend expects ISO 8601 datetime: "2025-10-29T10:30:00.000Z"
+        const timestamp = new Date(sample.startDate).toISOString()
+
+        console.log(`[HEALTHKIT] [${i + 1}/${samples.length}] Calling createGlucoseReading API: value=${valueInMgDl}, source=cgm, timestamp=${timestamp}`)
 
         // Create glucose reading via API
         // The backend will handle duplicate detection based on timestamp
         await createGlucoseReading(
           valueInMgDl,
           'cgm', // Mark as CGM source (from Apple Health)
-          sample.startDate // Use HealthKit timestamp
+          timestamp // Use ISO 8601 formatted timestamp
         )
 
         result.synced++
