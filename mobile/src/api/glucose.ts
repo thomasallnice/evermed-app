@@ -158,15 +158,8 @@ export async function getGlucoseReadings(params?: {
   endDate?: string
   limit?: number
 }): Promise<GetGlucoseReadingsResponse> {
-  // Refresh session to get fresh token
-  const {
-    data: { session },
-    error: refreshError,
-  } = await supabase.auth.refreshSession()
-
-  if (refreshError || !session) {
-    throw new Error('Session expired. Please sign in again.')
-  }
+  // Get valid session with retry logic
+  const session = await getValidSession()
 
   // Build query params
   const queryParams = new URLSearchParams()
@@ -209,15 +202,8 @@ export async function getGlucoseReadings(params?: {
  * Delete a glucose reading
  */
 export async function deleteGlucoseReading(id: string): Promise<void> {
-  // Refresh session to get fresh token
-  const {
-    data: { session },
-    error: refreshError,
-  } = await supabase.auth.refreshSession()
-
-  if (refreshError || !session) {
-    throw new Error('Session expired. Please sign in again.')
-  }
+  // Get valid session with retry logic
+  const session = await getValidSession()
 
   const url = `${API_BASE_URL}/api/metabolic/glucose/${id}`
 
