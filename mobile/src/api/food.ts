@@ -298,3 +298,50 @@ export async function deleteFoodEntry(id: string): Promise<void> {
     throw new Error(`Failed to delete food entry: ${response.status}`)
   }
 }
+
+/**
+ * Update food entry (edit ingredients, meal type, etc.)
+ */
+export async function updateFoodEntry(
+  id: string,
+  updates: {
+    mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+    ingredients?: Ingredient[]
+  }
+): Promise<FoodEntry> {
+  // Refresh session to get fresh token
+  const {
+    data: { session },
+    error: refreshError,
+  } = await supabase.auth.refreshSession()
+
+  if (refreshError || !session) {
+    throw new Error('Session expired. Please sign in again.')
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/metabolic/food/${id}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updates),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    let errorMessage = `Failed to update food entry: ${response.status}`
+
+    try {
+      const error = JSON.parse(errorText)
+      errorMessage = error.error || errorMessage
+    } catch {
+      errorMessage = errorText || errorMessage
+    }
+
+    throw new Error(errorMessage)
+  }
+
+  const data = await response.json()
+  return data.entry // PATCH returns { success: true, entry: {...} }
+}

@@ -354,7 +354,6 @@ export async function DELETE(
  * {
  *   mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack',
  *   ingredients?: Array<{
- *     id?: string, // If provided, update existing; if not, create new
  *     name: string,
  *     quantity: number,
  *     unit: string,
@@ -362,7 +361,10 @@ export async function DELETE(
  *     carbsG: number,
  *     proteinG: number,
  *     fatG: number,
- *     fiberG: number
+ *     fiberG: number,
+ *     foodPhotoId?: string, // Link ingredient to specific dish/photo (multi-dish support)
+ *     confidenceScore?: number, // AI confidence (defaults to 1.0 for manual entry)
+ *     source?: 'gemini_2_5_flash' | 'nutritionix' | 'manual_entry' | 'usda' // Defaults to 'manual_entry'
  *   }>
  * }
  *
@@ -441,7 +443,7 @@ export async function PATCH(
         },
       })
 
-      // Create new ingredients
+      // Create new ingredients (preserving foodPhotoId for multi-dish support)
       updateData.ingredients = {
         create: ingredients.map((ing: any) => ({
           name: ing.name,
@@ -452,8 +454,9 @@ export async function PATCH(
           proteinG: ing.proteinG || 0,
           fatG: ing.fatG || 0,
           fiberG: ing.fiberG || 0,
-          confidenceScore: 1.0, // Manual entry = 100% confidence
-          source: 'manual_entry', // Required enum field
+          confidenceScore: ing.confidenceScore || 1.0, // Manual entry = 100% confidence
+          source: ing.source || 'manual_entry', // Required enum field
+          foodPhotoId: ing.foodPhotoId || null, // Link to specific dish/photo
         })),
       }
 

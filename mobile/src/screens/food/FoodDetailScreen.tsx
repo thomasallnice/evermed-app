@@ -524,7 +524,15 @@ export function FoodDetailScreen({ route, navigation }: any) {
           {/* Ingredients (Read-Only) */}
           {!isEditing && entry.ingredients && entry.ingredients.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Ingredients</Text>
+              <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Ingredients</Text>
+                <TouchableOpacity
+                  style={styles.editIngredientsButton}
+                  onPress={() => navigation.navigate('EditIngredient', { entry, dishIndex: hasMultipleDishes ? currentDishIndex : undefined })}
+                >
+                  <Text style={styles.editIngredientsButtonText}>Edit with Search</Text>
+                </TouchableOpacity>
+              </View>
               {entry.ingredients.map((ingredient, index) => (
                 <View key={index} style={styles.ingredientCard}>
                   <View style={styles.ingredientHeader}>
@@ -818,11 +826,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     marginTop: 8,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#111827',
     marginBottom: 16,
+  },
+  editIngredientsButton: {
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  editIngredientsButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#2563eb',
   },
   nutritionGrid: {
     flexDirection: 'row',

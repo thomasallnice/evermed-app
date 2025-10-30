@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { DashboardScreen } from '../screens/dashboard/DashboardScreen'
 import { FoodListScreen } from '../screens/food/FoodListScreen'
 import { FoodDetailScreen } from '../screens/food/FoodDetailScreen'
+import { EditIngredientScreen } from '../screens/food/EditIngredientScreen'
 import { CameraScreen } from '../screens/food/CameraScreen'
 import { GlucoseScreen } from '../screens/glucose/GlucoseScreen'
 import { ProfileScreen } from '../screens/profile/ProfileScreen'
@@ -20,7 +21,7 @@ const Tab = createBottomTabNavigator()
 const FoodStack = createNativeStackNavigator()
 const RootStack = createNativeStackNavigator()
 
-// Food Stack Navigator (includes camera, list, detail)
+// Food Stack Navigator (includes camera, list, detail, edit)
 function FoodStackNavigator() {
   return (
     <FoodStack.Navigator>
@@ -38,6 +39,11 @@ function FoodStackNavigator() {
         name="FoodDetail"
         component={FoodDetailScreen}
         options={{ title: 'Meal Details' }}
+      />
+      <FoodStack.Screen
+        name="EditIngredient"
+        component={EditIngredientScreen}
+        options={{ headerShown: false }}
       />
     </FoodStack.Navigator>
   )
