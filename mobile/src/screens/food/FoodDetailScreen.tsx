@@ -37,6 +37,9 @@ export function FoodDetailScreen({ route, navigation }: any) {
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  // Multi-dish carousel state
+  const [currentDishIndex, setCurrentDishIndex] = useState(0)
+
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -199,6 +202,61 @@ export function FoodDetailScreen({ route, navigation }: any) {
     }
   }
 
+  // Calculate per-dish nutrition
+  const getDishNutrition = (dishIndex: number) => {
+    if (!entry || !entry.ingredients) {
+      return {
+        ingredients: [],
+        calories: 0,
+        carbs: 0,
+        protein: 0,
+        fat: 0,
+        fiber: 0,
+      }
+    }
+
+    // Get photo ID for this dish index
+    const photoId = entry.photos?.[dishIndex]?.id
+
+    // Filter ingredients for this dish
+    let dishIngredients = entry.ingredients
+    if (photoId) {
+      dishIngredients = entry.ingredients.filter(
+        (ing) => ing.foodPhotoId === photoId
+      )
+    } else {
+      // Fallback: use photoIndex if available, or default to first dish
+      dishIngredients = entry.ingredients.filter(
+        (ing) => (ing.photoIndex ?? 0) === dishIndex
+      )
+    }
+
+    // Calculate totals
+    const totals = dishIngredients.reduce(
+      (acc, ing) => ({
+        calories: acc.calories + ing.calories,
+        carbs: acc.carbs + ing.carbsG,
+        protein: acc.protein + ing.proteinG,
+        fat: acc.fat + ing.fatG,
+        fiber: acc.fiber + ing.fiberG,
+      }),
+      { calories: 0, carbs: 0, protein: 0, fat: 0, fiber: 0 }
+    )
+
+    return {
+      ingredients: dishIngredients,
+      ...totals,
+    }
+  }
+
+  // Get analysis status for specific dish
+  const getDishAnalysisStatus = (dishIndex: number): 'pending' | 'completed' | 'failed' => {
+    if (!entry?.photos?.[dishIndex]) {
+      return entry?.analysisStatus ?? 'pending'
+    }
+    return entry.photos[dishIndex].analysisStatus
+  }
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -211,28 +269,71 @@ export function FoodDetailScreen({ route, navigation }: any) {
     return null
   }
 
+  const hasMultipleDishes = entry.photoUrls && entry.photoUrls.length > 1
+  const currentDishNutrition = getDishNutrition(currentDishIndex)
+  const currentDishStatus = getDishAnalysisStatus(currentDishIndex)
+
   return (
     <ScrollView style={styles.container}>
-      {/* Photos */}
+      {/* Photos Carousel with Dish Badges */}
       {entry.photoUrls && entry.photoUrls.length > 0 && (
         <ScrollView
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           style={styles.photoScroll}
+          onScroll={(event) => {
+            const slideSize = event.nativeEvent.layoutMeasurement.width
+            const offset = event.nativeEvent.contentOffset.x
+            const index = Math.round(offset / slideSize)
+            setCurrentDishIndex(index)
+          }}
+          scrollEventThrottle={16}
         >
-          {entry.photoUrls.map((url, index) => (
-            <View key={index} style={styles.photoContainer}>
-              <Image source={{ uri: url }} style={styles.photo} resizeMode="cover" />
-              {entry.photoUrls.length > 1 && (
-                <View style={styles.photoIndicator}>
-                  <Text style={styles.photoIndicatorText}>
-                    {index + 1} / {entry.photoUrls.length}
+          {entry.photoUrls.map((url, index) => {
+            const dishStatus = getDishAnalysisStatus(index)
+            return (
+              <View key={index} style={styles.photoContainer}>
+                <Image source={{ uri: url }} style={styles.photo} resizeMode="cover" />
+
+                {/* Dish Number Badge */}
+                {hasMultipleDishes && (
+                  <View style={styles.dishBadge}>
+                    <Text style={styles.dishBadgeText}>Dish {index + 1}</Text>
+                  </View>
+                )}
+
+                {/* Analysis Status Indicator */}
+                <View style={[
+                  styles.analysisStatusBadge,
+                  dishStatus === 'pending' && styles.analysisStatusPending,
+                  dishStatus === 'completed' && styles.analysisStatusCompleted,
+                  dishStatus === 'failed' && styles.analysisStatusFailed,
+                ]}>
+                  {dishStatus === 'pending' && <ActivityIndicator size="small" color="#f59e0b" />}
+                  {dishStatus === 'completed' && <Text style={styles.analysisStatusIcon}>✓</Text>}
+                  {dishStatus === 'failed' && <Text style={styles.analysisStatusIcon}>✕</Text>}
+                  <Text style={[
+                    styles.analysisStatusText,
+                    dishStatus === 'pending' && styles.analysisStatusTextPending,
+                    dishStatus === 'completed' && styles.analysisStatusTextCompleted,
+                    dishStatus === 'failed' && styles.analysisStatusTextFailed,
+                  ]}>
+                    {dishStatus === 'pending' ? 'Analyzing' : dishStatus === 'completed' ? 'Complete' : 'Failed'}
                   </Text>
                 </View>
-              )}
-            </View>
-          ))}
+
+                {/* Photo Indicator (bottom right) */}
+                {hasMultipleDishes && (
+                  <View style={styles.photoIndicator}>
+                    <Text style={styles.photoIndicatorText}>
+                      {index + 1} / {entry.photoUrls.length}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )
+          })}
         </ScrollView>
       )}
 
@@ -326,11 +427,63 @@ export function FoodDetailScreen({ route, navigation }: any) {
         </View>
       )}
 
-      {/* Nutrition Summary */}
+      {/* Per-Dish Nutrition (if multiple dishes) */}
+      {hasMultipleDishes && currentDishStatus === 'completed' && (
+        <View style={styles.section}>
+          <View style={styles.dishNutritionHeader}>
+            <Text style={styles.sectionTitle}>Dish {currentDishIndex + 1} Nutrition</Text>
+            <View style={styles.dishIndicatorDots}>
+              {entry.photoUrls.map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.dishDot,
+                    index === currentDishIndex && styles.dishDotActive,
+                  ]}
+                />
+              ))}
+            </View>
+          </View>
+          {currentDishNutrition.ingredients.length > 0 ? (
+            <View style={styles.nutritionGrid}>
+              <View style={styles.nutritionCard}>
+                <Text style={styles.nutritionValue}>{Math.round(currentDishNutrition.calories)}</Text>
+                <Text style={styles.nutritionLabel}>Calories</Text>
+              </View>
+              <View style={styles.nutritionCard}>
+                <Text style={styles.nutritionValue}>{Math.round(currentDishNutrition.carbs)}g</Text>
+                <Text style={styles.nutritionLabel}>Carbs</Text>
+              </View>
+              <View style={styles.nutritionCard}>
+                <Text style={styles.nutritionValue}>{Math.round(currentDishNutrition.protein)}g</Text>
+                <Text style={styles.nutritionLabel}>Protein</Text>
+              </View>
+              <View style={styles.nutritionCard}>
+                <Text style={styles.nutritionValue}>{Math.round(currentDishNutrition.fat)}g</Text>
+                <Text style={styles.nutritionLabel}>Fat</Text>
+              </View>
+              {currentDishNutrition.fiber > 0 && (
+                <View style={styles.nutritionCard}>
+                  <Text style={styles.nutritionValue}>{Math.round(currentDishNutrition.fiber)}g</Text>
+                  <Text style={styles.nutritionLabel}>Fiber</Text>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View style={styles.noDataCard}>
+              <Text style={styles.noDataText}>No ingredients detected for this dish yet</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Total Meal Nutrition */}
       {entry.analysisStatus === 'completed' && (
         <>
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Nutrition Summary</Text>
+            <Text style={styles.sectionTitle}>
+              {hasMultipleDishes ? 'Total Meal Nutrition' : 'Nutrition Summary'}
+            </Text>
             <View style={styles.nutritionGrid}>
               <View style={styles.nutritionCard}>
                 <Text style={styles.nutritionValue}>{Math.round(entry.totalCalories)}</Text>
@@ -977,5 +1130,101 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Multi-Dish UI Styles
+  dishBadge: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    backgroundColor: '#2563eb',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  dishBadgeText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  analysisStatusBadge: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  analysisStatusPending: {
+    backgroundColor: '#fef3c7',
+  },
+  analysisStatusCompleted: {
+    backgroundColor: '#d1fae5',
+  },
+  analysisStatusFailed: {
+    backgroundColor: '#fee2e2',
+  },
+  analysisStatusIcon: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  analysisStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  analysisStatusTextPending: {
+    color: '#92400e',
+  },
+  analysisStatusTextCompleted: {
+    color: '#065f46',
+  },
+  analysisStatusTextFailed: {
+    color: '#991b1b',
+  },
+  dishNutritionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  dishIndicatorDots: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+  },
+  dishDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#d1d5db',
+  },
+  dishDotActive: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#2563eb',
+  },
+  noDataCard: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+  },
+  noDataText: {
+    fontSize: 14,
+    color: '#9ca3af',
+    textAlign: 'center',
   },
 })

@@ -195,9 +195,9 @@ export function FoodListScreen({ navigation }: any) {
             </View>
 
             {item.photoUrls && item.photoUrls.length > 1 && (
-              <View style={styles.photoCountBadge}>
-                <Text style={styles.photoCountBadgeText}>
-                  +{item.photoUrls.length - 1} photo{item.photoUrls.length - 1 > 1 ? 's' : ''}
+              <View style={styles.dishCountBadge}>
+                <Text style={styles.dishCountText}>
+                  {item.photoUrls.length} dish{item.photoUrls.length > 1 ? 'es' : ''}
                 </Text>
               </View>
             )}
@@ -354,18 +354,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#374151',
   },
-  photoCountBadge: {
+  dishCountBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginTop: 4,
+    backgroundColor: '#2563eb',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginTop: 6,
   },
-  photoCountBadgeText: {
-    fontSize: 12,
-    color: '#6b7280',
-    fontWeight: '500',
+  dishCountText: {
+    fontSize: 11,
+    color: '#fff',
+    fontWeight: '600',
   },
   nutritionSummary: {
     flexDirection: 'row',

@@ -16,7 +16,13 @@ export interface FoodEntry {
   totalProteinG: number
   totalFatG: number
   totalFiberG: number
+  photos?: Array<{
+    id: string
+    storagePath: string
+    analysisStatus: 'pending' | 'completed' | 'failed'
+  }>
   ingredients: Array<{
+    id?: string
     name: string
     quantity: number
     unit: string
@@ -25,6 +31,8 @@ export interface FoodEntry {
     proteinG: number
     fatG: number
     fiberG: number
+    foodPhotoId?: string | null // Links ingredient to specific dish
+    photoIndex?: number // Computed field for UI (0-based index)
   }>
 }
 
