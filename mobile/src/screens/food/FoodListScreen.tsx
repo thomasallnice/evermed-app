@@ -17,6 +17,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Swipeable, GestureHandlerRootView } from 'react-native-gesture-handler'
 import { getFoodEntries, FoodEntry, deleteFoodEntry } from '../../api/food'
+import { MealTemplateSelector } from '../../components/MealTemplateSelector'
+import { MealTemplate, Ingredient } from '../../api/templates'
 
 export function FoodListScreen({ navigation }: any) {
   const insets = useSafeAreaInsets()
@@ -50,6 +52,18 @@ export function FoodListScreen({ navigation }: any) {
     setIsRefreshing(true)
     loadEntries()
   }, [])
+
+  const handleSelectTemplate = (template: MealTemplate) => {
+    // Navigate to camera/food detail screen with pre-filled template data
+    navigation.navigate('FoodDetail', {
+      template: {
+        name: template.name,
+        mealType: 'breakfast', // Default, user can change
+        ingredients: template.ingredients,
+        nutritionTotals: template.nutritionTotals,
+      },
+    })
+  }
 
   const handleDelete = (id: string) => {
     Alert.alert(
@@ -232,6 +246,9 @@ export function FoodListScreen({ navigation }: any) {
         contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 100 }]}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+        }
+        ListHeaderComponent={
+          <MealTemplateSelector onSelectTemplate={handleSelectTemplate} />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>

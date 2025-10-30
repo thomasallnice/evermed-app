@@ -16,6 +16,8 @@ import {
 } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import { getFoodEntry, deleteFoodEntry, updateFoodEntry, FoodEntry } from '../../api/food'
+import { SaveTemplateModal } from '../../components/SaveTemplateModal'
+import { Ingredient, NutritionTotals } from '../../api/templates'
 
 interface EditableIngredient {
   id?: string
@@ -42,6 +44,9 @@ export function FoodDetailScreen({ route, navigation }: any) {
   const [editedIngredients, setEditedIngredients] = useState<EditableIngredient[]>([])
   const [showSuccessBanner, setShowSuccessBanner] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  // Save as template state
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false)
 
   useEffect(() => {
     loadEntry()
@@ -352,6 +357,17 @@ export function FoodDetailScreen({ route, navigation }: any) {
             </View>
           </View>
 
+          {/* Save as Template Button */}
+          <TouchableOpacity
+            style={styles.saveTemplateButton}
+            onPress={() => setShowSaveTemplate(true)}
+            accessibilityLabel="Save as template"
+            accessibilityHint="Save this meal as a reusable template"
+          >
+            <Text style={styles.saveTemplateIcon}>💾</Text>
+            <Text style={styles.saveTemplateButtonText}>Save as Template</Text>
+          </TouchableOpacity>
+
           {/* Ingredients (Read-Only) */}
           {!isEditing && entry.ingredients && entry.ingredients.length > 0 && (
             <View style={styles.section}>
@@ -560,6 +576,21 @@ export function FoodDetailScreen({ route, navigation }: any) {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Save Template Modal */}
+      <SaveTemplateModal
+        visible={showSaveTemplate}
+        onClose={() => setShowSaveTemplate(false)}
+        ingredients={entry.ingredients || []}
+        nutritionTotals={{
+          calories: entry.totalCalories,
+          carbs: entry.totalCarbsG,
+          protein: entry.totalProteinG,
+          fat: entry.totalFatG,
+          fiber: entry.totalFiberG,
+        }}
+        mealType={entry.mealType}
+      />
     </ScrollView>
   )
 }
@@ -920,6 +951,31 @@ const styles = StyleSheet.create({
   addIngredientButtonText: {
     color: '#374151',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  // Save Template Button
+  saveTemplateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginTop: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  saveTemplateIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  saveTemplateButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
   },
 })
