@@ -20,7 +20,7 @@ module.exports = ({ config }) => {
       ios: {
         supportsTablet: true,
         bundleIdentifier: 'com.carbio.mobile',
-        buildNumber: '1.0.18',
+        buildNumber: '1.0.19',
         infoPlist: {
           NSCameraUsageDescription:
             'Carbly needs access to your camera to photograph your meals for food tracking',
