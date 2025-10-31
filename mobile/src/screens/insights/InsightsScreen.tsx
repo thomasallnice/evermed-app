@@ -102,7 +102,12 @@ export default function InsightsScreen({ navigation }: Props) {
     if (!streakData) return null
 
     return (
-      <View style={styles.streakCard}>
+      <View
+        style={styles.streakCard}
+        accessible={true}
+        accessibilityLabel={`Streak tracking: ${streakData.currentStreak} day current streak, ${streakData.longestStreak} day longest streak, ${streakData.daysInTargetRange} total days in target range`}
+        accessibilityRole="summary"
+      >
         <Text style={styles.sectionTitle}>🔥 Your Streaks</Text>
         <View style={styles.streakStats}>
           <View style={styles.streakStat}>
@@ -130,14 +135,34 @@ export default function InsightsScreen({ navigation }: Props) {
 
     return (
       <View style={styles.milestonesSection}>
-        <Text style={styles.sectionTitle}>🏆 Milestones</Text>
+        <Text
+          style={styles.sectionTitle}
+          accessible={true}
+          accessibilityLabel={`Milestones: ${achievedMilestones.length} completed, ${inProgressMilestones.length} in progress`}
+          accessibilityRole="header"
+        >
+          🏆 Milestones
+        </Text>
 
         {/* Achieved Milestones */}
         {achievedMilestones.length > 0 && (
           <View style={styles.milestoneCategory}>
-            <Text style={styles.milestoneCategoryTitle}>Completed</Text>
+            <Text
+              style={styles.milestoneCategoryTitle}
+              accessible={true}
+              accessibilityLabel={`${achievedMilestones.length} completed milestones`}
+              accessibilityRole="header"
+            >
+              Completed
+            </Text>
             {achievedMilestones.map((milestone, index) => (
-              <View key={`achieved-${index}`} style={styles.milestoneCard}>
+              <View
+                key={`achieved-${index}`}
+                style={styles.milestoneCard}
+                accessible={true}
+                accessibilityLabel={`${milestone.title}, completed`}
+                accessibilityRole="text"
+              >
                 <View style={styles.milestoneHeader}>
                   <Text style={styles.milestoneIcon}>✓</Text>
                   <Text style={styles.milestoneTitle}>{milestone.title}</Text>
@@ -155,9 +180,22 @@ export default function InsightsScreen({ navigation }: Props) {
         {/* In Progress Milestones */}
         {inProgressMilestones.length > 0 && (
           <View style={styles.milestoneCategory}>
-            <Text style={styles.milestoneCategoryTitle}>In Progress</Text>
+            <Text
+              style={styles.milestoneCategoryTitle}
+              accessible={true}
+              accessibilityLabel={`${inProgressMilestones.length} milestones in progress`}
+              accessibilityRole="header"
+            >
+              In Progress
+            </Text>
             {inProgressMilestones.map((milestone, index) => (
-              <View key={`progress-${index}`} style={styles.milestoneCard}>
+              <View
+                key={`progress-${index}`}
+                style={styles.milestoneCard}
+                accessible={true}
+                accessibilityLabel={`${milestone.title}, ${Math.round(milestone.progress)}% complete`}
+                accessibilityRole="text"
+              >
                 <View style={styles.milestoneHeader}>
                   <Text style={styles.milestoneIcon}>⏳</Text>
                   <View style={styles.milestoneTitleContainer}>
@@ -186,7 +224,12 @@ export default function InsightsScreen({ navigation }: Props) {
   const renderDailyInsights = () => {
     if (dailyInsights.length === 0) {
       return (
-        <View style={styles.emptyState}>
+        <View
+          style={styles.emptyState}
+          accessible={true}
+          accessibilityLabel="No insights available yet. Log meals and glucose readings to get personalized insights"
+          accessibilityRole="text"
+        >
           <Text style={styles.emptyIcon}>📊</Text>
           <Text style={styles.emptyTitle}>No Insights Yet</Text>
           <Text style={styles.emptyText}>
@@ -198,13 +241,27 @@ export default function InsightsScreen({ navigation }: Props) {
 
     return (
       <View style={styles.dailyInsightsSection}>
-        <Text style={styles.sectionTitle}>Today's Insights</Text>
+        <Text
+          style={styles.sectionTitle}
+          accessible={true}
+          accessibilityLabel={`Today's insights, ${dailyInsights.length} insights available`}
+          accessibilityRole="header"
+        >
+          Today's Insights
+        </Text>
         {dailyInsights.map((insight) => {
           const color = getInsightColor(insight.type)
           const icon = getInsightIcon(insight.type)
+          const typeLabel = insight.type === 'pattern' ? 'Pattern' : insight.type === 'warning' ? 'Warning' : 'Tip'
 
           return (
-            <View key={insight.id} style={[styles.insightCard, { borderLeftColor: color }]}>
+            <View
+              key={insight.id}
+              style={[styles.insightCard, { borderLeftColor: color }]}
+              accessible={true}
+              accessibilityLabel={`${typeLabel}: ${insight.title}. ${insight.description}`}
+              accessibilityRole="text"
+            >
               <View style={styles.insightHeader}>
                 <Text style={styles.insightIcon}>{icon}</Text>
                 <Text style={[styles.insightTitle, { color }]}>{insight.title}</Text>
@@ -235,10 +292,22 @@ export default function InsightsScreen({ navigation }: Props) {
 
     return (
       <View style={styles.trendsSection}>
-        <Text style={styles.sectionTitle}>Weekly Trends</Text>
+        <Text
+          style={styles.sectionTitle}
+          accessible={true}
+          accessibilityLabel="Weekly trends summary"
+          accessibilityRole="header"
+        >
+          Weekly Trends
+        </Text>
 
         {/* Summary Stats */}
-        <View style={styles.weeklyStats}>
+        <View
+          style={styles.weeklyStats}
+          accessible={true}
+          accessibilityLabel={`Weekly summary: Average glucose ${Math.round(weeklySummary.avgGlucose)} mg/dL, ${Math.round(weeklySummary.timeInRange)}% time in range, ${weeklySummary.totalSpikes} spikes, ${weeklySummary.totalMeals} meals logged`}
+          accessibilityRole="summary"
+        >
           <View style={styles.weeklyStat}>
             <Text style={styles.weeklyStatValue}>{Math.round(weeklySummary.avgGlucose)}</Text>
             <Text style={styles.weeklyStatLabel}>Avg Glucose</Text>
@@ -258,7 +327,12 @@ export default function InsightsScreen({ navigation }: Props) {
         </View>
 
         {/* Time in Range Chart */}
-        <View style={styles.chartContainer}>
+        <View
+          style={styles.chartContainer}
+          accessible={true}
+          accessibilityLabel={`Weekly time in range chart: ${labels.join(', ')} with values ${tirData.map(v => Math.round(v) + '%').join(', ')}`}
+          accessibilityRole="image"
+        >
           <Text style={styles.chartTitle}>Time in Range %</Text>
           <BarChart
             data={{
@@ -294,25 +368,42 @@ export default function InsightsScreen({ navigation }: Props) {
 
     return (
       <View style={styles.foodsSection}>
-        <Text style={styles.sectionTitle}>✓ Foods That Work</Text>
+        <Text
+          style={styles.sectionTitle}
+          accessible={true}
+          accessibilityLabel={`${weeklySummary.bestMeals.length} foods that work well for you`}
+          accessibilityRole="header"
+        >
+          ✓ Foods That Work
+        </Text>
         <Text style={styles.foodsSubtitle}>
           These meals had minimal glucose impact. Consider eating them more often!
         </Text>
-        {weeklySummary.bestMeals.slice(0, 5).map((meal, index) => (
-          <View key={`best-${index}`} style={styles.foodCard}>
-            <View style={styles.foodHeader}>
-              <Text style={styles.foodName}>{meal.name}</Text>
-              <View style={[styles.foodBadge, { backgroundColor: '#16a34a15' }]}>
-                <Text style={[styles.foodBadgeText, { color: '#16a34a' }]}>
-                  +{Math.round(meal.glucoseChange)} mg/dL
-                </Text>
+        {weeklySummary.bestMeals.slice(0, 5).map((meal, index) => {
+          const formattedDate = new Date(meal.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+
+          return (
+            <View
+              key={`best-${index}`}
+              style={styles.foodCard}
+              accessible={true}
+              accessibilityLabel={`${meal.name}, ${meal.mealType} meal from ${formattedDate}, caused a glucose increase of ${Math.round(meal.glucoseChange)} mg/dL, which is stable`}
+              accessibilityRole="text"
+            >
+              <View style={styles.foodHeader}>
+                <Text style={styles.foodName}>{meal.name}</Text>
+                <View style={[styles.foodBadge, { backgroundColor: '#16a34a15' }]}>
+                  <Text style={[styles.foodBadgeText, { color: '#16a34a' }]}>
+                    +{Math.round(meal.glucoseChange)} mg/dL
+                  </Text>
+                </View>
               </View>
+              <Text style={styles.foodMeta}>
+                {meal.mealType} · {formattedDate}
+              </Text>
             </View>
-            <Text style={styles.foodMeta}>
-              {meal.mealType} · {new Date(meal.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-            </Text>
-          </View>
-        ))}
+          )
+        })}
       </View>
     )
   }
@@ -322,25 +413,42 @@ export default function InsightsScreen({ navigation }: Props) {
 
     return (
       <View style={styles.foodsSection}>
-        <Text style={styles.sectionTitle}>⚠️ Foods to Watch</Text>
+        <Text
+          style={styles.sectionTitle}
+          accessible={true}
+          accessibilityLabel={`${weeklySummary.worstMeals.length} foods to watch that caused glucose spikes`}
+          accessibilityRole="header"
+        >
+          ⚠️ Foods to Watch
+        </Text>
         <Text style={styles.foodsSubtitle}>
           These meals caused significant glucose spikes. Consider smaller portions or alternatives.
         </Text>
-        {weeklySummary.worstMeals.slice(0, 5).map((meal, index) => (
-          <View key={`worst-${index}`} style={styles.foodCard}>
-            <View style={styles.foodHeader}>
-              <Text style={styles.foodName}>{meal.name}</Text>
-              <View style={[styles.foodBadge, { backgroundColor: '#dc262615' }]}>
-                <Text style={[styles.foodBadgeText, { color: '#dc2626' }]}>
-                  +{Math.round(meal.glucoseChange)} mg/dL
-                </Text>
+        {weeklySummary.worstMeals.slice(0, 5).map((meal, index) => {
+          const formattedDate = new Date(meal.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+
+          return (
+            <View
+              key={`worst-${index}`}
+              style={styles.foodCard}
+              accessible={true}
+              accessibilityLabel={`${meal.name}, ${meal.mealType} meal from ${formattedDate}, caused a glucose spike of ${Math.round(meal.glucoseChange)} mg/dL, consider smaller portions`}
+              accessibilityRole="text"
+            >
+              <View style={styles.foodHeader}>
+                <Text style={styles.foodName}>{meal.name}</Text>
+                <View style={[styles.foodBadge, { backgroundColor: '#dc262615' }]}>
+                  <Text style={[styles.foodBadgeText, { color: '#dc2626' }]}>
+                    +{Math.round(meal.glucoseChange)} mg/dL
+                  </Text>
+                </View>
               </View>
+              <Text style={styles.foodMeta}>
+                {meal.mealType} · {formattedDate}
+              </Text>
             </View>
-            <Text style={styles.foodMeta}>
-              {meal.mealType} · {new Date(meal.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-            </Text>
-          </View>
-        ))}
+          )
+        })}
       </View>
     )
   }
