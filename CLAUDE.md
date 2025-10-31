@@ -86,6 +86,62 @@ supabase gen types typescript --local > types/supabase.ts
 npx vitest run tests/unit/auth.spec.ts
 ```
 
+## Current Sprint Status (Updated 2025-10-30)
+
+**🚀 8-Week Sprint to App Store Launch: December 25, 2025**
+
+**Sprint Plan:** See `docs/SPRINT_TO_APP_STORE_2025_10_30.md` for detailed roadmap
+
+### Sprint 1: Multi-Dish UI & Meal Editing ✅ COMPLETE (Oct 30, 2025)
+**Commits:** d02bee1 (multi-dish UI), b0ed09b (meal editing), acd73ae (migration)
+
+**Completed Features:**
+- ✅ Multi-dish carousel with per-dish nutrition breakdown
+- ✅ Horizontal swipe navigation between dishes (1-5 photos per meal)
+- ✅ Dish number badges and per-photo analysis status indicators
+- ✅ Meal editing screen with Nutritionix search (800,000+ foods)
+- ✅ Real-time nutrition recalculation using useMemo
+- ✅ Add/remove/modify ingredients with validation
+- ✅ Backend PATCH endpoint enhanced for multi-dish support
+- ✅ Nutritionix proxy API with caching (24h TTL) and rate limiting
+- ✅ Database migration: meal_templates description & last_used_at columns
+- ✅ 10 integration tests, comprehensive documentation
+
+**Files Created:**
+- `mobile/src/screens/food/EditIngredientScreen.tsx` (850 lines)
+- `mobile/src/api/nutritionix.ts` (147 lines)
+- `apps/web/src/app/api/metabolic/nutritionix/search/route.ts` (282 lines)
+- `tests/integration/nutritionix-search.spec.ts` (391 lines)
+- `docs/api/NUTRITIONIX_SEARCH.md` (517 lines)
+- `docs/MOBILE_INTEGRATION_NUTRITIONIX.md` (450+ lines)
+
+**Files Modified:**
+- `apps/web/src/app/api/metabolic/food/[id]/route.ts` (multi-dish support)
+- `mobile/src/api/food.ts` (added updateFoodEntry)
+- `mobile/src/screens/food/FoodDetailScreen.tsx` (carousel + Edit button)
+- `mobile/src/screens/food/FoodListScreen.tsx` (dish count badge)
+- `mobile/src/navigation/MainNavigator.tsx` (EditIngredient route)
+
+### Sprint 2: Glucose Foundation ⏳ NEXT (Nov 4-10, 2025)
+**Goal:** Manual glucose tracking with basic visualization
+
+**Features to Implement:**
+- Manual glucose entry screen (form with validation)
+- Glucose list view (color-coded by range: low/normal/high)
+- Basic glucose line chart (with target range shading)
+- Glucose API endpoints (POST, GET, DELETE)
+- Database schema already exists (GlucoseReading table)
+
+### Remaining Sprints (7 weeks)
+- **Sprint 3:** HealthKit Integration (Nov 11-17)
+- **Sprint 4:** Timeline & Correlation (Nov 18-24)
+- **Sprint 5:** Insights & Analytics (Nov 25-Dec 1)
+- **Sprint 6:** Reports & Export (Dec 2-8)
+- **Sprint 7:** Polish & Performance (Dec 9-15)
+- **Sprint 8:** Beta Testing & App Store (Dec 16-25)
+
+---
+
 ## Architecture
 
 ### Mobile-First Structure ⭐

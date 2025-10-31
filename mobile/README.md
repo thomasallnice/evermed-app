@@ -108,6 +108,30 @@ npx eas-cli submit --platform ios --latest
 - **App Store Connect ID:** 6754119933
 - **Apple Team ID:** YY2MH7J868
 
+### Sprint Progress (Updated Oct 30, 2025)
+
+**🚀 App Store Launch Target:** December 25, 2025 (7 weeks remaining)
+
+**Sprint 1: Multi-Dish UI & Meal Editing ✅ COMPLETE**
+- ✅ Multi-dish carousel with per-dish nutrition breakdown
+- ✅ Meal editing screen with Nutritionix search (800,000+ foods)
+- ✅ Real-time nutrition recalculation
+- ✅ Backend API enhancements (PATCH endpoint, Nutritionix proxy)
+- ✅ Database migration deployed
+
+**Key Screens:**
+- `src/screens/food/FoodListScreen.tsx` - Meal list with dish count badges
+- `src/screens/food/FoodDetailScreen.tsx` - Multi-dish carousel with nutrition
+- `src/screens/food/EditIngredientScreen.tsx` - Meal editing with search (NEW)
+
+**Sprint 2: Glucose Foundation ⏳ NEXT (Nov 4-10)**
+- Manual glucose entry screen
+- Glucose list view (color-coded)
+- Basic glucose line chart
+- API endpoints (POST, GET, DELETE)
+
+**See:** `docs/SPRINT_TO_APP_STORE_2025_10_30.md` for full 8-week roadmap
+
 ## Troubleshooting
 
 ### "Module not found" errors

@@ -1,23 +1,27 @@
 # EverMed Project State
 
 ## Last Updated
-2025-10-16
+2025-10-30
 
 ## Current Status
 ✅ **All Environments Deployed Successfully** (dev, staging, production)
 ✅ **IPv4/IPv6 Database Connection Fix** - Transaction Pooler implemented across all environments
 ✅ **Schema Drift Prevention System Implemented**
-✅ **PWA Features Complete** (offline support, installable)
-✅ **Validation Commands with Test Accounts** - Automated validation ready
-✅ **Tech Stack Analysis Complete** - Comprehensive 2025 optimization research completed
-🎯 **MVP FEATURES COMPLETE - BETA LAUNCH READY** (2025-10-16)
-  - ✅ Mock glucose predictions API implemented (baseline-v1.0 model)
-  - ✅ Daily insights generation with 7-day pattern detection
-  - ✅ Dashboard showing all insights (time in range, spikes, meal impact)
-  - ✅ Implementation roadmap created (4-week timeline to beta)
-  - 🔶 CGM integration next priority (3 weeks)
-  - 🔶 LSTM model optional for beta launch
-🔍 **DECISION REQUIRED** - Tech stack migration: OpenAI GPT-5 vs Google Gemini 2.5 Flash
+✅ **8-Week Sprint Plan to App Store Launch** - Created 2025-10-30
+✅ **Sprint 1 COMPLETE** - Multi-Dish UI & Meal Editing (2025-10-30)
+  - ✅ Multi-dish carousel with per-dish nutrition
+  - ✅ Meal editing with Nutritionix search (800,000+ foods)
+  - ✅ Real-time nutrition recalculation
+  - ✅ Database migration deployed (meal_templates columns)
+  - ✅ 10 integration tests, comprehensive documentation
+🚀 **APP STORE LAUNCH TARGET: December 25, 2025** (7 weeks remaining)
+  - Sprint 2: Glucose Foundation (Nov 4-10) - NEXT
+  - Sprint 3: HealthKit Integration (Nov 11-17)
+  - Sprint 4: Timeline & Correlation (Nov 18-24)
+  - Sprint 5: Insights & Analytics (Nov 25-Dec 1)
+  - Sprint 6: Reports & Export (Dec 2-8)
+  - Sprint 7: Polish & Performance (Dec 9-15)
+  - Sprint 8: Beta Testing & App Store (Dec 16-25)
 
 ## Git Branching Strategy & Environments
 
@@ -94,38 +98,46 @@ Feature Branch → dev → staging → main
 - Each environment has separate API keys and database credentials
 
 ## Current Phase
-**MVP FEATURE COMPLETE - BETA PREPARATION (Week 1 of 4-week timeline)**
+**SPRINT 1 COMPLETE - SPRINT 2 STARTING (8-Week Roadmap to App Store)**
 
-### Core Platform (Complete)
+### Sprint 1: Multi-Dish UI & Meal Editing (COMPLETE - 2025-10-30)
+- ✅ Multi-dish carousel with per-dish nutrition breakdown
+- ✅ Dish number badges and analysis status indicators
+- ✅ Meal editing screen with Nutritionix search (800,000+ foods)
+- ✅ Real-time nutrition recalculation
+- ✅ Backend PATCH endpoint enhanced for multi-dish support
+- ✅ Nutritionix proxy API with caching and rate limiting
+- ✅ 10 integration tests, comprehensive documentation
+- ✅ Database migration deployed (meal_templates columns)
+- ✅ Build verification passed
+- **Commits:** d02bee1 (multi-dish UI), b0ed09b (meal editing)
+
+### Sprint 2: Glucose Foundation (NEXT - Nov 4-10, 2025)
+- ⏳ Manual glucose entry screen
+- ⏳ Glucose list view with color-coded readings
+- ⏳ Basic glucose line chart
+- ⏳ Target range visualization
+- ⏳ Glucose API endpoints (POST, GET, DELETE)
+
+### Mobile App Progress (iOS)
+- ✅ Authentication & Onboarding (Weeks 1-4)
+- ✅ Food Tracking with Camera (Weeks 5-7)
+- ✅ Meal Templates (Week 7.5)
+- ✅ Multi-Dish UI (Sprint 1)
+- ✅ Meal Editing (Sprint 1)
+- ⏳ Glucose Tracking (Sprint 2-3)
+- ⏳ Timeline & Insights (Sprint 4-5)
+- ⏳ Reports & Export (Sprint 6)
+- ⏳ Polish & App Store (Sprint 7-8)
+
+### Backend Platform (Complete)
 - ✅ Core Features Complete
 - ✅ PWA Implemented
 - ✅ Schema Drift Prevention: Implemented (2025-01-10)
 - ✅ All Environments Deployed: Production + Staging/Preview (2025-10-11)
 - ✅ IPv4/IPv6 Database Fix: Transaction Pooler implemented (2025-10-11)
-
-### Metabolic Insights MVP (COMPLETE - 2025-10-16)
-- ✅ Database schema complete (11 tables in Prisma)
-- ✅ API endpoints implemented (12 endpoints)
-- ✅ UI components built (7 pages, Material Design)
-- ✅ Food recognition working (Google Gemini 2.5 Flash + Nutritionix)
-- ✅ Dashboard displaying meals + glucose timeline
-- ✅ **Mock glucose predictions API** (baseline-v1.0 model, 2-hour forecasts)
-- ✅ **Daily insights generation** (time in range, spikes, meal impact)
-- ✅ **7-day pattern detection** (trends, consistent meals, warnings)
-- ✅ Dashboard showing all insights (not just latest)
-- ✅ **STAGING DEPLOYED** (2025-10-12): 11 tables + 40 RLS policies + food-photos bucket
-- ✅ **PRODUCTION DEPLOYED** (2025-10-12): 11 tables + 40 RLS policies + food-photos bucket
-- 🔶 CGM integration (next priority, 3 weeks)
-- 🔶 LSTM model (optional for beta)
-
-### Next: Milestone 1 - CGM Integration (2-3 weeks)
-1. ✅ Research Dexcom Developer Portal requirements (COMPLETE - Oct 16)
-2. ✅ Configure DEXCOM environment variables (COMPLETE - Oct 16)
-3. ✅ Apply CGM database migration (COMPLETE - Oct 16)
-4. ✅ Build connection status UI in settings (COMPLETE - Oct 16)
-5. 🔶 Test OAuth flow with Dexcom sandbox (next priority)
-6. 🔶 Implement automatic background sync (2 days)
-7. 🔶 Deploy to staging and validate (1 day)
+- ✅ Google Gemini 2.5 Flash for food recognition
+- ✅ Nutritionix API integration (800,000+ foods)
 
 ## Key Milestones Completed
 - [x] Document vault & RAG implementation
