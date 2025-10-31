@@ -1,5 +1,31 @@
 # Recent Changes
 
+## 2025-10-31 (COMPLETE): Sprint 5 - Insights & Analytics ✅
+
+**What Was Done:**
+Completed Sprint 5 of the 8-week roadmap to App Store launch, implementing comprehensive insights system with pattern detection, weekly trends, gamification features, and milestone tracking.
+
+**Status:**
+✅ **COMPLETE** - Sprint 5 fully implemented and committed (Commit: 7231726)
+
+**Sprint 5 Summary:**
+- ✅ Daily insights with pattern detection (pattern/warning/tip cards)
+- ✅ Weekly trends visualization with bar charts
+- ✅ "Foods That Work" list (top 5 meals with minimal glucose impact)
+- ✅ "Foods to Watch" list (top 5 meals causing significant spikes)
+- ✅ Streak counter (current, longest, days in target range)
+- ✅ 6 milestone achievements with progress bars
+- ✅ 1,004 lines of code added (1 API client + 1 screen)
+
+**App Store Progress:**
+✅ Sprint 5 complete: 4/8 sprints (50%)
+🎯 **HALFWAY TO LAUNCH** - On Track for December 25, 2025
+
+**Next Sprint:**
+Sprint 6: Reports & Export (Dec 2-8, 2025)
+
+---
+
 ## 2025-10-31 (COMPLETE): Sprint 4 - Timeline & Correlation ✅
 
 **What Was Done:**
