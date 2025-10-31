@@ -665,6 +665,7 @@ Before implementing ANY technical change, ask yourself:
 - [ ] Am I implementing ML models or prediction systems? → **STOP** → Use `ml-pipeline-architect`
 - [ ] Am I integrating external APIs (Google Vision, Nutritionix, CGM)? → **STOP** → Use `external-api-integrator`
 - [ ] Am I building analytics, dashboards, or correlation algorithms? → **STOP** → Use `analytics-architect`
+- [ ] Did I just complete a sprint, feature, or deployment? → **STOP** → Use `project-documentation-manager`
 
 **If you answered YES to any of the above, you MUST invoke the subagent. NO EXCEPTIONS.**
 
@@ -906,6 +907,42 @@ Before implementing ANY technical change, ask yourself:
      - Invoke `api-contract-validator` to ensure analytics API endpoints match spec
      - Invoke `vitest-test-writer` for query correctness, privacy compliance, edge case testing
      - Collaborate with `nextjs-ui-builder` for dashboard layout and chart selection
+
+13. **project-documentation-manager**
+   - **ALWAYS USE FOR**: Completing major milestones, features, or sprints to systematically update all project documentation and memory files
+   - **WITHOUT EXCEPTION**: After sprint completion, significant feature implementation (>500 lines changed), production deployments, project phase changes (beta → production), critical bug fixes, blocker resolution
+   - **WHY CRITICAL**: Ensures documentation consistency, project state accuracy, proper context for future sessions, prevents knowledge loss
+   - **NEVER SKIP**: Outdated documentation causes confusion and lost context in future sessions
+   - **WHAT IT UPDATES**:
+     - `.claude/memory/recent-changes.md` - Add new entry at top with date and details
+     - `.claude/memory/project-state.md` - Current phase, completion %, next steps
+     - `.claude/memory/active-issues.md` - Move resolved issues to "Resolved Recently"
+     - `CLAUDE.md` - Sprint status section when sprint/phase changes
+     - `mobile/README.md` - Sprint progress if mobile features involved
+     - Cross-file consistency validation (dates, versions, status alignment)
+   - **PROACTIVE INVOCATION TRIGGERS**:
+     - ✅ Sprint completion (e.g., "Sprint 1 complete")
+     - ✅ Major feature completion (>500 lines changed, multiple commits)
+     - ✅ Production deployment success
+     - ✅ Critical issue resolution
+     - ✅ Phase transitions (MVP → Beta → Production)
+   - **EXAMPLES**:
+     ```typescript
+     // After completing Sprint 1
+     Task({
+       subagent_type: "project-documentation-manager",
+       description: "Update docs for Sprint 1 completion",
+       prompt: "Sprint 1 complete: multi-dish UI and meal editing. Update all documentation with completion status, files created, next sprint goals."
+     })
+
+     // After production deployment
+     Task({
+       subagent_type: "project-documentation-manager",
+       description: "Document production deployment",
+       prompt: "Production deployment successful for glucose prediction feature. Update project-state.md with production status, add to recent-changes.md."
+     })
+     ```
+   - **DO NOT WAIT FOR USER TO ASK**: Proactively invoke after detecting sprint/feature completion
 
 ### How to Invoke Subagents
 
