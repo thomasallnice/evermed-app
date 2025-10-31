@@ -16,12 +16,14 @@ import { CameraScreen } from '../screens/food/CameraScreen'
 import GlucoseListScreen from '../screens/glucose/GlucoseListScreen'
 import ManualEntryScreen from '../screens/glucose/ManualEntryScreen'
 import { ProfileScreen } from '../screens/profile/ProfileScreen'
+import ReportsScreen from '../screens/reports/ReportsScreen'
 import { OnboardingScreen } from '../screens/auth/OnboardingScreen'
 import { FloatingActionButton } from '../components/FloatingActionButton'
 
 const Tab = createBottomTabNavigator()
 const FoodStack = createNativeStackNavigator()
 const GlucoseStack = createNativeStackNavigator()
+const ProfileStack = createNativeStackNavigator()
 const RootStack = createNativeStackNavigator()
 
 // Food Stack Navigator (includes camera, list, detail, edit)
@@ -67,6 +69,24 @@ function GlucoseStackNavigator() {
         options={{ headerShown: false }}
       />
     </GlucoseStack.Navigator>
+  )
+}
+
+// Profile Stack Navigator (includes profile and reports)
+function ProfileStackNavigator() {
+  return (
+    <ProfileStack.Navigator>
+      <ProfileStack.Screen
+        name="ProfileMain"
+        component={ProfileScreen}
+        options={{ title: 'Profile' }}
+      />
+      <ProfileStack.Screen
+        name="Reports"
+        component={ReportsScreen}
+        options={{ title: 'Weekly Reports' }}
+      />
+    </ProfileStack.Navigator>
   )
 }
 
@@ -157,8 +177,9 @@ function TabNavigator() {
         />
         <Tab.Screen
           name="Profile"
-          component={ProfileScreen}
+          component={ProfileStackNavigator}
           options={{
+            headerShown: false,
             title: 'Profile',
             tabBarIcon: ({ color, size }) => (
               <MaterialIcons name="person" size={size} color={color} />

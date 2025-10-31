@@ -58,7 +58,11 @@ const ALLERGY_OPTIONS = [
   'Sesame',
 ]
 
-export function ProfileScreen() {
+interface Props {
+  navigation: any
+}
+
+export function ProfileScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets()
   const { user, signOut } = useAuth()
 
@@ -776,6 +780,25 @@ export function ProfileScreen() {
         </View>
       </View>
 
+      {/* Reports & Export */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Reports & Export</Text>
+        <TouchableOpacity
+          style={styles.reportsButton}
+          onPress={() => navigation.navigate('Reports')}
+        >
+          <View style={styles.reportsButtonContent}>
+            <View>
+              <Text style={styles.reportsButtonTitle}>Weekly Reports</Text>
+              <Text style={styles.reportsButtonSubtitle}>
+                Generate and share reports for your doctor
+              </Text>
+            </View>
+            <Text style={styles.reportsButtonArrow}>›</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
@@ -960,6 +983,36 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  reportsButton: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  reportsButtonContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+  },
+  reportsButtonTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  reportsButtonSubtitle: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  reportsButtonArrow: {
+    fontSize: 32,
+    color: '#9ca3af',
+    fontWeight: '300',
   },
   signOutButton: {
     backgroundColor: '#ef4444',
