@@ -19,7 +19,7 @@ module.exports = ({ config }) => {
       },
       ios: {
         supportsTablet: true,
-        bundleIdentifier: 'com.carbio.mobile',
+        bundleIdentifier: 'com.carbly.mobile',
         buildNumber: '1.0.19',
         infoPlist: {
           NSCameraUsageDescription:
@@ -44,7 +44,7 @@ module.exports = ({ config }) => {
           foregroundImage: './assets/adaptive-icon.png',
           backgroundColor: '#2563eb',
         },
-        package: 'com.carbio.mobile',
+        package: 'com.carbly.mobile',
         versionCode: 1,
         edgeToEdgeEnabled: true,
         predictiveBackGestureEnabled: false,
