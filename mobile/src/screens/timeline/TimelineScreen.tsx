@@ -130,36 +130,61 @@ export default function TimelineScreen({ navigation }: Props) {
     )
   }
 
-  const renderDateNavigation = () => (
-    <View style={styles.dateNav}>
-      <TouchableOpacity style={styles.dateNavButton} onPress={handlePreviousDay}>
-        <Text style={styles.dateNavIcon}>←</Text>
-      </TouchableOpacity>
-      <View style={styles.dateDisplay}>
-        <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
-      </View>
-      <TouchableOpacity
-        style={styles.dateNavButton}
-        onPress={handleNextDay}
-        disabled={formatDateISO(selectedDate) === formatDateISO(new Date())}
-      >
-        <Text
-          style={[
-            styles.dateNavIcon,
-            formatDateISO(selectedDate) === formatDateISO(new Date()) && styles.dateNavIconDisabled,
-          ]}
+  const renderDateNavigation = () => {
+    const isToday = formatDateISO(selectedDate) === formatDateISO(new Date())
+    const formattedDate = formatDate(selectedDate)
+
+    return (
+      <View style={styles.dateNav}>
+        <TouchableOpacity
+          style={styles.dateNavButton}
+          onPress={handlePreviousDay}
+          accessibilityLabel="Previous day"
+          accessibilityHint="View timeline for the previous day"
+          accessibilityRole="button"
         >
-          →
-        </Text>
-      </TouchableOpacity>
-    </View>
-  )
+          <Text style={styles.dateNavIcon}>←</Text>
+        </TouchableOpacity>
+        <View
+          style={styles.dateDisplay}
+          accessible={true}
+          accessibilityLabel={`Viewing timeline for ${formattedDate}`}
+          accessibilityRole="text"
+        >
+          <Text style={styles.dateText}>{formattedDate}</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.dateNavButton}
+          onPress={handleNextDay}
+          disabled={isToday}
+          accessibilityLabel="Next day"
+          accessibilityHint={isToday ? "Cannot view future dates" : "View timeline for the next day"}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isToday }}
+        >
+          <Text
+            style={[
+              styles.dateNavIcon,
+              isToday && styles.dateNavIconDisabled,
+            ]}
+          >
+            →
+          </Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
 
   const renderSummaryCard = () => {
     if (!dailySummary || dailySummary.totalReadings === 0) return null
 
     return (
-      <View style={styles.summaryCard}>
+      <View
+        style={styles.summaryCard}
+        accessible={true}
+        accessibilityLabel={`Daily summary: Average glucose ${dailySummary.avgGlucose} mg/dL, ${dailySummary.timeInRange}% time in range, ${dailySummary.spikes.length} spikes detected, ${dailySummary.totalMeals} meals logged`}
+        accessibilityRole="summary"
+      >
         <Text style={styles.summaryTitle}>Daily Summary</Text>
         <View style={styles.summaryStats}>
           <View style={styles.summaryStatItem}>
@@ -188,12 +213,26 @@ export default function TimelineScreen({ navigation }: Props) {
     const spikeLabel = getSpikeLabel(spikeIncrease ?? 0)
     const photoUrl = meal.photoUrl || (meal.photoUrls && meal.photoUrls[0]) || null
 
+    // Create comprehensive accessibility label
+    const glucoseResponse = spikeIncrease !== null && spikeIncrease >= 30
+      ? `glucose spike of ${spikeIncrease} mg/dL`
+      : 'stable glucose response'
+
+    const accessibilityLabel =
+      `${meal.name}, ${meal.type} meal at ${formatTime(meal.timestamp)}, ` +
+      `${meal.calories} calories, ${meal.carbs} grams carbs, ` +
+      `${meal.protein} grams protein, ${meal.fat} grams fat, ` +
+      `${glucoseResponse}`
+
     return (
       <TouchableOpacity
         key={meal.id}
         style={styles.mealCard}
         onPress={() => handleMealPress(meal)}
         activeOpacity={0.7}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint="Tap to view detailed glucose response information"
+        accessibilityRole="button"
       >
         {photoUrl && (
           <Image source={{ uri: photoUrl }} style={styles.mealPhoto} resizeMode="cover" />
@@ -226,7 +265,12 @@ export default function TimelineScreen({ navigation }: Props) {
   const renderMealsSection = () => {
     if (!timelineData || timelineData.meals.length === 0) {
       return (
-        <View style={styles.emptyState}>
+        <View
+          style={styles.emptyState}
+          accessible={true}
+          accessibilityLabel="No meals logged today. Log meals to see glucose correlation analysis"
+          accessibilityRole="text"
+        >
           <Text style={styles.emptyIcon}>🍽️</Text>
           <Text style={styles.emptyTitle}>No Meals Logged</Text>
           <Text style={styles.emptyText}>Log meals to see glucose correlation</Text>
@@ -250,7 +294,14 @@ export default function TimelineScreen({ navigation }: Props) {
         {/* Best Meals */}
         {bestMeals.length > 0 && (
           <View style={styles.mealCategory}>
-            <Text style={styles.mealCategoryTitle}>✓ Meals with Stable Response</Text>
+            <Text
+              style={styles.mealCategoryTitle}
+              accessible={true}
+              accessibilityLabel={`${bestMeals.length} meals with stable glucose response`}
+              accessibilityRole="header"
+            >
+              ✓ Meals with Stable Response
+            </Text>
             {bestMeals.map((meal) => renderMealCard(meal, spikeMap.get(meal.id) ?? null))}
           </View>
         )}
@@ -258,7 +309,14 @@ export default function TimelineScreen({ navigation }: Props) {
         {/* Worst Meals */}
         {worstMeals.length > 0 && (
           <View style={styles.mealCategory}>
-            <Text style={styles.mealCategoryTitle}>⚠️ Watch These Meals</Text>
+            <Text
+              style={styles.mealCategoryTitle}
+              accessible={true}
+              accessibilityLabel={`${worstMeals.length} meals to watch, caused glucose spikes`}
+              accessibilityRole="header"
+            >
+              ⚠️ Watch These Meals
+            </Text>
             {worstMeals.map((meal) => renderMealCard(meal, spikeMap.get(meal.id) ?? null))}
           </View>
         )}
@@ -266,7 +324,14 @@ export default function TimelineScreen({ navigation }: Props) {
         {/* All Other Meals */}
         {timelineData.meals.length > bestMeals.length + worstMeals.length && (
           <View style={styles.mealCategory}>
-            <Text style={styles.mealCategoryTitle}>Other Meals</Text>
+            <Text
+              style={styles.mealCategoryTitle}
+              accessible={true}
+              accessibilityLabel="Other meals from today"
+              accessibilityRole="header"
+            >
+              Other Meals
+            </Text>
             {timelineData.meals
               .filter(
                 (meal) =>
@@ -283,7 +348,12 @@ export default function TimelineScreen({ navigation }: Props) {
   const renderGlucoseChart = () => {
     if (!timelineData || timelineData.glucose.length < 2) {
       return (
-        <View style={styles.emptyState}>
+        <View
+          style={styles.emptyState}
+          accessible={true}
+          accessibilityLabel="No glucose data available. Add glucose readings to see trend visualization"
+          accessibilityRole="text"
+        >
           <Text style={styles.emptyIcon}>📊</Text>
           <Text style={styles.emptyTitle}>No Glucose Data</Text>
           <Text style={styles.emptyText}>Add glucose readings to see trends</Text>
@@ -298,7 +368,15 @@ export default function TimelineScreen({ navigation }: Props) {
       source: 'cgm' as const,
     }))
 
-    return <GlucoseChart readings={readings} />
+    return (
+      <View
+        accessible={true}
+        accessibilityLabel={`Glucose trend chart with ${timelineData.glucose.length} readings for ${formatDate(selectedDate)}`}
+        accessibilityRole="image"
+      >
+        <GlucoseChart readings={readings} />
+      </View>
+    )
   }
 
   return (
