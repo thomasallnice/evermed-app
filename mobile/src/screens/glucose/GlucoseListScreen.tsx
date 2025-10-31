@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { GlucoseChart } from '../../components/GlucoseChart'
 import { getGlucoseReadings, deleteGlucoseReading, GlucoseReading } from '../../api/glucose'
+import { HapticFeedback } from '../../utils/haptics'
 
 // Navigation types
 type RootStackParamList = {
@@ -116,6 +117,7 @@ export default function GlucoseListScreen({ navigation }: Props) {
   }, [loadReadings])
 
   const handleDelete = useCallback((reading: GlucoseReading) => {
+    HapticFeedback.heavy()
     Alert.alert(
       'Delete Reading',
       `Are you sure you want to delete this ${reading.value} mg/dL reading?`,
@@ -131,7 +133,9 @@ export default function GlucoseListScreen({ navigation }: Props) {
 
               // Remove from local state
               setReadings((prev) => prev.filter((r) => r.id !== reading.id))
+              HapticFeedback.success()
             } catch (error: any) {
+              HapticFeedback.error()
               console.error('Error deleting reading:', error)
               const errorMessage = error?.message || 'Failed to delete reading'
               Alert.alert('Error', errorMessage)
@@ -143,6 +147,7 @@ export default function GlucoseListScreen({ navigation }: Props) {
   }, [])
 
   const handleAddReading = () => {
+    HapticFeedback.light()
     navigation.navigate('ManualEntry')
   }
 

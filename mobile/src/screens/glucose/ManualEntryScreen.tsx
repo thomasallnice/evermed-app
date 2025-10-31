@@ -14,6 +14,7 @@ import DateTimePicker from '@react-native-community/datetimepicker'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { createGlucoseReading } from '../../api/glucose'
+import { HapticFeedback } from '../../utils/haptics'
 
 // Navigation types
 type RootStackParamList = {
@@ -60,11 +61,13 @@ export default function ManualEntryScreen({ navigation }: Props) {
   const handleSave = async () => {
     // Validation
     if (!value || glucoseValue <= 0) {
+      HapticFeedback.error()
       Alert.alert('Invalid Value', 'Please enter a valid glucose value')
       return
     }
 
     if (mgDlValue < 20 || mgDlValue > 600) {
+      HapticFeedback.error()
       Alert.alert(
         'Out of Range',
         'Glucose value must be between 20-600 mg/dL (1.1-33.3 mmol/L)'
@@ -73,6 +76,7 @@ export default function ManualEntryScreen({ navigation }: Props) {
     }
 
     if (timestamp > new Date()) {
+      HapticFeedback.error()
       Alert.alert('Invalid Time', 'Timestamp cannot be in the future')
       return
     }
@@ -87,6 +91,7 @@ export default function ManualEntryScreen({ navigation }: Props) {
         timestamp.toISOString()
       )
 
+      HapticFeedback.success()
       Alert.alert('Success', 'Glucose reading saved', [
         {
           text: 'OK',
@@ -94,6 +99,7 @@ export default function ManualEntryScreen({ navigation }: Props) {
         },
       ])
     } catch (error: any) {
+      HapticFeedback.error()
       const errorMessage = error?.message || 'Failed to save glucose reading. Please try again.'
       Alert.alert('Error', errorMessage)
       console.error('Save glucose error:', error)
@@ -103,6 +109,7 @@ export default function ManualEntryScreen({ navigation }: Props) {
   }
 
   const handleCancel = () => {
+    HapticFeedback.light()
     navigation.goBack()
   }
 
@@ -180,7 +187,10 @@ export default function ManualEntryScreen({ navigation }: Props) {
               <View style={styles.unitContainer}>
                 <TouchableOpacity
                   style={[styles.unitButton, unit === 'mg/dL' && styles.unitButtonActive]}
-                  onPress={() => setUnit('mg/dL')}
+                  onPress={() => {
+                    HapticFeedback.selection()
+                    setUnit('mg/dL')
+                  }}
                 >
                   <Text
                     style={[styles.unitButtonText, unit === 'mg/dL' && styles.unitButtonTextActive]}
@@ -190,7 +200,10 @@ export default function ManualEntryScreen({ navigation }: Props) {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.unitButton, unit === 'mmol/L' && styles.unitButtonActive]}
-                  onPress={() => setUnit('mmol/L')}
+                  onPress={() => {
+                    HapticFeedback.selection()
+                    setUnit('mmol/L')
+                  }}
                 >
                   <Text
                     style={[
@@ -243,7 +256,10 @@ export default function ManualEntryScreen({ navigation }: Props) {
             <View style={styles.sourceRow}>
               <TouchableOpacity
                 style={[styles.sourceButton, source === 'fingerstick' && styles.sourceButtonActive]}
-                onPress={() => setSource('fingerstick')}
+                onPress={() => {
+                  HapticFeedback.selection()
+                  setSource('fingerstick')
+                }}
               >
                 <Text style={styles.sourceIcon}>🩸</Text>
                 <Text
@@ -257,7 +273,10 @@ export default function ManualEntryScreen({ navigation }: Props) {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.sourceButton, source === 'lab' && styles.sourceButtonActive]}
-                onPress={() => setSource('lab')}
+                onPress={() => {
+                  HapticFeedback.selection()
+                  setSource('lab')
+                }}
               >
                 <Text style={styles.sourceIcon}>🧪</Text>
                 <Text
