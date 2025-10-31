@@ -8,6 +8,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import TimelineScreen from '../screens/timeline/TimelineScreen'
+import InsightsScreen from '../screens/insights/InsightsScreen'
 import { FoodListScreen } from '../screens/food/FoodListScreen'
 import { FoodDetailScreen } from '../screens/food/FoodDetailScreen'
 import { EditIngredientScreen } from '../screens/food/EditIngredientScreen'
@@ -118,6 +119,17 @@ function TabNavigator() {
             title: 'Timeline',
             tabBarIcon: ({ color, size }) => (
               <MaterialIcons name="timeline" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tab.Screen
+          name="Insights"
+          component={InsightsScreen}
+          options={{
+            headerShown: false,
+            title: 'Insights',
+            tabBarIcon: ({ color, size }) => (
+              <MaterialIcons name="lightbulb" size={size} color={color} />
             ),
           }}
         />
