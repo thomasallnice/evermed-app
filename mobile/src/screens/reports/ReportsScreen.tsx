@@ -144,46 +144,64 @@ export default function ReportsScreen({ navigation }: Props) {
     }
   }
 
-  const renderDatePicker = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionLabel}>WEEK</Text>
-      <View style={styles.dateNavigation}>
-        <TouchableOpacity style={styles.dateNavButton} onPress={handlePreviousWeek}>
-          <Text style={styles.dateNavIcon}>←</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.dateDisplay}
-          onPress={() => setShowDatePicker(true)}
-        >
-          <Text style={styles.dateText}>{formatWeekRange(selectedWeek)}</Text>
-          <Text style={styles.dateSubtext}>Tap to change week</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.dateNavButton}
-          onPress={handleNextWeek}
-          disabled={selectedWeek >= getMondayOfWeek(new Date())}
-        >
-          <Text
-            style={[
-              styles.dateNavIcon,
-              selectedWeek >= getMondayOfWeek(new Date()) && styles.dateNavIconDisabled,
-            ]}
+  const renderDatePicker = () => {
+    const isCurrentWeek = selectedWeek >= getMondayOfWeek(new Date())
+    const weekRange = formatWeekRange(selectedWeek)
+
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>WEEK</Text>
+        <View style={styles.dateNavigation}>
+          <TouchableOpacity
+            style={styles.dateNavButton}
+            onPress={handlePreviousWeek}
+            accessibilityLabel="Previous week"
+            accessibilityHint="View the previous week for the report"
+            accessibilityRole="button"
           >
-            →
-          </Text>
-        </TouchableOpacity>
+            <Text style={styles.dateNavIcon}>←</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dateDisplay}
+            onPress={() => setShowDatePicker(true)}
+            accessibilityLabel={`Selected week: ${weekRange}`}
+            accessibilityHint="Tap to open calendar and change week"
+            accessibilityRole="button"
+          >
+            <Text style={styles.dateText}>{weekRange}</Text>
+            <Text style={styles.dateSubtext}>Tap to change week</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dateNavButton}
+            onPress={handleNextWeek}
+            disabled={isCurrentWeek}
+            accessibilityLabel="Next week"
+            accessibilityHint={isCurrentWeek ? "Cannot select future weeks" : "View the next week for the report"}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: isCurrentWeek }}
+          >
+            <Text
+              style={[
+                styles.dateNavIcon,
+                isCurrentWeek && styles.dateNavIconDisabled,
+              ]}
+            >
+              →
+            </Text>
+          </TouchableOpacity>
+        </View>
+        {showDatePicker && (
+          <DateTimePicker
+            value={selectedWeek}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+            maximumDate={new Date()}
+          />
+        )}
       </View>
-      {showDatePicker && (
-        <DateTimePicker
-          value={selectedWeek}
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-          maximumDate={new Date()}
-        />
-      )}
-    </View>
-  )
+    )
+  }
 
   const renderReportOptions = () => (
     <View style={styles.section}>
@@ -191,6 +209,10 @@ export default function ReportsScreen({ navigation }: Props) {
       <TouchableOpacity
         style={styles.optionRow}
         onPress={() => setIncludeGlucose(!includeGlucose)}
+        accessibilityLabel="Glucose readings"
+        accessibilityHint={`${includeGlucose ? 'Included' : 'Not included'}. Tap to ${includeGlucose ? 'exclude' : 'include'} glucose readings in the report`}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: includeGlucose }}
       >
         <View style={styles.checkbox}>
           {includeGlucose && <View style={styles.checkboxChecked} />}
@@ -206,6 +228,10 @@ export default function ReportsScreen({ navigation }: Props) {
       <TouchableOpacity
         style={styles.optionRow}
         onPress={() => setIncludeMeals(!includeMeals)}
+        accessibilityLabel="Meals and nutrition"
+        accessibilityHint={`${includeMeals ? 'Included' : 'Not included'}. Tap to ${includeMeals ? 'exclude' : 'include'} meals and nutrition details in the report`}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: includeMeals }}
       >
         <View style={styles.checkbox}>
           {includeMeals && <View style={styles.checkboxChecked} />}
@@ -221,6 +247,10 @@ export default function ReportsScreen({ navigation }: Props) {
       <TouchableOpacity
         style={styles.optionRow}
         onPress={() => setIncludeInsights(!includeInsights)}
+        accessibilityLabel="Insights and patterns"
+        accessibilityHint={`${includeInsights ? 'Included' : 'Not included'}. Tap to ${includeInsights ? 'exclude' : 'include'} insights and patterns in the report`}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: includeInsights }}
       >
         <View style={styles.checkbox}>
           {includeInsights && <View style={styles.checkboxChecked} />}
@@ -247,22 +277,39 @@ export default function ReportsScreen({ navigation }: Props) {
         multiline
         numberOfLines={5}
         maxLength={500}
+        accessibilityLabel="Notes for healthcare provider"
+        accessibilityHint="Add any notes, questions, or concerns to include in the report. Maximum 500 characters"
+        accessibilityRole="none"
       />
-      <Text style={styles.charCount}>{customNotes.length}/500 characters</Text>
+      <Text
+        style={styles.charCount}
+        accessible={true}
+        accessibilityLabel={`${customNotes.length} of 500 characters used`}
+        accessibilityRole="text"
+      >
+        {customNotes.length}/500 characters
+      </Text>
     </View>
   )
 
   const renderReportPreview = () => {
     if (!reportData) return null
 
+    const weekStart = new Date(reportData.weekStart).toLocaleDateString()
+    const weekEnd = new Date(reportData.weekEnd).toLocaleDateString()
+
     return (
       <View style={styles.previewSection}>
         <Text style={styles.sectionLabel}>REPORT PREVIEW</Text>
-        <View style={styles.previewCard}>
+        <View
+          style={styles.previewCard}
+          accessible={true}
+          accessibilityLabel={`Report preview for ${weekStart} to ${weekEnd}. Average glucose ${Math.round(reportData.summary.avgGlucose)} mg/dL, ${Math.round(reportData.summary.timeInRange)}% time in range, ${reportData.summary.totalSpikes} spikes, ${reportData.summary.totalMeals} meals. Report includes ${reportData.dailyData.length} days of data`}
+          accessibilityRole="summary"
+        >
           <Text style={styles.previewTitle}>Weekly Glucose & Meal Report</Text>
           <Text style={styles.previewSubtitle}>
-            {new Date(reportData.weekStart).toLocaleDateString()} -{' '}
-            {new Date(reportData.weekEnd).toLocaleDateString()}
+            {weekStart} - {weekEnd}
           </Text>
 
           <View style={styles.previewStats}>
@@ -304,6 +351,10 @@ export default function ReportsScreen({ navigation }: Props) {
         style={[styles.exportButton, styles.exportButtonPrimary]}
         onPress={handleExportText}
         disabled={loading || !reportData}
+        accessibilityLabel="Export as text report"
+        accessibilityHint="Export the report as a formatted text file suitable for email"
+        accessibilityRole="button"
+        accessibilityState={{ disabled: loading || !reportData }}
       >
         <Text style={styles.exportButtonIcon}>📄</Text>
         <View style={styles.exportButtonContent}>
@@ -318,6 +369,10 @@ export default function ReportsScreen({ navigation }: Props) {
         style={[styles.exportButton, styles.exportButtonSecondary]}
         onPress={handleExportCSV}
         disabled={loading || !reportData}
+        accessibilityLabel="Export as CSV data"
+        accessibilityHint="Export the report as a spreadsheet file for detailed analysis"
+        accessibilityRole="button"
+        accessibilityState={{ disabled: loading || !reportData }}
       >
         <Text style={styles.exportButtonIcon}>📊</Text>
         <View style={styles.exportButtonContent}>
@@ -357,6 +412,10 @@ export default function ReportsScreen({ navigation }: Props) {
           style={[styles.generateButton, loading && styles.generateButtonDisabled]}
           onPress={handleGenerateReport}
           disabled={loading}
+          accessibilityLabel={loading ? "Generating report" : "Generate report"}
+          accessibilityHint="Create a weekly report with the selected options"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: loading, busy: loading }}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
