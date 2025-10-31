@@ -12,13 +12,15 @@ import { FoodListScreen } from '../screens/food/FoodListScreen'
 import { FoodDetailScreen } from '../screens/food/FoodDetailScreen'
 import { EditIngredientScreen } from '../screens/food/EditIngredientScreen'
 import { CameraScreen } from '../screens/food/CameraScreen'
-import { GlucoseScreen } from '../screens/glucose/GlucoseScreen'
+import GlucoseListScreen from '../screens/glucose/GlucoseListScreen'
+import ManualEntryScreen from '../screens/glucose/ManualEntryScreen'
 import { ProfileScreen } from '../screens/profile/ProfileScreen'
 import { OnboardingScreen } from '../screens/auth/OnboardingScreen'
 import { FloatingActionButton } from '../components/FloatingActionButton'
 
 const Tab = createBottomTabNavigator()
 const FoodStack = createNativeStackNavigator()
+const GlucoseStack = createNativeStackNavigator()
 const RootStack = createNativeStackNavigator()
 
 // Food Stack Navigator (includes camera, list, detail, edit)
@@ -46,6 +48,24 @@ function FoodStackNavigator() {
         options={{ headerShown: false }}
       />
     </FoodStack.Navigator>
+  )
+}
+
+// Glucose Stack Navigator (includes list and manual entry)
+function GlucoseStackNavigator() {
+  return (
+    <GlucoseStack.Navigator>
+      <GlucoseStack.Screen
+        name="GlucoseList"
+        component={GlucoseListScreen}
+        options={{ headerShown: false }}
+      />
+      <GlucoseStack.Screen
+        name="ManualEntry"
+        component={ManualEntryScreen}
+        options={{ headerShown: false }}
+      />
+    </GlucoseStack.Navigator>
   )
 }
 
@@ -114,8 +134,9 @@ function TabNavigator() {
         />
         <Tab.Screen
           name="Glucose"
-          component={GlucoseScreen}
+          component={GlucoseStackNavigator}
           options={{
+            headerShown: false,
             title: 'Glucose',
             tabBarIcon: ({ color, size }) => (
               <MaterialIcons name="show-chart" size={size} color={color} />
