@@ -167,12 +167,17 @@ export default function GlucoseListScreen({ navigation }: Props) {
   const renderReading = ({ item }: { item: GlucoseReading }) => {
     const color = getGlucoseColor(item.value)
     const rangeLabel = getRangeLabel(item.value)
+    const sourceLabel = getSourceLabel(item.source)
+    const timeLabel = getRelativeTime(item.timestamp)
 
     return (
       <TouchableOpacity
         style={styles.readingCard}
         onLongPress={() => handleDelete(item)}
         activeOpacity={0.7}
+        accessibilityLabel={`Glucose reading: ${item.value} mg/dL, ${rangeLabel}, ${timeLabel}, from ${sourceLabel}`}
+        accessibilityHint="Long press to delete this reading"
+        accessibilityRole="button"
       >
         <View style={[styles.colorBar, { backgroundColor: color }]} />
         <View style={styles.readingContent}>
@@ -187,11 +192,11 @@ export default function GlucoseListScreen({ navigation }: Props) {
             </View>
           </View>
           <View style={styles.readingDetails}>
-            <Text style={styles.relativeTime}>{getRelativeTime(item.timestamp)}</Text>
+            <Text style={styles.relativeTime}>{timeLabel}</Text>
             <Text style={styles.absoluteTime}>{formatTime(item.timestamp)}</Text>
           </View>
           <View style={styles.sourceBadge}>
-            <Text style={styles.sourceText}>{getSourceLabel(item.source)}</Text>
+            <Text style={styles.sourceText}>{sourceLabel}</Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -262,7 +267,14 @@ export default function GlucoseListScreen({ navigation }: Props) {
       />
 
       {/* Floating Action Button */}
-      <TouchableOpacity style={styles.fab} onPress={handleAddReading} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={handleAddReading}
+        activeOpacity={0.8}
+        accessibilityLabel="Add glucose reading"
+        accessibilityHint="Open the form to add a new glucose reading"
+        accessibilityRole="button"
+      >
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
     </SafeAreaView>
