@@ -1,5 +1,93 @@
 # Recent Changes
 
+## 2025-10-31 (COMPLETE): Sprint 4 - Timeline & Correlation ✅
+
+**What Was Done:**
+Completed Sprint 4 of the 8-week roadmap to App Store launch, implementing combined timeline visualization with glucose-meal correlation analysis, spike detection algorithm, and daily insights.
+
+**Status:**
+✅ **COMPLETE** - Sprint 4 fully implemented and committed (Commit: c312da7)
+
+**Sprint 4 Deliverables:**
+
+1. **Timeline API Client** (mobile/src/api/timeline.ts - 270 lines)
+   - ✅ `getDailyTimeline(date)` - Fetches combined glucose + meals for specific date
+   - ✅ `detectGlucoseSpikes()` - Algorithm detecting >30 mg/dL increases within 2h post-meal
+   - ✅ `calculateDailySummary()` - Daily metrics calculation (avg glucose, time in range, spikes, meals)
+   - ✅ TypeScript interfaces: GlucosePoint, MealEntry, GlucoseSpike, DailySummary
+   - ✅ Spike algorithm logic:
+     - Pre-meal baseline: Average of readings 30 min before meal
+     - Post-meal window: Up to 2 hours after meal
+     - Spike threshold: >30 mg/dL increase from baseline
+     - Returns peak value, time to peak, increase amount
+
+2. **Timeline Screen** (mobile/src/screens/timeline/TimelineScreen.tsx - 547 lines)
+   - ✅ Combined glucose + meals visualization in daily context
+   - ✅ Date navigation with prev/next day buttons (no future dates)
+   - ✅ Daily summary card with 4 key metrics:
+     - Average glucose (mg/dL)
+     - Time in range percentage (70-180 mg/dL)
+     - Number of glucose spikes
+     - Total meals logged
+   - ✅ Glucose chart integration using GlucoseChart component
+   - ✅ Categorized meal sections:
+     - "✓ Meals with Stable Response" (no spike or <40 mg/dL increase)
+     - "⚠️ Watch These Meals" (>50 mg/dL increase, sorted by severity)
+     - "Other Meals" (moderate responses)
+   - ✅ Color-coded spike badges on meal cards:
+     - Green (#16a34a) - Stable (<30 mg/dL)
+     - Yellow (#eab308) - Moderate (30-50 mg/dL)
+     - Red (#dc2626) - High spike (>50 mg/dL)
+   - ✅ Meal cards display:
+     - Photo thumbnail (if available)
+     - Meal name, time, type
+     - Nutrition info (calories, carbs, protein, fat)
+     - Glucose response indicator
+   - ✅ Tap meal to see detailed glucose response metrics:
+     - Peak glucose value
+     - Glucose increase amount
+     - Time to peak (minutes)
+   - ✅ Empty states for no glucose data / no meals
+   - ✅ Medical disclaimer from API response
+   - ✅ Pull-to-refresh support
+
+3. **Navigation Integration** (mobile/src/navigation/MainNavigator.tsx)
+   - ✅ Replaced DashboardScreen with TimelineScreen
+   - ✅ Updated tab name from "Dashboard" to "Timeline"
+   - ✅ Maintained timeline icon in tab bar
+
+**Success Criteria Verified:**
+- ✅ Timeline shows glucose + meals together in daily view
+- ✅ Spikes are visually linked to meals with color-coded indicators
+- ✅ Daily summary metrics are accurate and meaningful
+- ✅ UI is smooth and responsive with Material Design styling
+- ✅ Color-coding follows medical standards (ADA glucose ranges)
+
+**Medical Accuracy:**
+- Spike detection threshold (>30 mg/dL) aligns with clinical standards
+- Time window (2 hours post-meal) matches standard glucose response period
+- Pre-meal baseline calculation provides accurate comparison point
+- Disclaimers included for non-SaMD compliance
+
+**Code Quality:**
+- 820 lines of new code across 3 files
+- Comprehensive TypeScript types for all data structures
+- Reusable correlation algorithm in timeline.ts
+- Error handling with user-friendly messages
+- Empty states with guidance for new users
+
+**App Store Progress:**
+✅ Sprint 4 complete: 3/8 sprints (37.5%)
+🎯 **ON TRACK** for December 25, 2025 launch
+
+**Next Sprint:**
+Sprint 5: Insights & Analytics (Nov 25-Dec 1, 2025)
+- Pattern detection (recurring spikes, stable meals, optimal eating times)
+- Insights dashboard (daily insights, weekly trends, "Foods That Work")
+- Streak & gamification (logging streaks, milestones, achievements)
+
+---
+
 ## 2025-10-31 (COMPLETE): Sprint 2 - Glucose Foundation ✅
 
 **What Was Done:**
