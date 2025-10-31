@@ -154,7 +154,13 @@ export default function ManualEntryScreen({ navigation }: Props) {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
+          <TouchableOpacity
+            onPress={handleCancel}
+            style={styles.headerButton}
+            accessibilityLabel="Cancel"
+            accessibilityHint="Discard this glucose reading and go back"
+            accessibilityRole="button"
+          >
             <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Add Glucose Reading</Text>
@@ -162,6 +168,10 @@ export default function ManualEntryScreen({ navigation }: Props) {
             onPress={handleSave}
             style={styles.headerButton}
             disabled={saving}
+            accessibilityLabel={saving ? "Saving glucose reading" : "Save glucose reading"}
+            accessibilityHint="Save this glucose reading to your history"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: saving }}
           >
             <Text style={[styles.saveText, saving && styles.saveTextDisabled]}>
               {saving ? 'Saving...' : 'Save'}
@@ -183,6 +193,9 @@ export default function ManualEntryScreen({ navigation }: Props) {
                 keyboardType="decimal-pad"
                 maxLength={6}
                 autoFocus
+                accessibilityLabel="Glucose value"
+                accessibilityHint={`Enter your glucose reading in ${unit}`}
+                accessibilityValue={{ text: value || "0" }}
               />
               <View style={styles.unitContainer}>
                 <TouchableOpacity
@@ -191,6 +204,10 @@ export default function ManualEntryScreen({ navigation }: Props) {
                     HapticFeedback.selection()
                     setUnit('mg/dL')
                   }}
+                  accessibilityLabel="mg/dL unit"
+                  accessibilityHint="Switch to milligrams per deciliter"
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: unit === 'mg/dL' }}
                 >
                   <Text
                     style={[styles.unitButtonText, unit === 'mg/dL' && styles.unitButtonTextActive]}
@@ -204,6 +221,10 @@ export default function ManualEntryScreen({ navigation }: Props) {
                     HapticFeedback.selection()
                     setUnit('mmol/L')
                   }}
+                  accessibilityLabel="mmol/L unit"
+                  accessibilityHint="Switch to millimoles per liter"
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: unit === 'mmol/L' }}
                 >
                   <Text
                     style={[
@@ -236,6 +257,9 @@ export default function ManualEntryScreen({ navigation }: Props) {
               <TouchableOpacity
                 style={styles.dateTimeButton}
                 onPress={() => setShowDatePicker(true)}
+                accessibilityLabel={`Date: ${formatDate(timestamp)}`}
+                accessibilityHint="Change the date of this glucose reading"
+                accessibilityRole="button"
               >
                 <Text style={styles.dateTimeIcon}>📅</Text>
                 <Text style={styles.dateTimeText}>{formatDate(timestamp)}</Text>
@@ -243,6 +267,9 @@ export default function ManualEntryScreen({ navigation }: Props) {
               <TouchableOpacity
                 style={styles.dateTimeButton}
                 onPress={() => setShowTimePicker(true)}
+                accessibilityLabel={`Time: ${formatTime(timestamp)}`}
+                accessibilityHint="Change the time of this glucose reading"
+                accessibilityRole="button"
               >
                 <Text style={styles.dateTimeIcon}>🕐</Text>
                 <Text style={styles.dateTimeText}>{formatTime(timestamp)}</Text>
@@ -260,6 +287,10 @@ export default function ManualEntryScreen({ navigation }: Props) {
                   HapticFeedback.selection()
                   setSource('fingerstick')
                 }}
+                accessibilityLabel="Fingerstick source"
+                accessibilityHint="Mark this reading as from a fingerstick test"
+                accessibilityRole="button"
+                accessibilityState={{ selected: source === 'fingerstick' }}
               >
                 <Text style={styles.sourceIcon}>🩸</Text>
                 <Text
@@ -277,6 +308,10 @@ export default function ManualEntryScreen({ navigation }: Props) {
                   HapticFeedback.selection()
                   setSource('lab')
                 }}
+                accessibilityLabel="Lab test source"
+                accessibilityHint="Mark this reading as from a lab test"
+                accessibilityRole="button"
+                accessibilityState={{ selected: source === 'lab' }}
               >
                 <Text style={styles.sourceIcon}>🧪</Text>
                 <Text
@@ -300,6 +335,8 @@ export default function ManualEntryScreen({ navigation }: Props) {
               multiline
               numberOfLines={3}
               maxLength={200}
+              accessibilityLabel="Notes"
+              accessibilityHint="Add optional notes about this glucose reading, such as meals eaten or how you feel"
             />
           </View>
 
