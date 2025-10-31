@@ -7,7 +7,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { DashboardScreen } from '../screens/dashboard/DashboardScreen'
+import TimelineScreen from '../screens/timeline/TimelineScreen'
 import { FoodListScreen } from '../screens/food/FoodListScreen'
 import { FoodDetailScreen } from '../screens/food/FoodDetailScreen'
 import { EditIngredientScreen } from '../screens/food/EditIngredientScreen'
@@ -112,8 +112,8 @@ function TabNavigator() {
         }}
       >
         <Tab.Screen
-          name="Dashboard"
-          component={DashboardScreen}
+          name="Timeline"
+          component={TimelineScreen}
           options={{
             title: 'Timeline',
             tabBarIcon: ({ color, size }) => (
