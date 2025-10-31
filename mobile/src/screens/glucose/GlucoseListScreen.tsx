@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
+    padding: 20,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -430,8 +430,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
+    fontSize: 48,
+    marginBottom: 12,
   },
   emptyTitle: {
     fontSize: 20,

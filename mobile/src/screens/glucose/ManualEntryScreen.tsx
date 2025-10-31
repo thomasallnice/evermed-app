@@ -401,8 +401,8 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 28,
+    fontWeight: '700',
     color: '#111827',
   },
   cancelText: {
