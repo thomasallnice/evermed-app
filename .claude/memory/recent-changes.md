@@ -1,5 +1,74 @@
 # Recent Changes
 
+## 2025-10-31 (COMPLETE): Sprint 6 - Reports & Export ✅
+
+**What Was Done:**
+Completed Sprint 6 of the 8-week roadmap to App Store launch, implementing comprehensive weekly report generation with CSV/text export, iOS share sheet integration, and healthcare provider communication features.
+
+**Status:**
+✅ **COMPLETE** - Sprint 6 fully implemented and committed (Commit: f85fbbb)
+✅ **32 DAYS AHEAD OF SCHEDULE** - Target was Dec 2-8, completed Oct 31
+✅ **75% TO LAUNCH** - 6/8 sprints complete
+
+**Sprint 6 Deliverables:**
+
+1. **Reports API Client** (mobile/src/api/reports.ts - 319 lines)
+   - ✅ `fetchReportData()` - Aggregate weekly glucose + meal data
+   - ✅ `generateCSV()` - CSV export format with headers and data rows
+   - ✅ `generateTextReport()` - Human-readable text format with summaries
+   - ✅ `exportCSV()` / `exportTextReport()` - iOS share sheet integration
+   - ✅ `getMondayOfWeek()` - Week calculation helper (Monday-based)
+   - ✅ Session management with retry logic and exponential backoff
+   - ✅ TypeScript interfaces: ReportOptions, ReportData
+
+2. **Reports Screen** (mobile/src/screens/reports/ReportsScreen.tsx - 661 lines)
+   - ✅ Week picker with Monday alignment (React Native DateTimePicker)
+   - ✅ Report customization toggles (glucose, meals, insights)
+   - ✅ Custom notes TextInput for healthcare provider communication
+   - ✅ Report preview with summary stats (avg glucose, time in range, spikes, meals)
+   - ✅ Export buttons (CSV and Text) with loading states
+   - ✅ iOS share sheet integration (expo-sharing + expo-file-system)
+   - ✅ Error handling and empty state UI
+   - ✅ Graceful degradation for missing data
+
+3. **Navigation Integration**
+   - ✅ ProfileStackNavigator created (mobile/src/navigation/MainNavigator.tsx)
+   - ✅ Reports screen added to Profile stack
+   - ✅ Navigation button added to ProfileScreen ("Reports & Export" section)
+   - ✅ Card design with title, subtitle, and arrow indicator
+
+**Key Features:**
+- Weekly report generation with Monday-aligned weeks
+- Customizable report sections (include/exclude glucose, meals, insights)
+- Custom notes field for adding context for doctors
+- CSV export: Structured data format for Excel/Numbers
+- Text export: Human-readable format with formatted insights
+- iOS share sheet: Email, AirDrop, save to Files, print
+- Preview before export: Summary stats to verify data
+- Non-PHI export format with medical disclaimers
+
+**Technical Highlights:**
+- Parallel data loading for 7 days of timeline data
+- Week calculations using ISO 8601 (Monday as week start)
+- File operations with expo-file-system
+- Native sharing via expo-sharing
+- Graceful error handling for incomplete weeks
+- Loading states and user feedback
+
+**App Store Progress:**
+✅ Sprint 6 complete: 6/8 sprints (75%)
+🚀 **32 DAYS AHEAD OF SCHEDULE**
+🎯 Launch Target: December 25, 2025
+
+**Next Sprint:**
+Sprint 7: Polish & Performance (Dec 9-15 target, starting now)
+- UI/UX refinements and accessibility
+- Performance optimization
+- Bug fixes and edge case handling
+- Production readiness validation
+
+---
+
 ## 2025-10-31 (COMPLETE): Sprint 5 - Insights & Analytics ✅
 
 **What Was Done:**

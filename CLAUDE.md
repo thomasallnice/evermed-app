@@ -89,7 +89,7 @@ npx vitest run tests/unit/auth.spec.ts
 ## Current Sprint Status (Updated 2025-10-31)
 
 **🚀 8-Week Sprint to App Store Launch: December 25, 2025**
-**🎯 Progress: 2/8 Sprints Complete (25%)** - 🎉 **11 Days Ahead of Schedule**
+**🎯 Progress: 6/8 Sprints Complete (75%)** - 🎉 **32 Days Ahead of Schedule**
 
 **Sprint Plan:** See `docs/SPRINT_TO_APP_STORE_2025_10_30.md` for detailed roadmap
 
@@ -161,12 +161,37 @@ npx vitest run tests/unit/auth.spec.ts
 **Files Modified:**
 - `mobile/src/navigation/MainNavigator.tsx` (added glucose navigation)
 
-### Remaining Sprints (6 weeks)
-- **Sprint 3:** HealthKit Integration (Nov 11-17) - NEXT
-- **Sprint 4:** Timeline & Correlation (Nov 18-24)
-- **Sprint 5:** Insights & Analytics (Nov 25-Dec 1)
-- **Sprint 6:** Reports & Export (Dec 2-8)
-- **Sprint 7:** Polish & Performance (Dec 9-15)
+### Sprint 6: Reports & Export ✅ COMPLETE (Oct 31, 2025) 🎉 **32 DAYS AHEAD**
+**Commit:** f85fbbb
+**Goal:** Weekly reports for healthcare providers with export functionality
+
+**Completed Features:**
+- ✅ Reports API client (mobile/src/api/reports.ts - 319 lines)
+  - Weekly data aggregation (glucose + meals + insights)
+  - CSV export generation (structured data format)
+  - Text export generation (human-readable format)
+  - iOS share sheet integration (expo-sharing)
+  - Session management with retry logic
+- ✅ Reports screen (mobile/src/screens/reports/ReportsScreen.tsx - 661 lines)
+  - Week picker with Monday alignment
+  - Report customization toggles (glucose/meals/insights)
+  - Custom notes field for healthcare providers
+  - Report preview with summary stats
+  - Export buttons (CSV and Text) with loading states
+- ✅ Navigation integration (ProfileStackNavigator)
+  - Created ProfileStack with Reports screen
+  - Added "Reports & Export" section to ProfileScreen
+
+**Files Created:**
+- `mobile/src/api/reports.ts` (319 lines)
+- `mobile/src/screens/reports/ReportsScreen.tsx` (661 lines)
+
+**Files Modified:**
+- `mobile/src/navigation/MainNavigator.tsx` (ProfileStack navigator)
+- `mobile/src/screens/profile/ProfileScreen.tsx` (navigation button)
+
+### Remaining Sprints (2 weeks)
+- **Sprint 7:** Polish & Performance (Dec 9-15) - NEXT
 - **Sprint 8:** Beta Testing & App Store (Dec 16-25)
 
 ---
