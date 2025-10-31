@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { GlucoseChart } from '../../components/GlucoseChart'
+import { StatsRowSkeleton, ChartSkeleton, CardSkeleton } from '../../components/LoadingSkeleton'
 import {
   getDailyTimeline,
   calculateDailySummary,
@@ -394,20 +395,33 @@ export default function TimelineScreen({ navigation }: Props) {
         {/* Date Navigation */}
         {renderDateNavigation()}
 
-        {/* Daily Summary Card */}
-        {renderSummaryCard()}
-
-        {/* Glucose Chart */}
-        {renderGlucoseChart()}
-
-        {/* Meals Section */}
-        {renderMealsSection()}
-
-        {/* Disclaimer */}
-        {timelineData && (
-          <View style={styles.disclaimer}>
-            <Text style={styles.disclaimerText}>{timelineData.disclaimer}</Text>
+        {loading ? (
+          /* Loading State */
+          <View style={{ padding: 16 }}>
+            <StatsRowSkeleton count={4} />
+            <ChartSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
           </View>
+        ) : (
+          <>
+            {/* Daily Summary Card */}
+            {renderSummaryCard()}
+
+            {/* Glucose Chart */}
+            {renderGlucoseChart()}
+
+            {/* Meals Section */}
+            {renderMealsSection()}
+
+            {/* Disclaimer */}
+            {timelineData && (
+              <View style={styles.disclaimer}>
+                <Text style={styles.disclaimerText}>{timelineData.disclaimer}</Text>
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>

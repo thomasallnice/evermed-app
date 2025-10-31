@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { BarChart } from 'react-native-chart-kit'
+import { StatsRowSkeleton, ChartSkeleton, CardSkeleton } from '../../components/LoadingSkeleton'
 import {
   getDailyInsights,
   getWeeklySummary,
@@ -465,23 +466,39 @@ export default function InsightsScreen({ navigation }: Props) {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
       >
-        {/* Streak Card */}
-        {renderStreakCard()}
+        {loading ? (
+          /* Loading State */
+          <View>
+            <StatsRowSkeleton count={3} />
+            <CardSkeleton />
+            <CardSkeleton />
+            <StatsRowSkeleton count={4} />
+            <ChartSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </View>
+        ) : (
+          <>
+            {/* Streak Card */}
+            {renderStreakCard()}
 
-        {/* Daily Insights */}
-        {renderDailyInsights()}
+            {/* Daily Insights */}
+            {renderDailyInsights()}
 
-        {/* Weekly Trends */}
-        {renderWeeklyTrends()}
+            {/* Weekly Trends */}
+            {renderWeeklyTrends()}
 
-        {/* Foods That Work */}
-        {renderFoodsThatWork()}
+            {/* Foods That Work */}
+            {renderFoodsThatWork()}
 
-        {/* Foods to Watch */}
-        {renderFoodsToWatch()}
+            {/* Foods to Watch */}
+            {renderFoodsToWatch()}
 
-        {/* Milestones */}
-        {renderMilestones()}
+            {/* Milestones */}
+            {renderMilestones()}
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   )

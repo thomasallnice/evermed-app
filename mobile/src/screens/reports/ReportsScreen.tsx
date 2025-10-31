@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import DateTimePicker from '@react-native-community/datetimepicker'
+import { StatsRowSkeleton, CardSkeleton } from '../../components/LoadingSkeleton'
 import {
   fetchReportData,
   exportCSV,
@@ -427,8 +428,16 @@ export default function ReportsScreen({ navigation }: Props) {
           )}
         </TouchableOpacity>
 
-        {/* Report Preview */}
-        {renderReportPreview()}
+        {/* Loading Skeleton or Report Preview */}
+        {loading && !reportData ? (
+          <View style={{ marginBottom: 24 }}>
+            <Text style={styles.sectionLabel}>GENERATING REPORT</Text>
+            <StatsRowSkeleton count={4} />
+            <CardSkeleton />
+          </View>
+        ) : (
+          renderReportPreview()
+        )}
 
         {/* Export Buttons */}
         {reportData && renderExportButtons()}
