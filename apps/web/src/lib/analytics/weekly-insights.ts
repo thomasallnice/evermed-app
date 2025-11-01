@@ -220,7 +220,7 @@ export async function storeWeeklySummary(
     where: {
       personId,
       date: weekStart,
-      insightType: 'weekly_summary',
+      insightType: 'weekly_report',
     },
   })
 
@@ -241,7 +241,7 @@ export async function storeWeeklySummary(
       data: {
         personId,
         date: weekStart,
-        insightType: 'weekly_summary',
+        insightType: 'weekly_report',
         insightData: summaryData as any, // JSON field
       },
     })
@@ -264,7 +264,7 @@ export async function getWeeklySummary(
     where: {
       personId, // CRITICAL: RLS enforcement
       date: weekStart,
-      insightType: 'weekly_summary',
+      insightType: 'weekly_report',
     },
     select: {
       insightData: true,
